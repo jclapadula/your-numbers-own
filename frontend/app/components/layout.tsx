@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Link, Outlet } from "react-router";
 import Amount from "./Amount";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
@@ -54,7 +54,7 @@ export default function Layout() {
         <div className="menu flex flex-col h-full justify-between">
           <ul className="w-64 p-4">
             <li>
-              <a href="/budget">Budget</a>
+              <Link to="/budget">Budget</Link>
             </li>
             <li className="menu-disabled">
               <a>

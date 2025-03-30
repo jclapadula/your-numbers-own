@@ -31,9 +31,9 @@ export const ContextProviders = ({
       clientId={config.auth0.clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
+        audience: config.auth0.audience,
       }}
       useRefreshTokens
-      cacheLocation="localstorage"
     >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </Auth0Provider>
