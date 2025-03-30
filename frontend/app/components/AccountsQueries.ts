@@ -1,17 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { accountsApi } from "~/api/accountsApi";
+import { useHttpClient } from "~/api/httpClient";
 
 export const useAccounts = () => {
-  const [isEnabled, setIsEnabled] = useState(false);
-  useEffect(() => {
-    setIsEnabled(true);
-  }, []);
+  const http = useHttpClient();
 
   return useQuery({
     queryKey: ["accounts"],
-    queryFn: () => accountsApi.getAccounts(),
+    queryFn: () => http.get<{ name: string; balance: number }[]>("/accounts"),
     throwOnError: true,
-    enabled: isEnabled,
   });
 };

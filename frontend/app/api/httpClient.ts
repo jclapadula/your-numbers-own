@@ -1,19 +1,15 @@
 import { useAuth0 } from "@auth0/auth0-react";
 
-const API_BASE_URL = import.meta.env.API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
 }
 
-async function getAuthToken(): Promise<string> {
-  const { getAccessTokenSilently } = useAuth0();
-  return getAccessTokenSilently();
-}
-
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
+  getAuthToken: () => Promise<string>
 ): Promise<T> {
   const { requiresAuth = true, ...fetchOptions } = options;
 
@@ -39,25 +35,38 @@ async function apiRequest<T>(
   return response.json();
 }
 
-// Convenience methods for common HTTP operations
-export const httpClient = {
+const getHttpClient = (getAuthToken: () => Promise<string>) => ({
   get: <T>(endpoint: string, options?: RequestOptions) =>
-    apiRequest<T>(endpoint, { ...options, method: "GET" }),
+    apiRequest<T>(endpoint, { ...options, method: "GET" }, getAuthToken),
 
   post: <T>(endpoint: string, data: unknown, options?: RequestOptions) =>
-    apiRequest<T>(endpoint, {
-      ...options,
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    apiRequest<T>(
+      endpoint,
+      {
+        ...options,
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      getAuthToken
+    ),
 
   put: <T>(endpoint: string, data: unknown, options?: RequestOptions) =>
-    apiRequest<T>(endpoint, {
-      ...options,
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+    apiRequest<T>(
+      endpoint,
+      {
+        ...options,
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+      getAuthToken
+    ),
 
   delete: <T>(endpoint: string, options?: RequestOptions) =>
-    apiRequest<T>(endpoint, { ...options, method: "DELETE" }),
+    apiRequest<T>(endpoint, { ...options, method: "DELETE" }, getAuthToken),
+});
+
+export const useHttpClient = () => {
+  const { getAccessTokenSilently } = useAuth0();
+
+  return getHttpClient(getAccessTokenSilently);
 };
