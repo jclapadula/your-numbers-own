@@ -16,6 +16,7 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
+    "express-oauth2-jwt-bearer": "^1.6.1",
     "kysely": "^0.27.6",
     "kysely-codegen": "^0.18.3",
     "pg": "^8.14.1"

@@ -1,5 +1,27 @@
 import { Outlet } from "react-router";
 import Amount from "./Amount";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect } from "react";
+import { useAccounts } from "./AccountsQueries";
+
+const AccountList = () => {
+  const { data: accounts, isLoading } = useAccounts();
+
+  if (isLoading || !accounts) return null;
+
+  return (
+    <>
+      {accounts.map((account) => (
+        <li key={account.name}>
+          <div className="flex justify-between items-baseline">
+            <a>{account.name}</a>
+            <Amount amount={account.balance} />
+          </div>
+        </li>
+      ))}
+    </>
+  );
+};
 
 export default function Layout() {
   const accounts = [
@@ -9,6 +31,19 @@ export default function Layout() {
     },
   ];
 
+  const { isLoading, isAuthenticated, loginWithRedirect, logout } = useAuth0();
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading) {
+      loginWithRedirect({
+        authorizationParams: { redirect_uri: window.location.origin },
+      });
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading || !isAuthenticated) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="drawer md:drawer-open">
       <input type="checkbox" className="drawer-toggle" />
@@ -16,8 +51,8 @@ export default function Layout() {
         <Outlet />
       </div>
       <div className="drawer-side bg-base-200 !overflow-visible">
-        <div className="flex flex-col">
-          <ul className="menu min-h-full w-64 p-4">
+        <div className="menu flex flex-col h-full justify-between">
+          <ul className="w-64 p-4">
             <li>
               <a href="/budget">Budget</a>
             </li>
@@ -34,14 +69,19 @@ export default function Layout() {
                 <button className="btn btn-xs btn-primary">+</button>
               </div>
             </div>
-            {accounts.map((account) => (
-              <li key={account.name}>
-                <div className="flex justify-between items-baseline">
-                  <a>{account.name}</a>
-                  <Amount amount={account.balance} />
-                </div>
-              </li>
-            ))}
+            <AccountList />
+          </ul>
+          <ul>
+            <li>
+              <button
+                className="btn btn-sm btn-secondary btn-soft"
+                onClick={() =>
+                  logout({ logoutParams: { returnTo: window.location.origin } })
+                }
+              >
+                Log out
+              </button>
+            </li>
           </ul>
         </div>
       </div>

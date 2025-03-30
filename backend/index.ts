@@ -1,17 +1,14 @@
 import { env } from "bun";
 import express from "express";
-import { errorHandler } from "./src/api/middlewares";
-import { usersRouter } from "./src/api/usersRouter";
+import { errorHandler, routerLogger } from "./src/api/middlewares";
+import { mainRouter } from "./src/api";
 
 const app = express();
 const port = 8080;
 
-app.get("/", (req, res) => {
-  res.status(200).send("");
-});
+app.use(mainRouter);
 
-app.use("/api/users", usersRouter);
-
+app.use(routerLogger);
 app.use(errorHandler);
 
 app.listen(port, () => {
