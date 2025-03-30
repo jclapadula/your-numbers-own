@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useHttpClient } from "~/api/httpClient";
+import { useAccountsApi } from "~/api/accountsApi";
 
 export const useAccounts = () => {
-  const http = useHttpClient();
+  const { getAll } = useAccountsApi();
 
   return useQuery({
     queryKey: ["accounts"],
-    queryFn: () => http.get<{ name: string; balance: number }[]>("/accounts"),
+    queryFn: getAll,
     throwOnError: true,
   });
 };

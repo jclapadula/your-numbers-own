@@ -1,17 +1,11 @@
 import { Link, Outlet } from "react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useEffect } from "react";
 import { AccountsList } from "./AccountsList";
+import { useLogin } from "./useLogin";
 
 export default function Layout() {
-  const { isLoading, isAuthenticated, loginWithRedirect, logout } = useAuth0();
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      loginWithRedirect({
-        authorizationParams: { redirect_uri: window.location.origin },
-      });
-    }
-  }, [isAuthenticated, isLoading]);
+  const { isLoading, isAuthenticated } = useLogin();
+  const { logout } = useAuth0();
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -31,7 +25,7 @@ export default function Layout() {
         <div className="menu flex flex-col h-full justify-between">
           <ul className="w-64 p-4">
             <li>
-              <Link to="/budget">Budget</Link>
+              <Link to="/">Budget</Link>
             </li>
             <li className="menu-disabled">
               <a>

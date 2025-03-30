@@ -11,8 +11,8 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 
 export interface Users {
   email: string;
+  externalId: string;
   id: Generated<string>;
-  name: string;
 }
 
 export interface DB {

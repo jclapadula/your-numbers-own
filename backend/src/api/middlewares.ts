@@ -11,8 +11,6 @@ export const errorHandler = (
   res.status(500).send("Something went wrong!");
 };
 
-// Authorization middleware. When used, the Access Token must
-// exist and be verified against the Auth0 JSON Web Key Set.
 export const authenticate = auth({
   audience: "https://api.your-numbers.app",
   issuerBaseURL: `https://your-numbers.eu.auth0.com/`,
