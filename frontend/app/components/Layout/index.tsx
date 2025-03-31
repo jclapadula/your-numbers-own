@@ -1,11 +1,13 @@
 import { Link, Outlet } from "react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AccountsList } from "./AccountsList";
+import { AccountsList, CreateAccountModal } from "./AccountsList";
 import { useLogin } from "./useLogin";
+import { useState } from "react";
 
 export default function Layout() {
   const { isLoading, isAuthenticated } = useLogin();
   const { logout } = useAuth0();
+  const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -17,6 +19,9 @@ export default function Layout() {
 
   return (
     <div className="drawer md:drawer-open">
+      {showCreateAccountModal && (
+        <CreateAccountModal onClose={() => setShowCreateAccountModal(false)} />
+      )}
       <input type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col items-center justify-center">
         <Outlet />
@@ -37,7 +42,12 @@ export default function Layout() {
             <div className="flex justify-between items-baseline">
               <h2 className="menu-title">Accounts</h2>
               <div className="tooltip" data-tip="Add account">
-                <button className="btn btn-xs btn-primary">+</button>
+                <button
+                  className="btn btn-xs btn-primary"
+                  onClick={() => setShowCreateAccountModal(true)}
+                >
+                  +
+                </button>
               </div>
             </div>
             <AccountsList />

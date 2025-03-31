@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@types/cors": "^2.8.17",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
@@ -25,7 +26,8 @@
   },
   "scripts": {
     "dev": "bun --watch index.ts",
-    "db:migrate": "bun run src/db/migrator.ts",
+    "db:create": "bun run src/db/scripts/create-migration.ts",
+    "db:migrate": "bun run src/db/scripts/migrator.ts",
     "db:generate": "kysely-codegen --out-file=./src/db/models/index.d.ts --env-file=.env.development"
   }
 }
