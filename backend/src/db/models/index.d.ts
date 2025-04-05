@@ -9,22 +9,58 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
 
+export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface Accounts {
+  budgetId: string;
   id: Generated<string>;
   name: string;
   updatedAt: Generated<Timestamp>;
-  userId: string;
+}
+
+export interface Budget {
+  id: Generated<string>;
+  name: string;
+  ownerId: string;
+}
+
+export interface Categories {
+  budgetId: string;
+  id: Generated<string>;
+  name: string;
+}
+
+export interface Payees {
+  budgetId: string;
+  id: Generated<string>;
+  name: string;
+}
+
+export interface Transactions {
+  accountId: string;
+  amount: Generated<Int8>;
+  categoryId: string | null;
+  date: Timestamp;
+  id: Generated<string>;
+  isReconciled: Generated<boolean>;
+  notes: string | null;
+  payeeId: string | null;
 }
 
 export interface Users {
   email: string;
   externalId: string;
   id: Generated<string>;
+  timeZone: Generated<string>;
 }
 
 export interface DB {
   accounts: Accounts;
+  budget: Budget;
+  categories: Categories;
+  payees: Payees;
+  transactions: Transactions;
   users: Users;
 }

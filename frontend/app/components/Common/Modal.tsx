@@ -1,22 +1,28 @@
+import { useEffect, useRef } from "react";
+
 type ModalProps = {
+  onClose: () => void;
   children: React.ReactNode;
   title: string;
-  hidden?: boolean;
-  onClose: () => void;
   onSave: () => void;
   disabled?: boolean;
 };
 
 export const Modal = ({
-  children,
-  hidden: hidden,
   onClose,
+  children,
   title,
   onSave,
   disabled,
 }: ModalProps) => {
+  const modalRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    modalRef.current?.showModal();
+  }, []);
+
   return (
-    <dialog className="modal top-0 left-0" open={!hidden}>
+    <dialog className="modal inset-0 absolute" ref={modalRef} onClose={onClose}>
       <div className="modal-box">
         <div className="flex flex-col gap-3">
           <div>

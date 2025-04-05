@@ -1,15 +1,20 @@
-import type { Request } from "express";
+import type { NextFunction, Request } from "express";
 import { db } from "../db";
 
+const getExternalUserId = (req: Request) => {
+  return req.auth?.payload.sub;
+};
+
 export const getAuthenticatedUser = async (req: Request) => {
-  if (!req.auth?.payload.sub) {
+  const externalUserId = getExternalUserId(req);
+
+  if (!externalUserId) {
     throw new Error("User not authenticated");
   }
 
-  const userId = req.auth?.payload.sub;
   const user = await db
     .selectFrom("users")
-    .where("externalId", "=", userId)
+    .where("externalId", "=", externalUserId)
     .selectAll()
     .executeTakeFirst();
 

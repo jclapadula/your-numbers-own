@@ -14,9 +14,10 @@ app.use(
   })
 );
 
+app.use(routerLogger);
+
 app.use(mainRouter);
 
-app.use(routerLogger);
 app.use(errorHandler);
 
 app.listen(port, () => {

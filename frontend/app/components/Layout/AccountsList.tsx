@@ -1,61 +1,41 @@
-import { useState } from "react";
-import { useAccounts, useCreateAccount } from "../AccountsQueries";
+import type { BudgetAccount } from "~/api/models";
+import { useAccounts } from "../Accounts/AccountsQueries";
+import { EditAccountModal } from "../Accounts/EditAccountModal";
 import Amount from "../Amount";
-import { Modal } from "../Common/Modal";
-
+import { useState } from "react";
+import { PencilIcon } from "@heroicons/react/16/solid";
 export const AccountsList = () => {
   const { data: accounts, isLoading } = useAccounts();
+  const [editingAccount, setEditingAccount] = useState<BudgetAccount | null>(
+    null
+  );
 
   if (isLoading || !accounts) return null;
 
   return (
     <>
       {accounts.map((account) => (
-        <li key={account.id}>
+        <li key={account.id} className="group">
           <div className="flex justify-between items-baseline">
-            <a>{account.name}</a>
+            <div className="flex gap-2 items-baseline">
+              <a>{account.name}</a>
+              <button
+                className="btn btn-xs btn-ghost"
+                onClick={() => setEditingAccount(account)}
+              >
+                <PencilIcon className="text-secondary size-4 invisible group-hover:visible" />
+              </button>
+            </div>
             <Amount amount={1000.0} />
           </div>
         </li>
       ))}
-    </>
-  );
-};
-
-export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
-  const [name, setName] = useState("");
-  const [isValid, setIsValid] = useState(true);
-  const { mutate: createAccount, isPending } = useCreateAccount();
-
-  const handleSave = () => {
-    if (!name) {
-      setIsValid(false);
-      return;
-    }
-
-    createAccount({ name });
-    onClose();
-  };
-
-  return (
-    <Modal
-      title="Create Account"
-      onClose={onClose}
-      onSave={handleSave}
-      disabled={isPending}
-    >
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend">Your account name</legend>
-        <input
-          type="text"
-          className="input"
-          placeholder="Like Cash or Revolut"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoFocus
+      {editingAccount && (
+        <EditAccountModal
+          onClose={() => setEditingAccount(null)}
+          account={editingAccount}
         />
-        {!isValid && <div className="text-error">Enter an account name</div>}
-      </fieldset>
-    </Modal>
+      )}
+    </>
   );
 };

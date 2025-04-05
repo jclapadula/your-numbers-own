@@ -5,7 +5,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     CREATE OR REPLACE FUNCTION on_update_timestamp()
     RETURNS trigger AS $$
     BEGIN
-      NEW.updated_at = now();
+      NEW."updatedAt" = now();
       RETURN NEW;
     END;
     $$ language 'plpgsql'`.compile(db);

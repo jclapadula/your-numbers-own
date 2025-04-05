@@ -7,5 +7,6 @@ export const mainRouter = Router();
 
 mainRouter.use(bodyParser.json());
 
-mainRouter.use("/accounts", accountsRouter);
 mainRouter.use("/users", usersRouter);
+
+mainRouter.use(accountsRouter);

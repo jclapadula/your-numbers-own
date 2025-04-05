@@ -26,3 +26,16 @@ export const useCreateAccount = () => {
     },
   });
 };
+
+export const useUpdateAccount = () => {
+  const { update } = useAccountsApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      update(id, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts });
+    },
+  });
+};

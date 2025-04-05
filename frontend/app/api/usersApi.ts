@@ -4,6 +4,6 @@ export const useUsersApi = () => {
   const httpClient = useHttpClient();
 
   return {
-    ensureUser: () => httpClient.post("/users/me", {}),
+    ensureUser: () => httpClient.post<{ budgetId: string }>("/users/me", {}),
   };
 };

@@ -2,6 +2,7 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { config } from "~/config";
+import { CurrentBudgetContextProvider } from "./Contexts.tsx/CurrentBudgetContext";
 
 export const ContextProviders = ({
   children,
@@ -35,7 +36,9 @@ export const ContextProviders = ({
       }}
       useRefreshTokens
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <CurrentBudgetContextProvider>{children}</CurrentBudgetContextProvider>
+      </QueryClientProvider>
     </Auth0Provider>
   );
 };

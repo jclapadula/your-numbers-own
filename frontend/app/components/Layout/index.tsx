@@ -1,15 +1,18 @@
 import { Link, Outlet } from "react-router";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AccountsList, CreateAccountModal } from "./AccountsList";
+import { AccountsList } from "./AccountsList";
+import { CreateAccountModal } from "../Accounts/CreateAccountModal";
 import { useLogin } from "./useLogin";
 import { useState } from "react";
+import { useCurrentBudgetContext } from "../Contexts.tsx/CurrentBudgetContext";
 
 export default function Layout() {
   const { isLoading, isAuthenticated } = useLogin();
   const { logout } = useAuth0();
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+  const { budgetId } = useCurrentBudgetContext();
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || !budgetId) {
     return (
       <div className="flex justify-center items-center h-screen">
         <span className="loading loading-spinner text-primary w-10"></span>
