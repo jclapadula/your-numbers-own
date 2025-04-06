@@ -1,13 +1,12 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
-import { db } from "../db";
-import { authenticate } from "./middlewares";
+import { db } from "../../db";
+import { authenticate } from "../middlewares";
 
 export const usersRouter = Router();
 
 usersRouter.use(authenticate);
 
-usersRouter.post("/me", async (req, res) => {
+usersRouter.post("/users/me", async (req, res) => {
   const { sub, email } = req.auth!.payload as { sub: string; email: string };
 
   let existingUser = await db

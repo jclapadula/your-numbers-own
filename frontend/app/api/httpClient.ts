@@ -61,6 +61,17 @@ const getHttpClient = (getAuthToken: () => Promise<string>) => ({
       getAuthToken
     ),
 
+  patch: <T>(endpoint: string, data: unknown, options?: RequestOptions) =>
+    apiRequest<T>(
+      endpoint,
+      {
+        ...options,
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+      getAuthToken
+    ),
+
   delete: <T>(endpoint: string, options?: RequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: "DELETE" }, getAuthToken),
 });

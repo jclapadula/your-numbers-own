@@ -6,5 +6,11 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
-  layout("./components/layout.tsx", [index("routes/budget.tsx")]),
+  layout("./components/layout.tsx", [
+    index("routes/budget.tsx"),
+    route(
+      "/accounts/:accountId/transactions",
+      "./components/Transactions/AccountTransactions.tsx"
+    ),
+  ]),
 ] satisfies RouteConfig;

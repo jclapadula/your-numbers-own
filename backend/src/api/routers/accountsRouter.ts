@@ -1,12 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { db } from "../db";
-import { authenticate, authorizeRequest } from "./middlewares";
-import { getAuthenticatedUser } from "./utils";
-import type {
-  CreateAccount,
-  BudgetAccount,
-} from "../services/models/accountsModels";
+import { db } from "../../db";
+import { authenticate, authorizeRequest } from "../middlewares";
+import { getAuthenticatedUser } from "../utils";
+import type { CreateAccount, BudgetAccount } from "../../services/models";
 
 export const accountsRouter = Router();
 
