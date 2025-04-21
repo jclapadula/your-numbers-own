@@ -1,0 +1,58 @@
+import { PlusIcon } from "@heroicons/react/16/solid";
+import { useState } from "react";
+import type { Transaction } from "~/api/models";
+import { TransactionListHeader } from "./TransactionListHeader";
+import { NewTransactionRow, TransactionRow } from "./TransactionRow";
+
+type TransactionListActionsProps = {
+  onAddTransaction: () => void;
+};
+
+const TransactionListActions = ({
+  onAddTransaction,
+}: TransactionListActionsProps) => {
+  return (
+    <div className="p-2">
+      <button className="btn btn-sm btn-ghost" onClick={onAddTransaction}>
+        <PlusIcon className="text-primary size-4" />
+        <span className="text-primary">Add</span>
+      </button>
+    </div>
+  );
+};
+
+export const AccountTransactionsList = ({
+  transactions,
+}: {
+  transactions: Transaction[];
+}) => {
+  const [addingTransaction, setAddingTransaction] = useState(false);
+
+  return (
+    <div className="h-full">
+      <TransactionListActions
+        onAddTransaction={() => setAddingTransaction(true)}
+      />
+      <div className="border border-base-content/5">
+        <table className="table [&_td]:px-2 [&_td]:py-1 [&_th]:p-2">
+          <TransactionListHeader />
+          <tbody>
+            {addingTransaction && (
+              <NewTransactionRow onCancel={() => setAddingTransaction(false)} />
+            )}
+            {transactions.map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))}
+            {transactions.length === 0 && !addingTransaction && (
+              <tr>
+                <td colSpan={7} className="text-center h-full">
+                  This account has no transactions yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

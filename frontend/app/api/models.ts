@@ -9,14 +9,14 @@ export type BudgetAccount = {
 
 export type Transaction = {
   id: string;
-  date: Date;
+  date: string;
   accountId: string;
   amount: string;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
-}[];
+};
 
 export type CreateTransaction = {
   date: Date;
@@ -36,3 +36,13 @@ export type UpdateTransaction = Partial<{
   notes: string | null;
   payeeId: string | null;
 }>;
+
+export type Payee = {
+  id: string;
+  name: string;
+};
+
+export type Category = {
+  id: string;
+  name: string;
+};
