@@ -7,9 +7,9 @@ import {
   TransactionPayeeCell,
   TransactionPaymentDepositCell,
 } from "./TransactionRowFields";
-import { useCategories, usePayees } from "~/components/Budget/budgetQueries";
 import { format } from "date-fns";
-import { rawNumberToAmount, rawStringToAmount } from "~/components/Amount";
+import { rawNumberToAmount } from "~/components/Amount";
+import { TransactionTableWidths } from "./TransactionListHeader";
 
 export const TransactionRow = ({
   transaction,
@@ -17,15 +17,15 @@ export const TransactionRow = ({
   transaction: Transaction;
 }) => {
   return (
-    <tr>
-      <td>{transaction.date}</td>
-      <td>{transaction.payeeId}</td>
-      <td>{transaction.categoryId}</td>
-      <td>{transaction.notes}</td>
-      <td>{transaction.amount}</td>
-      <td>{transaction.amount}</td>
-      <td>{transaction.isReconciled}</td>
-    </tr>
+    <div className="flex flex-row">
+      <div style={TransactionTableWidths.date}>{transaction.date}</div>
+      <div>{transaction.payeeId}</div>
+      <div>{transaction.categoryId}</div>
+      <div>{transaction.notes}</div>
+      <div>{transaction.amount}</div>
+      <div>{transaction.amount}</div>
+      <div>{transaction.isReconciled}</div>
+    </div>
   );
 };
 
@@ -40,11 +40,11 @@ export const NewTransactionRow = ({ onCancel }: NewTransactionRowProps) => {
     notes: "",
   });
 
-  const transactionAmount = rawStringToAmount(newTransaction.amount || null);
+  const transactionAmount = newTransaction.amount || null;
 
   return (
     <>
-      <tr>
+      <div className="flex flex-row">
         <TransactionDateCell
           value={newTransaction.date || format(new Date(), "yyyy-MM-dd")}
           onChange={(date) => {
@@ -70,7 +70,7 @@ export const NewTransactionRow = ({ onCancel }: NewTransactionRowProps) => {
           }}
         />
         <TransactionPaymentDepositCell
-          value={
+          rawValue={
             transactionAmount != null && transactionAmount <= 0
               ? Math.abs(transactionAmount)
               : null
@@ -78,12 +78,12 @@ export const NewTransactionRow = ({ onCancel }: NewTransactionRowProps) => {
           onChange={(amount) => {
             setNewTransaction({
               ...newTransaction,
-              amount: `-${rawNumberToAmount(amount)}`,
+              amount: rawNumberToAmount(amount * -1) || undefined,
             });
           }}
         />
         <TransactionPaymentDepositCell
-          value={
+          rawValue={
             transactionAmount != null && transactionAmount > 0
               ? transactionAmount
               : null
@@ -91,24 +91,24 @@ export const NewTransactionRow = ({ onCancel }: NewTransactionRowProps) => {
           onChange={(amount) => {
             setNewTransaction({
               ...newTransaction,
-              amount: `${rawNumberToAmount(amount)}`,
+              amount: rawNumberToAmount(amount) || undefined,
             });
           }}
         />
-        <td></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td colSpan={6}></td>
-        <td>
+        <div></div>
+        <div></div>
+      </div>
+      <div className="flex flex-row">
+        <div></div>
+        <div>
           <div className="flex gap-2">
             <button className="btn btn-sm btn-ghost" onClick={onCancel}>
               Cancel
             </button>
             <button className="btn btn-sm btn-primary">Save</button>
           </div>
-        </td>
-      </tr>
+        </div>
+      </div>
     </>
   );
 };

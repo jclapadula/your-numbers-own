@@ -3,10 +3,44 @@ import { useCategories, usePayees } from "~/components/Budget/budgetQueries";
 import { CategoryInput } from "~/components/Budget/CategoryInput";
 import { PayeeInput } from "~/components/Budget/PayeeInput";
 import { TransactionTableWidths } from "./TransactionListHeader";
-import Amount, { rawStringToAmount } from "~/components/Amount";
+import Amount, { rawValueToString } from "~/components/Amount";
+import { twMerge } from "tailwind-merge";
+
 type TransactionDateFieldProps = {
   value: string | null;
   onChange: (value: string) => void;
+};
+
+const RowCell = ({
+  children,
+  className,
+  style,
+  onClick,
+  onFocus,
+  grows,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
+  grows?: boolean;
+}) => {
+  return (
+    <div
+      className={twMerge(
+        "px-2 py-1 text-sm",
+        grows && "flex-auto basis-0",
+        className
+      )}
+      style={style}
+      onClick={onClick}
+      onFocus={onFocus}
+      tabIndex={0}
+    >
+      {children}
+    </div>
+  );
 };
 
 export const TransactionDateCell = ({
@@ -18,21 +52,23 @@ export const TransactionDateCell = ({
   const displayValue = value ? new Date(value).toLocaleDateString() : "";
 
   return (
-    <td onClick={() => setIsFocused(true)} style={TransactionTableWidths.date}>
+    <RowCell
+      onClick={() => setIsFocused(true)}
+      style={TransactionTableWidths.date}
+      className="px-2 py-1 text-sm"
+    >
       {isFocused && (
         <input
           type="date"
-          className="input p-1 pr-4 h-auto"
+          className="input px-0 h-auto !outline-none"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => setIsFocused(false)}
           autoFocus
         />
       )}
-      {!isFocused && (
-        <span className="w-[123px] inline-block ml-1">{displayValue}</span>
-      )}
-    </td>
+      {!isFocused && <span className="inline-block">{displayValue}</span>}
+    </RowCell>
   );
 };
 
@@ -60,17 +96,25 @@ export const TransactionPayeeCell = ({
   }, [value]);
 
   return (
-    <td onClick={() => setIsFocused(true)}>
+    <RowCell
+      grows
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsFocused(true);
+      }}
+      onFocus={() => setIsFocused(true)}
+    >
       {isFocused ? (
         <PayeeInput
           value={payee?.name || ""}
           onPayeeSelected={handleChange}
           onBlur={() => setIsFocused(false)}
+          className="w-full h-full"
         />
       ) : (
-        <span>{payee?.name || "--"}</span>
+        <span className="block w-full">{payee?.name || "--"}</span>
       )}
-    </td>
+    </RowCell>
   );
 };
 
@@ -94,7 +138,11 @@ export const TransactionCategoryCell = ({
   };
 
   return (
-    <td onClick={() => setIsFocused(true)}>
+    <RowCell
+      grows
+      onClick={() => setIsFocused(true)}
+      onFocus={() => setIsFocused(true)}
+    >
       {isFocused ? (
         <CategoryInput
           value={category?.name || ""}
@@ -106,7 +154,7 @@ export const TransactionCategoryCell = ({
       ) : (
         <span className="text-primary">Categorize</span>
       )}
-    </td>
+    </RowCell>
   );
 };
 
@@ -126,10 +174,14 @@ export const TransactionNotesCell = ({
   };
 
   return (
-    <td onClick={() => setIsFocused(true)}>
+    <RowCell
+      grows
+      onClick={() => setIsFocused(true)}
+      onFocus={() => setIsFocused(true)}
+    >
       {isFocused ? (
         <input
-          className="input w-full h-auto pl-0"
+          className="input w-full h-auto pl-0 !outline-0"
           value={value ?? ""}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={() => setIsFocused(false)}
@@ -143,45 +195,59 @@ export const TransactionNotesCell = ({
       ) : (
         <span>{value}</span>
       )}
-    </td>
+    </RowCell>
   );
 };
 
 type TransactionPaymentDepositFieldProps = {
-  value: number | null;
+  rawValue: number | null;
   onChange: (value: number) => void;
 };
 
 export const TransactionPaymentDepositCell = ({
-  value,
+  rawValue,
   onChange,
 }: TransactionPaymentDepositFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [amount, setAmount] = useState(value);
+  const [amount, setAmount] = useState(rawValueToString(rawValue));
 
   useEffect(() => {
-    setAmount(value);
-  }, [value]);
+    setAmount(rawValueToString(rawValue));
+  }, [rawValue]);
 
   return (
-    <td onClick={() => setIsFocused(true)}>
+    <RowCell
+      onClick={() => setIsFocused(true)}
+      onFocus={() => setIsFocused(true)}
+      style={TransactionTableWidths.paymentDeposit}
+    >
       {isFocused ? (
         <input
-          type="number"
-          className="input w-full h-auto pl-0"
+          className="input w-full h-auto pl-0 !outline-0"
           value={amount?.toString()}
           onChange={(e) => {
-            setAmount(e.target.valueAsNumber);
+            setAmount(e.target.value);
           }}
-          onBlur={() => {
-            onChange(amount || 0);
+          onBlur={(e) => {
+            const valueAsNumber = Number(e.target.value);
+            if (!isNaN(valueAsNumber)) {
+              const roundedValue = Number(valueAsNumber.toFixed(2));
+              onChange(roundedValue);
+              setAmount(roundedValue.toString());
+            }
             setIsFocused(false);
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              (e.target as any).blur();
+            }
+          }}
+          accept="[0-9]*[.,]?[0-9]*"
           autoFocus
         />
       ) : (
-        value !== null && <Amount amount={value * 100} />
+        rawValue !== null && <Amount amount={rawValue} />
       )}
-    </td>
+    </RowCell>
   );
 };

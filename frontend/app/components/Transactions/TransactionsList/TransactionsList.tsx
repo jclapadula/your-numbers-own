@@ -34,24 +34,22 @@ export const AccountTransactionsList = ({
         onAddTransaction={() => setAddingTransaction(true)}
       />
       <div className="border border-base-content/5">
-        <table className="table [&_td]:px-2 [&_td]:py-1 [&_th]:p-2">
+        <div>
           <TransactionListHeader />
-          <tbody>
-            {addingTransaction && (
-              <NewTransactionRow onCancel={() => setAddingTransaction(false)} />
-            )}
-            {transactions.map((transaction) => (
-              <TransactionRow key={transaction.id} transaction={transaction} />
-            ))}
-            {transactions.length === 0 && !addingTransaction && (
-              <tr>
-                <td colSpan={7} className="text-center h-full">
-                  This account has no transactions yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          {addingTransaction && (
+            <NewTransactionRow onCancel={() => setAddingTransaction(false)} />
+          )}
+          {transactions.map((transaction) => (
+            <TransactionRow key={transaction.id} transaction={transaction} />
+          ))}
+          {transactions.length === 0 && !addingTransaction && (
+            <tr>
+              <td colSpan={7} className="text-center h-full">
+                This account has no transactions yet.
+              </td>
+            </tr>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { usePayees, useCreatePayee } from "./budgetQueries";
+import { twMerge } from "tailwind-merge";
 
 type PayeeInputProps = {
   value: string | null;
   onPayeeSelected: (payeeId: string) => void;
   onBlur: () => void;
+  className?: string;
 };
 
 export const PayeeInput = ({
   value,
   onPayeeSelected,
   onBlur,
+  className,
 }: PayeeInputProps) => {
   const { data: payees } = usePayees();
   const { mutateAsync: createPayee } = useCreatePayee();
@@ -57,7 +60,7 @@ export const PayeeInput = ({
   }, [value]);
 
   return (
-    <div className="dropdown" ref={divRef}>
+    <div className={twMerge("dropdown", className)} ref={divRef}>
       <input
         type="text"
         value={searchTerm}

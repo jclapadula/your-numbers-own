@@ -1,19 +1,18 @@
 export const TransactionTableWidths = {
-  date: { maxWidth: "110px" },
+  date: { width: "130px" },
+  paymentDeposit: { width: "100px" },
 };
 
 export const TransactionListHeader = () => {
   return (
-    <thead>
-      <tr>
-        <th style={TransactionTableWidths.date}>Date</th>
-        <th>Payee</th>
-        <th>Category</th>
-        <th>Notes</th>
-        <th>Payment</th>
-        <th>Deposit</th>
-        <th>Reconciled</th>
-      </tr>
-    </thead>
+    <div className="flex flex-row [&>div]:px-2 [&>div]:py-1 text-sm">
+      <div style={TransactionTableWidths.date}>Date</div>
+      <div className="flex-auto basis-0">Payee</div>
+      <div className="flex-auto basis-0">Category</div>
+      <div className="flex-auto basis-0">Notes</div>
+      <div style={TransactionTableWidths.paymentDeposit}>Payment</div>
+      <div style={TransactionTableWidths.paymentDeposit}>Deposit</div>
+      {/* <div>Reconciled</div> */}
+    </div>
   );
 };

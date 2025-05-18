@@ -11,7 +11,7 @@ export type Transaction = {
   id: string;
   date: string;
   accountId: string;
-  amount: string;
+  amount: number;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;

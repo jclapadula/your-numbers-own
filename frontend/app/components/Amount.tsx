@@ -1,16 +1,12 @@
 import { twMerge } from "tailwind-merge";
 
-export const rawStringToAmount = (rawString: string | null) => {
-  if (rawString === null) {
+/** Raw value is always without decimals */
+export const rawValueToString = (rawValue: number | null) => {
+  if (rawValue === null) {
     return null;
   }
 
-  const amountAsNumber = Number(rawString) / 100;
-  if (isNaN(amountAsNumber)) {
-    return null;
-  }
-
-  return amountAsNumber;
+  return (rawValue / 100).toString();
 };
 
 export const rawNumberToAmount = (rawNumber: number | null) => {
