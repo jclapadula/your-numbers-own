@@ -4,7 +4,7 @@ import { AccountsList } from "./AccountsList";
 import { CreateAccountModal } from "../Accounts/CreateAccountModal";
 import { useLogin } from "./useLogin";
 import { useState } from "react";
-import { useCurrentBudgetContext } from "../Contexts.tsx/CurrentBudgetContext";
+import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 export default function Layout() {
   const { isLoading, isAuthenticated } = useLogin();

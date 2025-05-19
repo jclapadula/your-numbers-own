@@ -12,7 +12,6 @@ export const usePayees = () => {
   return useQuery({
     queryKey: queryKeys.payees,
     queryFn: () => budgetApi.getPayees(),
-    initialData: [],
   });
 };
 

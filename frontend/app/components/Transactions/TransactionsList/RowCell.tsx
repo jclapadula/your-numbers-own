@@ -1,0 +1,29 @@
+import { twMerge } from "tailwind-merge";
+
+export const RowCell = ({
+  children,
+  className,
+  style,
+  onClick,
+  onFocus,
+  grows,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
+  grows?: boolean;
+}) => {
+  return (
+    <div
+      className={twMerge("px-2 py-1", grows && "flex-auto basis-0", className)}
+      style={style}
+      onClick={onClick}
+      onFocus={onFocus}
+      tabIndex={0}
+    >
+      {children}
+    </div>
+  );
+};

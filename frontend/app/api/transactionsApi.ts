@@ -1,4 +1,4 @@
-import { useCurrentBudgetContext } from "~/components/Contexts.tsx/CurrentBudgetContext";
+import { useCurrentBudgetContext } from "~/components/Contexts/CurrentBudgetContext";
 import { useHttpClient } from "./httpClient";
 import type {
   CreateTransaction,

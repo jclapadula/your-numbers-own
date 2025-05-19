@@ -5,6 +5,7 @@ import type {
   UpdateTransaction,
 } from "~/api/models";
 import { useTransactionsApi } from "~/api/transactionsApi";
+import { useToast } from "../Common/ToastContext";
 
 const queryKeys = {
   transactions: (accountId: string) => ["accounts", accountId, "transactions"],
@@ -22,6 +23,7 @@ export const useTransactions = (accountId: string) => {
 export const useCreateTransaction = (accountId: string) => {
   const { create } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
+  const { setToast } = useToast();
 
   return useMutation({
     mutationFn: (transaction: CreateTransaction) => create(transaction),
@@ -30,13 +32,17 @@ export const useCreateTransaction = (accountId: string) => {
         queryKey: queryKeys.transactions(accountId),
       });
     },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to create transaction", "error");
+    },
   });
 };
 
 export const useUpdateTransaction = (accountId: string) => {
   const { patch } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
-
+  const { setToast } = useToast();
   return useMutation({
     mutationFn: ({
       transaction,
@@ -46,13 +52,20 @@ export const useUpdateTransaction = (accountId: string) => {
       transaction: UpdateTransaction;
     }) => patch(transactionId, transaction),
     onSuccess: (data, { transactionId }) => {
+      // update transaction with new backend data
       queryClient.setQueryData(
         queryKeys.transactions(accountId),
-        (previous: Transaction) =>
-          previous.map((todo) =>
-            todo.id === transactionId ? { ...todo, ...data } : todo
+        (previous: Transaction[]) =>
+          previous.map((transaction) =>
+            transaction.id === transactionId
+              ? { ...transaction, ...data }
+              : transaction
           )
       );
+    },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to update transaction", "error");
     },
   });
 };

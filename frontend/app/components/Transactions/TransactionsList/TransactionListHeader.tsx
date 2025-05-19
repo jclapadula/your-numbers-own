@@ -1,6 +1,7 @@
 export const TransactionTableWidths = {
   date: { width: "130px" },
   paymentDeposit: { width: "100px" },
+  reconciled: { width: "30px" },
 };
 
 export const TransactionListHeader = () => {
@@ -12,7 +13,12 @@ export const TransactionListHeader = () => {
       <div className="flex-auto basis-0">Notes</div>
       <div style={TransactionTableWidths.paymentDeposit}>Payment</div>
       <div style={TransactionTableWidths.paymentDeposit}>Deposit</div>
-      {/* <div>Reconciled</div> */}
+      <div
+        style={TransactionTableWidths.reconciled}
+        className="flex items-center justify-center"
+      >
+        ✓
+      </div>
     </div>
   );
 };

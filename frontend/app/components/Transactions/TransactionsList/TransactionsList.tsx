@@ -37,17 +37,15 @@ export const AccountTransactionsList = ({
         <div>
           <TransactionListHeader />
           {addingTransaction && (
-            <NewTransactionRow onCancel={() => setAddingTransaction(false)} />
+            <NewTransactionRow onClose={() => setAddingTransaction(false)} />
           )}
           {transactions.map((transaction) => (
             <TransactionRow key={transaction.id} transaction={transaction} />
           ))}
           {transactions.length === 0 && !addingTransaction && (
-            <tr>
-              <td colSpan={7} className="text-center h-full">
-                This account has no transactions yet.
-              </td>
-            </tr>
+            <div className="text-center h-full p-4">
+              This account has no transactions yet.
+            </div>
           )}
         </div>
       </div>

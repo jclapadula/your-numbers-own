@@ -5,64 +5,44 @@ import { PayeeInput } from "~/components/Budget/PayeeInput";
 import { TransactionTableWidths } from "./TransactionListHeader";
 import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
+import { RowCell } from "./RowCell";
+import { formatISO } from "date-fns";
 
 type TransactionDateFieldProps = {
-  value: string | null;
+  value: string;
   onChange: (value: string) => void;
-};
-
-const RowCell = ({
-  children,
-  className,
-  style,
-  onClick,
-  onFocus,
-  grows,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
-  grows?: boolean;
-}) => {
-  return (
-    <div
-      className={twMerge(
-        "px-2 py-1 text-sm",
-        grows && "flex-auto basis-0",
-        className
-      )}
-      style={style}
-      onClick={onClick}
-      onFocus={onFocus}
-      tabIndex={0}
-    >
-      {children}
-    </div>
-  );
+  error?: string;
+  autoFocus?: boolean;
 };
 
 export const TransactionDateCell = ({
   value,
   onChange,
+  error,
+  autoFocus = false,
 }: TransactionDateFieldProps) => {
-  const [isFocused, setIsFocused] = useState(true);
+  const [isFocused, setIsFocused] = useState(autoFocus);
 
-  const displayValue = value ? new Date(value).toLocaleDateString() : "";
+  const displayValue = new Date(value).toLocaleDateString();
 
   return (
     <RowCell
       onClick={() => setIsFocused(true)}
       style={TransactionTableWidths.date}
-      className="px-2 py-1 text-sm"
+      className={"px-2 py-1"}
     >
       {isFocused && (
         <input
           type="date"
-          className="input px-0 h-auto !outline-none"
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
+          className={twMerge(
+            "input px-0 h-auto !outline-none",
+            error && "input-error"
+          )}
+          value={value}
+          onChange={(e) => {
+            const date = new Date(e.target.value);
+            return onChange(formatISO(date));
+          }}
           onBlur={() => setIsFocused(false)}
           autoFocus
         />
@@ -82,7 +62,7 @@ export const TransactionPayeeCell = ({
   onChange,
 }: TransactionPayeeFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const { data: payees } = usePayees();
+  const { data: payees = [] } = usePayees();
 
   const payee = payees.find((p) => p.id === value);
 
@@ -209,11 +189,13 @@ export const TransactionPaymentDepositCell = ({
   onChange,
 }: TransactionPaymentDepositFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [amount, setAmount] = useState(rawValueToString(rawValue));
+
+  const initialValue = rawValueToString(rawValue);
+  const [amount, setAmount] = useState(initialValue);
 
   useEffect(() => {
-    setAmount(rawValueToString(rawValue));
-  }, [rawValue]);
+    setAmount(initialValue);
+  }, [initialValue]);
 
   return (
     <RowCell
@@ -229,6 +211,11 @@ export const TransactionPaymentDepositCell = ({
             setAmount(e.target.value);
           }}
           onBlur={(e) => {
+            if (initialValue === amount) {
+              setIsFocused(false);
+              return;
+            }
+
             const valueAsNumber = Number(e.target.value);
             if (!isNaN(valueAsNumber)) {
               const roundedValue = Number(valueAsNumber.toFixed(2));

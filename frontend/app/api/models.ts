@@ -19,9 +19,9 @@ export type Transaction = {
 };
 
 export type CreateTransaction = {
-  date: Date;
+  date: string;
   accountId: string;
-  amount: string;
+  amount: number;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;
@@ -29,8 +29,8 @@ export type CreateTransaction = {
 };
 
 export type UpdateTransaction = Partial<{
-  date: Date;
-  amount: string;
+  date: string;
+  amount: number;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { PencilIcon } from "@heroicons/react/16/solid";
 import { EditAccountModal } from "../Accounts/EditAccountModal";
 import { AccountTransactionsList } from "./TransactionsList/TransactionsList";
+import { AccountTransactionsContextProvider } from "./AccountTransactionsContext";
 
 const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
   const [editingAccount, setEditingAccount] = useState<BudgetAccount | null>(
@@ -57,9 +58,11 @@ export default function AccountTransactions() {
     );
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <AccountTransactionsHeader accountId={accountId} />
-      <AccountTransactionsList transactions={transactions || []} />
-    </div>
+    <AccountTransactionsContextProvider accountId={accountId}>
+      <div className="flex flex-col h-full w-full">
+        <AccountTransactionsHeader accountId={accountId} />
+        <AccountTransactionsList transactions={transactions || []} />
+      </div>
+    </AccountTransactionsContextProvider>
   );
 }
