@@ -19,6 +19,7 @@
     "@types/cors": "^2.8.17",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
     "express-oauth2-jwt-bearer": "^1.6.1",
@@ -30,6 +31,6 @@
     "dev": "bun --watch index.ts",
     "db:create": "bun run src/db/scripts/create-migration.ts",
     "db:migrate": "bun run src/db/scripts/migrator.ts",
-    "db:generate": "kysely-codegen --out-file=./src/db/models/index.d.ts --env-file=.env.development"
+    "db:generate": "kysely-codegen --out-file=./src/db/models/index.d.ts --env-file=.env.development --numeric-parser numeric"
   }
 }

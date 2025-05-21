@@ -5,6 +5,7 @@ export type CreateAccount = {
 export type BudgetAccount = {
   id: string;
   name: string;
+  balance: bigint;
 };
 
 export type Transaction = {

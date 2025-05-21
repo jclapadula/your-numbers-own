@@ -25,9 +25,17 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.notNull().defaultTo(false)
     )
     .execute();
+
+  await db.schema
+    .createIndex("transactions_accountId_index")
+    .on("transactions")
+    .column("accountId")
+    .execute();
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropIndex("transactions_accountId_index").execute();
+
   await db.schema.dropTable("transactions").execute();
 
   await db.schema.alterTable("users").dropColumn("timeZone").execute();

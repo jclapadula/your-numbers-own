@@ -13,6 +13,13 @@ export type Int8 = ColumnType<string, bigint | number | string, bigint | number 
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface AccountPartialBalances {
+  accountId: string;
+  balance: Generated<Int8>;
+  month: number;
+  year: number;
+}
+
 export interface Accounts {
   budgetId: string;
   id: Generated<string>;
@@ -57,6 +64,7 @@ export interface Users {
 }
 
 export interface DB {
+  account_partial_balances: AccountPartialBalances;
   accounts: Accounts;
   budget: Budget;
   categories: Categories;

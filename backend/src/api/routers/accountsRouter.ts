@@ -13,17 +13,26 @@ accountsRouter.use(authorizeRequest);
 accountsRouter.get(
   "/budgets/:budgetId/accounts",
   async (req: Request<{ budgetId: string }>, res: Response) => {
-    const user = await getAuthenticatedUser(req);
-
     const accounts = await db
       .selectFrom("accounts")
       .where("budgetId", "=", req.params.budgetId)
       .selectAll()
       .execute();
 
+    const accountsId = accounts.map((a) => a.id);
+
+    const balances = await db
+      .selectFrom("account_partial_balances")
+      .where("accountId", "in", accountsId)
+      .orderBy("year", "desc")
+      .orderBy("month", "desc")
+      .selectAll()
+      .execute();
+
     const accountsResponse: BudgetAccount[] = accounts.map((a) => ({
       id: a.id,
       name: a.name,
+      balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0n,
     }));
 
     res.json(accountsResponse);
