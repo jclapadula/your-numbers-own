@@ -6,19 +6,17 @@ import { TransactionTableWidths } from "./TransactionListHeader";
 import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
 import { RowCell } from "./RowCell";
-import { formatISO } from "date-fns";
+import { format, formatISO } from "date-fns";
 
 type TransactionDateFieldProps = {
   value: string;
   onChange: (value: string) => void;
-  error?: string;
   autoFocus?: boolean;
 };
 
 export const TransactionDateCell = ({
   value,
   onChange,
-  error,
   autoFocus = false,
 }: TransactionDateFieldProps) => {
   const [isFocused, setIsFocused] = useState(autoFocus);
@@ -34,11 +32,8 @@ export const TransactionDateCell = ({
       {isFocused && (
         <input
           type="date"
-          className={twMerge(
-            "input px-0 h-auto !outline-none",
-            error && "input-error"
-          )}
-          value={value}
+          className={twMerge("input px-0 h-auto !outline-none")}
+          value={format(new Date(value), "yyyy-MM-dd")}
           onChange={(e) => {
             const date = new Date(e.target.value);
             return onChange(formatISO(date));
@@ -148,10 +143,15 @@ export const TransactionNotesCell = ({
   onChange,
 }: TransactionNotesFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [notes, setNotes] = useState(value ?? "");
 
   const handleChange = (notes: string) => {
-    onChange(notes);
+    setNotes(notes);
   };
+
+  useEffect(() => {
+    setNotes(value ?? "");
+  }, [value]);
 
   return (
     <RowCell
@@ -162,9 +162,12 @@ export const TransactionNotesCell = ({
       {isFocused ? (
         <input
           className="input w-full h-auto pl-0 !outline-0"
-          value={value ?? ""}
+          value={notes}
           onChange={(e) => handleChange(e.target.value)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={() => {
+            setIsFocused(false);
+            onChange(notes);
+          }}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -173,7 +176,7 @@ export const TransactionNotesCell = ({
           }}
         />
       ) : (
-        <span>{value}</span>
+        <span>{notes}</span>
       )}
     </RowCell>
   );

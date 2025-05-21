@@ -43,22 +43,23 @@ export const useUpdateTransaction = (accountId: string) => {
   const { patch } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
   const { setToast } = useToast();
+
   return useMutation({
     mutationFn: ({
-      transaction,
+      changes: changes,
       transactionId,
     }: {
       transactionId: string;
-      transaction: UpdateTransaction;
-    }) => patch(transactionId, transaction),
-    onSuccess: (data, { transactionId }) => {
+      changes: UpdateTransaction;
+    }) => patch(transactionId, changes),
+    onSuccess: (_, { transactionId, changes }) => {
       // update transaction with new backend data
       queryClient.setQueryData(
         queryKeys.transactions(accountId),
         (previous: Transaction[]) =>
           previous.map((transaction) =>
             transaction.id === transactionId
-              ? { ...transaction, ...data }
+              ? { ...transaction, ...changes }
               : transaction
           )
       );

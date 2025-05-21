@@ -17,10 +17,11 @@ import {
 import { useAccountTransactions } from "../AccountTransactionsContext";
 import { z } from "zod";
 import { toObjectErrors } from "~/components/Common/formUtils";
+import { twMerge } from "tailwind-merge";
 
 const transactionSchema = z.object({
   accountId: z.string().min(1),
-  date: z.string().datetime(),
+  date: z.string().datetime({ offset: true }),
   payeeId: z.string().uuid().nullable(),
   categoryId: z.string().uuid().nullable(),
   notes: z.string(),
@@ -43,36 +44,41 @@ export const TransactionRow = ({
 
   const transactionAmount = transaction.amount || null;
 
-  const { mutateAsync: updateTransaction } = useUpdateTransaction(accountId);
+  const { mutateAsync: updateTransaction, isPending } =
+    useUpdateTransaction(accountId);
 
   const saveChanges = async (changes: Partial<Transaction>) => {
     const result = transactionSchema
       .omit({ accountId: true })
       .partial()
-      .safeParse({ ...changes });
+      .safeParse(changes);
 
     if (!result.success) {
       setErrors(toObjectErrors(result.error));
       console.log(result.error);
-      console.log({ ...changes });
+      console.log(changes);
       return;
     }
 
     await updateTransaction({
       transactionId: transaction.id,
-      transaction: result.data,
+      changes: result.data,
     });
   };
 
   return (
     <>
-      <div className="flex flex-row text-sm">
+      <div
+        className={twMerge(
+          "flex flex-row text-sm",
+          isPending && "animate-pulse"
+        )}
+      >
         <TransactionDateCell
           value={transaction.date}
           onChange={(date) => {
             saveChanges({ date });
           }}
-          error={errors.date}
         />
         <TransactionPayeeCell
           value={transaction.payeeId || null}
@@ -94,7 +100,7 @@ export const TransactionRow = ({
         />
         <TransactionPaymentDepositCell
           rawValue={
-            transactionAmount != null && transactionAmount <= 0
+            transactionAmount != null && transactionAmount < 0
               ? Math.abs(transactionAmount)
               : null
           }
@@ -151,9 +157,6 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
     amount: 0,
     isReconciled: true,
   });
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof Transaction, string>>
-  >({});
 
   const transactionAmount = newTransaction.amount || null;
 
@@ -164,8 +167,8 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
     const result = transactionSchema.safeParse(newTransaction);
 
     if (!result.success) {
-      setErrors(toObjectErrors(result.error));
       console.log(result.error);
+      console.log({ newTransaction });
       return;
     }
 
@@ -181,7 +184,6 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
           onChange={(date) => {
             setNewTransaction({ ...newTransaction, date });
           }}
-          error={errors.date}
           autoFocus
         />
         <TransactionPayeeCell
@@ -204,7 +206,7 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
         />
         <TransactionPaymentDepositCell
           rawValue={
-            transactionAmount != null && transactionAmount <= 0
+            transactionAmount != null && transactionAmount < 0
               ? Math.abs(transactionAmount)
               : null
           }

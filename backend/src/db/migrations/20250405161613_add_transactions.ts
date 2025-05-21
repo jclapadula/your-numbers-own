@@ -16,7 +16,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("accountId", "uuid", (col) =>
       col.notNull().references("accounts.id")
     )
-    .addColumn("date", "timestamp", (col) => col.notNull())
+    .addColumn("date", "timestamptz", (col) => col.notNull())
     .addColumn("payeeId", "uuid", (col) => col.references("payees.id"))
     .addColumn("categoryId", "uuid", (col) => col.references("categories.id"))
     .addColumn("notes", "text")

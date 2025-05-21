@@ -50,6 +50,10 @@ export default function AccountTransactions() {
   const { data: transactions, isLoading: isLoadingTransactions } =
     useTransactions(accountId);
 
+  const sortedTransactions = transactions?.sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+
   if (isLoadingTransactions || isLoadingAccounts)
     return (
       <div className="flex justify-center items-center h-full">
@@ -61,7 +65,7 @@ export default function AccountTransactions() {
     <AccountTransactionsContextProvider accountId={accountId}>
       <div className="flex flex-col h-full w-full">
         <AccountTransactionsHeader accountId={accountId} />
-        <AccountTransactionsList transactions={transactions || []} />
+        <AccountTransactionsList transactions={sortedTransactions || []} />
       </div>
     </AccountTransactionsContextProvider>
   );

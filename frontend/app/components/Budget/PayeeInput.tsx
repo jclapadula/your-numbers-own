@@ -15,7 +15,7 @@ export const PayeeInput = ({
   onBlur,
   className,
 }: PayeeInputProps) => {
-  const { data: payees } = usePayees();
+  const { data: payees = [] } = usePayees();
   const { mutateAsync: createPayee } = useCreatePayee();
   const [searchTerm, setSearchTerm] = useState(value || "");
 
@@ -76,7 +76,7 @@ export const PayeeInput = ({
         }}
         autoFocus
       />
-      <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-full mt-1">
+      <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box mt-1 w-max max-w-xs">
         {filteredPayees.map((payee) => (
           <li key={payee.id}>
             <button

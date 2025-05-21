@@ -21,6 +21,7 @@ transactionsRouter.get(
     const transactions = await db
       .selectFrom("transactions")
       .where("accountId", "=", req.params.accountId)
+      .orderBy("date", "desc")
       .selectAll()
       .execute();
 
