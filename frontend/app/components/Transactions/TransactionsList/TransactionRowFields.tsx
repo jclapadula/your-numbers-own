@@ -49,7 +49,7 @@ export const TransactionDateCell = ({
 
 type TransactionPayeeFieldProps = {
   value: string | null;
-  onChange: (value: string) => void;
+  onChange: (value: string | null) => void;
 };
 
 export const TransactionPayeeCell = ({
@@ -61,7 +61,7 @@ export const TransactionPayeeCell = ({
 
   const payee = payees.find((p) => p.id === value);
 
-  const handleChange = (payeeId: string) => {
+  const handleChange = (payeeId: string | null) => {
     onChange(payeeId);
     setIsFocused(false);
   };

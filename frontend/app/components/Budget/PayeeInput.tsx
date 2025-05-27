@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 
 type PayeeInputProps = {
   value: string | null;
-  onPayeeSelected: (payeeId: string) => void;
+  onPayeeSelected: (payeeId: string | null) => void;
   onBlur: () => void;
   className?: string;
 };
@@ -24,7 +24,10 @@ export const PayeeInput = ({
   );
 
   const handleCreatePayee = async () => {
-    if (!searchTerm.trim()) return;
+    if (!searchTerm.trim()) {
+      onPayeeSelected(null);
+      return;
+    }
 
     const existingPayee = payees.find((p) => p.name === searchTerm);
     if (existingPayee) {

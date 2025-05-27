@@ -57,6 +57,19 @@ export const useUpdateTransaction = (accountId: string) => {
       changes: UpdateTransaction;
     }) => patch(transactionId, changes),
     onSuccess: (_, { transactionId, changes }) => {
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
+      });
+    },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to update transaction", "error");
+    },
+    onMutate: async ({ transactionId, changes }) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.transactions(accountId),
+      });
+
       // update transaction with new backend data
       queryClient.setQueryData(
         queryKeys.transactions(accountId),
@@ -67,13 +80,6 @@ export const useUpdateTransaction = (accountId: string) => {
               : transaction
           )
       );
-      queryClient.invalidateQueries({
-        queryKey: accountsQueryKeys.accounts,
-      });
-    },
-    onError: (error) => {
-      console.error(error);
-      setToast("Failed to update transaction", "error");
     },
   });
 };
