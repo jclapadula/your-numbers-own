@@ -72,8 +72,16 @@ const getHttpClient = (getAuthToken: () => Promise<string>) => ({
       getAuthToken
     ),
 
-  delete: <T>(endpoint: string, options?: RequestOptions) =>
-    apiRequest<T>(endpoint, { ...options, method: "DELETE" }, getAuthToken),
+  delete: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
+    apiRequest<T>(
+      endpoint,
+      {
+        ...options,
+        method: "DELETE",
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      getAuthToken
+    ),
 });
 
 export const useHttpClient = () => {

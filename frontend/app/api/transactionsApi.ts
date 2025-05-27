@@ -20,9 +20,10 @@ export const useTransactionsApi = (accountId: string) => {
         `/budgets/${budgetId}/accounts/${accountId}/transactions`,
         transaction
       ),
-    delete: (id: string) =>
+    deleteMany: (transactionIds: string[]) =>
       httpClient.delete(
-        `/budgets/${budgetId}/accounts/${accountId}/transactions/${id}`
+        `/budgets/${budgetId}/accounts/${accountId}/transactions`,
+        { transactionIds }
       ),
     patch: (transactionId: string, transaction: UpdateTransaction) =>
       httpClient.patch<UpdateTransaction>(

@@ -115,6 +115,23 @@ export namespace accountBalanceService {
     }
   };
 
+  const deleteBalancesAfterLastTransaction = async (
+    db: Kysely<DB>,
+    accountId: string,
+    end: { year: number; month: number }
+  ) => {
+    await db
+      .deleteFrom("account_partial_balances")
+      .where("accountId", "=", accountId)
+      .where(({ or, eb, and }) =>
+        or([
+          eb("year", "=", end.year).and("month", ">", end.month),
+          eb("year", ">", end.year),
+        ])
+      )
+      .execute();
+  };
+
   export const updateAccountBalance = async (
     db: Kysely<DB>,
     accountId: string,
@@ -146,6 +163,8 @@ export namespace accountBalanceService {
       end,
       previousBalance
     );
+
+    await deleteBalancesAfterLastTransaction(db, accountId, end);
   };
 
   export const getAccountsBalances = async (accountsIds: string[]) => {

@@ -83,3 +83,25 @@ export const useUpdateTransaction = (accountId: string) => {
     },
   });
 };
+
+export const useDeleteTransactions = (accountId: string) => {
+  const { deleteMany } = useTransactionsApi(accountId);
+  const queryClient = useQueryClient();
+  const { setToast } = useToast();
+
+  return useMutation({
+    mutationFn: (transactionIds: string[]) => deleteMany(transactionIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.transactions(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
+      });
+    },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to delete transaction", "error");
+    },
+  });
+};

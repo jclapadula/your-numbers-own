@@ -94,9 +94,10 @@ transactionsRouter.patch(
             .execute()
         )[0]!;
 
-        const amountWasTouched = !!req.body.amount || req.body.amount === 0;
+        const amountOrDateWereTouched =
+          !!req.body.amount || req.body.amount === 0 || !!req.body.date;
 
-        if (amountWasTouched) {
+        if (amountOrDateWereTouched) {
           await accountBalanceService.updateAccountBalance(
             trx,
             req.params.accountId,
@@ -110,21 +111,36 @@ transactionsRouter.patch(
 );
 
 transactionsRouter.delete(
-  "/budgets/:budgetId/accounts/:accountId/transactions/:transactionId",
+  "/budgets/:budgetId/accounts/:accountId/transactions",
   async (
-    req: Request<{
-      budgetId: string;
-      accountId: string;
-      transactionId: string;
-    }>,
+    req: Request<
+      { budgetId: string; accountId: string },
+      {},
+      { transactionIds: string[] }
+    >,
     res: Response
   ) => {
-    const { transactionId } = req.params;
+    const { transactionIds } = req.body;
 
     await db
-      .deleteFrom("transactions")
-      .where("id", "=", transactionId)
-      .execute();
+      .transaction()
+      .setIsolationLevel("serializable")
+      .execute(async (trx) => {
+        const dates = await trx
+          .deleteFrom("transactions")
+          .where("id", "in", transactionIds)
+          .where("accountId", "=", req.params.accountId)
+          .returning(["date"])
+          .execute();
+
+        if (dates.length > 0) {
+          await accountBalanceService.updateAccountBalance(
+            trx,
+            req.params.accountId,
+            dates
+          );
+        }
+      });
 
     res.status(200).send({});
   }

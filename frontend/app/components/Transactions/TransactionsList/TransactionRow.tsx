@@ -33,8 +33,12 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 export const TransactionRow = ({
   transaction,
+  isSelected,
+  onSelect,
 }: {
   transaction: Transaction;
+  isSelected: boolean;
+  onSelect: (selected: boolean) => void;
 }) => {
   const { accountId } = useAccountTransactions();
 
@@ -74,6 +78,16 @@ export const TransactionRow = ({
           isPending && "animate-pulse"
         )}
       >
+        <div
+          style={TransactionTableWidths.selection}
+          className="flex items-center justify-center"
+        >
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect(e.target.checked)}
+          />
+        </div>
         <TransactionDateCell
           value={transaction.date}
           onChange={(date) => {
