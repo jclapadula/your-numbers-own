@@ -22,10 +22,10 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
 
   return (
     <div className="py-5 px-6">
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center group">
         <h1 className="text-2xl font-bold">{account?.name}</h1>
         <button
-          className="btn btn-sm btn-ghost"
+          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={() => setEditingAccount(account)}
         >
           <PencilIcon className="text-secondary size-4" />
