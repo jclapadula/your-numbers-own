@@ -4,6 +4,7 @@ import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import { getAuthenticatedUser } from "../utils";
 import type { CreateAccount, BudgetAccount } from "../../services/models";
+import { accountBalanceService } from "../../services/accountBalanceService";
 
 export const accountsRouter = Router();
 
@@ -19,20 +20,16 @@ accountsRouter.get(
       .selectAll()
       .execute();
 
-    const accountsId = accounts.map((a) => a.id);
+    const accountsIds = accounts.map((a) => a.id);
 
-    const balances = await db
-      .selectFrom("account_partial_balances")
-      .where("accountId", "in", accountsId)
-      .orderBy("year", "desc")
-      .orderBy("month", "desc")
-      .selectAll()
-      .execute();
+    const balances = await accountBalanceService.getAccountsBalances(
+      accountsIds
+    );
 
     const accountsResponse: BudgetAccount[] = accounts.map((a) => ({
       id: a.id,
       name: a.name,
-      balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0n,
+      balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0,
     }));
 
     res.json(accountsResponse);

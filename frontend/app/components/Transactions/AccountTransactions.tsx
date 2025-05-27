@@ -31,7 +31,9 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
           <PencilIcon className="text-secondary size-4" />
         </button>
       </div>
-      <h2>{<Amount className="text-lg font-bold" amount={10_00} />}</h2>
+      <h2>
+        {<Amount className="text-lg font-bold" amount={account.balance} />}
+      </h2>
 
       {editingAccount && (
         <EditAccountModal

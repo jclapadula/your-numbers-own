@@ -6,6 +6,7 @@ import type {
   CreateTransaction,
   UpdateTransaction,
 } from "../../services/models";
+import { accountBalanceService } from "../../services/accountBalanceService";
 
 export const transactionsRouter = Router();
 
@@ -40,9 +41,25 @@ transactionsRouter.post(
     res: Response
   ) => {
     await db
-      .insertInto("transactions")
-      .values({ ...req.body })
-      .execute();
+      .transaction()
+      .setIsolationLevel("serializable")
+      .execute(async (trx) => {
+        const { date } = (
+          await trx
+            .insertInto("transactions")
+            .values({ ...req.body })
+            .returning(["date"])
+            .execute()
+        )[0]!;
+
+        if (!isNaN(req.body.amount)) {
+          await accountBalanceService.updateAccountBalance(
+            trx,
+            req.params.accountId,
+            [{ date }]
+          );
+        }
+      });
 
     res.status(200).send({});
   }
@@ -65,10 +82,28 @@ transactionsRouter.patch(
     const { transactionId } = req.params;
 
     await db
-      .updateTable("transactions")
-      .set({ ...req.body })
-      .where("id", "=", transactionId)
-      .execute();
+      .transaction()
+      .setIsolationLevel("serializable")
+      .execute(async (trx) => {
+        const { date } = (
+          await trx
+            .updateTable("transactions")
+            .set({ ...req.body })
+            .where("id", "=", transactionId)
+            .returning(["date"])
+            .execute()
+        )[0]!;
+
+        const amountWasTouched = !!req.body.amount || req.body.amount === 0;
+
+        if (amountWasTouched) {
+          await accountBalanceService.updateAccountBalance(
+            trx,
+            req.params.accountId,
+            [{ date }]
+          );
+        }
+      });
 
     res.status(200).send({});
   }

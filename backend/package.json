@@ -24,13 +24,13 @@
     "express": "^5.0.1",
     "express-oauth2-jwt-bearer": "^1.6.1",
     "kysely": "^0.27.6",
-    "kysely-codegen": "^0.18.3",
+    "kysely-codegen": "^0.18.5",
     "pg": "^8.14.1"
   },
   "scripts": {
-    "dev": "bun --watch index.ts",
+    "dev": "bun --inspect=6500/backend --watch index.ts",
     "db:create": "bun run src/db/scripts/create-migration.ts",
     "db:migrate": "bun run src/db/scripts/migrator.ts",
-    "db:generate": "kysely-codegen --out-file=./src/db/models/index.d.ts --env-file=.env.development --numeric-parser numeric"
+    "db:generate": "kysely-codegen --env-file=.env.development"
   }
 }

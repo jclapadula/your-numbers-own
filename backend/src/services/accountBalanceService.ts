@@ -1,8 +1,9 @@
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
 import { endOfMonth } from "date-fns";
+import { db } from "../db";
 
-export namespace AccountBalanceService {
+export namespace accountBalanceService {
   const getEarliestAffectedMonth = (sortedTransactions: { date: Date }[]) => {
     if (!sortedTransactions.length) return null;
 
@@ -23,7 +24,6 @@ export namespace AccountBalanceService {
       .where("accountId", "=", accountId)
       .select(["date"])
       .orderBy("date", "desc")
-      .limit(1)
       .executeTakeFirst();
     if (!latestTransaction) return null;
     const latestDate = new Date(latestTransaction.date);
@@ -45,7 +45,7 @@ export namespace AccountBalanceService {
     }
 
     // Query for previous month's balance
-    let previousBalance = 0n;
+    let previousBalance = 0;
     if (prevYear > 0) {
       const prevBalanceResult = await db
         .selectFrom("account_partial_balances")
@@ -59,7 +59,7 @@ export namespace AccountBalanceService {
         prevBalanceResult.balance !== undefined &&
         prevBalanceResult.balance !== null
       ) {
-        previousBalance = BigInt(prevBalanceResult.balance);
+        previousBalance = Number(prevBalanceResult.balance);
       }
     }
 
@@ -71,7 +71,7 @@ export namespace AccountBalanceService {
     accountId: string,
     start: { year: number; month: number },
     end: { year: number; month: number },
-    previousBalance: bigint
+    previousBalance: number
   ) => {
     let { year, month } = start;
     const { year: endYear, month: endMonth } = end;
@@ -88,7 +88,7 @@ export namespace AccountBalanceService {
         .where("date", "<=", monthEnd)
         .select(db.fn.sum("amount").as("balance"))
         .executeTakeFirst();
-      const monthSum = sumResult?.balance ? BigInt(sumResult.balance) : 0n;
+      const monthSum = sumResult?.balance ? Number(sumResult.balance) : 0;
       const balance = previousBalance + monthSum;
 
       await db
@@ -118,7 +118,7 @@ export namespace AccountBalanceService {
   export const updateAccountBalance = async (
     db: Kysely<DB>,
     accountId: string,
-    modifiedTransactions: { date: Date; amount: number }[]
+    modifiedTransactions: { date: Date }[]
   ) => {
     const sortedTransactions = [...modifiedTransactions].sort(
       (a, b) => a.date.getTime() - b.date.getTime()
@@ -146,5 +146,35 @@ export namespace AccountBalanceService {
       end,
       previousBalance
     );
+  };
+
+  export const getAccountsBalances = async (accountsIds: string[]) => {
+    return await db
+      .selectFrom("account_partial_balances")
+      .innerJoin(
+        db
+          .selectFrom("account_partial_balances")
+          .where("accountId", "in", accountsIds)
+          .select(["accountId", "year", "month"])
+          .orderBy("accountId")
+          .orderBy("year", "desc")
+          .orderBy("month", "desc")
+          .distinctOn("accountId")
+          .as("latest"),
+        (join) =>
+          join
+            .onRef(
+              "account_partial_balances.accountId",
+              "=",
+              "latest.accountId"
+            )
+            .onRef("account_partial_balances.year", "=", "latest.year")
+            .onRef("account_partial_balances.month", "=", "latest.month")
+      )
+      .select([
+        "account_partial_balances.accountId",
+        "account_partial_balances.balance",
+      ])
+      .execute();
   };
 }

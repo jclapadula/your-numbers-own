@@ -5,7 +5,7 @@ export type CreateAccount = {
 export type BudgetAccount = {
   id: string;
   name: string;
-  balance: bigint;
+  balance: number;
 };
 
 export type Transaction = {
@@ -22,7 +22,7 @@ export type Transaction = {
 export type CreateTransaction = {
   date: Date;
   accountId: string;
-  amount: string;
+  amount: number;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;
@@ -31,7 +31,7 @@ export type CreateTransaction = {
 
 export type UpdateTransaction = Partial<{
   date: Date;
-  amount: string;
+  amount: number;
   categoryId: string | null;
   isReconciled: boolean;
   notes: string | null;

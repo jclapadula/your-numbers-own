@@ -14,7 +14,7 @@ export const AccountsList = () => {
           <Link to={`/accounts/${account.id}/transactions`} className="block">
             <div className="flex justify-between items-baseline">
               <span>{account.name}</span>
-              <Amount amount={1000.0} />
+              <Amount amount={account.balance} />
             </div>
           </Link>
         </li>

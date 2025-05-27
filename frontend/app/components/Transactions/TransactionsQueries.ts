@@ -6,6 +6,7 @@ import type {
 } from "~/api/models";
 import { useTransactionsApi } from "~/api/transactionsApi";
 import { useToast } from "../Common/ToastContext";
+import { accountsQueryKeys } from "../Accounts/AccountsQueries";
 
 const queryKeys = {
   transactions: (accountId: string) => ["accounts", accountId, "transactions"],
@@ -30,6 +31,9 @@ export const useCreateTransaction = (accountId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.transactions(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
       });
     },
     onError: (error) => {
@@ -63,6 +67,9 @@ export const useUpdateTransaction = (accountId: string) => {
               : transaction
           )
       );
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
+      });
     },
     onError: (error) => {
       console.error(error);
