@@ -9,7 +9,8 @@
     "@types/pg": "^8.11.11",
     "daisyui": "^5.0.12",
     "drizzle-kit": "^0.30.5",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "@types/lodash": "^4.17.17"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -25,6 +26,7 @@
     "express-oauth2-jwt-bearer": "^1.6.1",
     "kysely": "^0.27.6",
     "kysely-codegen": "^0.18.5",
+    "lodash": "^4.17.21",
     "pg": "^8.14.1"
   },
   "scripts": {

@@ -10,7 +10,7 @@ export default [
     index("routes/budget.tsx"),
     route(
       "/accounts/:accountId/transactions",
-      "./components/Transactions/AccountTransactions.tsx"
+      "./routes/accountTransactions.tsx"
     ),
   ]),
 ] satisfies RouteConfig;

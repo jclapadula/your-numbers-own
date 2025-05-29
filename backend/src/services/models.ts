@@ -47,3 +47,8 @@ export type Category = {
   id: string;
   name: string;
 };
+
+export type MonthOfYear = {
+  year: number;
+  month: number;
+};

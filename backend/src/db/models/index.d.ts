@@ -27,7 +27,7 @@ export interface Accounts {
   updatedAt: Generated<Timestamp>;
 }
 
-export interface Budget {
+export interface Budgets {
   id: Generated<string>;
   name: string;
   ownerId: string;
@@ -37,6 +37,16 @@ export interface Categories {
   budgetId: string;
   id: Generated<string>;
   name: string;
+}
+
+export interface MonthlyCategoryBudgets {
+  assignedAmount: Int8;
+  balance: Generated<Int8>;
+  budgetId: string;
+  categoryId: string | null;
+  month: number;
+  updatedAt: Generated<Timestamp>;
+  year: number;
 }
 
 export interface Payees {
@@ -66,8 +76,9 @@ export interface Users {
 export interface DB {
   account_partial_balances: AccountPartialBalances;
   accounts: Accounts;
-  budget: Budget;
+  budgets: Budgets;
   categories: Categories;
+  monthly_category_budgets: MonthlyCategoryBudgets;
   payees: Payees;
   transactions: Transactions;
   users: Users;

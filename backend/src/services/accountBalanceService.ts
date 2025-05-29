@@ -2,6 +2,7 @@ import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
 import { endOfMonth } from "date-fns";
 import { db } from "../db";
+import { getMonthOfYear } from "./utils";
 
 export namespace accountBalanceService {
   const getEarliestAffectedMonth = (sortedTransactions: { date: Date }[]) => {
@@ -9,10 +10,7 @@ export namespace accountBalanceService {
 
     const earliest = sortedTransactions[0]!.date;
 
-    return {
-      year: earliest.getFullYear(),
-      month: earliest.getMonth() + 1,
-    };
+    return getMonthOfYear(earliest);
   };
 
   const getLatestMonthWithTransactions = async (
@@ -123,7 +121,7 @@ export namespace accountBalanceService {
     await db
       .deleteFrom("account_partial_balances")
       .where("accountId", "=", accountId)
-      .where(({ or, eb, and }) =>
+      .where(({ or, eb }) =>
         or([
           eb("year", "=", end.year).and("month", ">", end.month),
           eb("year", ">", end.year),

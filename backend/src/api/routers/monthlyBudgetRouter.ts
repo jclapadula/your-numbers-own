@@ -5,8 +5,10 @@ import { authenticate, authorizeRequest } from "../middlewares";
 import type {
   CreateTransaction,
   UpdateTransaction,
+  MonthOfYear,
 } from "../../services/models";
 import { accountBalanceService } from "../../services/accountBalanceService";
+import { isValidMonthOfYear } from "../../services/utils";
 
 export const transactionsRouter = Router();
 
@@ -14,11 +16,16 @@ transactionsRouter.use(authenticate);
 transactionsRouter.use(authorizeRequest);
 
 transactionsRouter.get(
-  "/budgets/:budgetId/accounts/:accountId/transactions",
+  "/budgets/:budgetId/monthly-budget",
   async (
-    req: Request<{ budgetId: string; accountId: string }>,
+    req: Request<{ budgetId: string }, any, any, MonthOfYear>,
     res: Response
   ) => {
+    if (!isValidMonthOfYear(req.query)) {
+      res.status(400).json({ error: "Invalid month of year" });
+      return;
+    }
+
     const transactions = await db
       .selectFrom("transactions")
       .where("accountId", "=", req.params.accountId)
@@ -81,17 +88,6 @@ transactionsRouter.patch(
   ) => {
     const { transactionId } = req.params;
 
-    let oldDate: Date | undefined;
-    if (!!req.body.date) {
-      oldDate = (
-        await db
-          .selectFrom("transactions")
-          .where("id", "=", transactionId)
-          .select(["date"])
-          .executeTakeFirst()
-      )?.date;
-    }
-
     await db
       .transaction()
       .setIsolationLevel("serializable")
@@ -112,7 +108,7 @@ transactionsRouter.patch(
           await accountBalanceService.updateAccountBalance(
             trx,
             req.params.accountId,
-            [{ date, ...(oldDate ? [oldDate] : []) }]
+            [{ date }]
           );
         }
       });
