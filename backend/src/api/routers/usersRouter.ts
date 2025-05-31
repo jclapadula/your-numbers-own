@@ -27,14 +27,14 @@ usersRouter.post("/users/me", async (req, res) => {
   }
 
   let userBudget = await db
-    .selectFrom("budget")
+    .selectFrom("budgets")
     .select("id")
     .where("ownerId", "=", existingUser.id)
     .executeTakeFirst();
 
   if (!userBudget) {
     userBudget = await db
-      .insertInto("budget")
+      .insertInto("budgets")
       .values({ name: "My Budget", ownerId: existingUser.id })
       .returning("id")
       .executeTakeFirstOrThrow();

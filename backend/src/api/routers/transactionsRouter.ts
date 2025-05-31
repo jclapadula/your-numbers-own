@@ -7,6 +7,7 @@ import type {
   UpdateTransaction,
 } from "../../services/models";
 import { accountBalanceService } from "../../services/accountBalanceService";
+import { transactionsService } from "../../services/transactionsService";
 
 export const transactionsRouter = Router();
 
@@ -40,26 +41,11 @@ transactionsRouter.post(
     >,
     res: Response
   ) => {
-    await db
-      .transaction()
-      .setIsolationLevel("serializable")
-      .execute(async (trx) => {
-        const { date } = (
-          await trx
-            .insertInto("transactions")
-            .values({ ...req.body })
-            .returning(["date"])
-            .execute()
-        )[0]!;
-
-        if (!isNaN(req.body.amount)) {
-          await accountBalanceService.updateAccountBalance(
-            trx,
-            req.params.accountId,
-            [{ date }]
-          );
-        }
-      });
+    await transactionsService.insertTransaction(
+      db,
+      req.params.budgetId,
+      req.body
+    );
 
     res.status(200).send({});
   }
@@ -81,41 +67,13 @@ transactionsRouter.patch(
   ) => {
     const { transactionId } = req.params;
 
-    let oldDate: Date | undefined;
-    if (!!req.body.date) {
-      oldDate = (
-        await db
-          .selectFrom("transactions")
-          .where("id", "=", transactionId)
-          .select(["date"])
-          .executeTakeFirst()
-      )?.date;
-    }
-
-    await db
-      .transaction()
-      .setIsolationLevel("serializable")
-      .execute(async (trx) => {
-        const { date } = (
-          await trx
-            .updateTable("transactions")
-            .set({ ...req.body })
-            .where("id", "=", transactionId)
-            .returning(["date"])
-            .execute()
-        )[0]!;
-
-        const amountOrDateWereTouched =
-          !!req.body.amount || req.body.amount === 0 || !!req.body.date;
-
-        if (amountOrDateWereTouched) {
-          await accountBalanceService.updateAccountBalance(
-            trx,
-            req.params.accountId,
-            [{ date, ...(oldDate ? [oldDate] : []) }]
-          );
-        }
-      });
+    await transactionsService.patchTransaction(
+      db,
+      req.params.budgetId,
+      req.params.accountId,
+      transactionId,
+      req.body
+    );
 
     res.status(200).send({});
   }

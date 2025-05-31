@@ -44,7 +44,7 @@ export const authorizeRequest = async (
 
   if (params.budgetId) {
     const { count } = await db
-      .selectFrom("budget")
+      .selectFrom("budgets")
       .select(db.fn.countAll().as("count"))
       .where("id", "=", params.budgetId)
       .where("ownerId", "=", user.id)

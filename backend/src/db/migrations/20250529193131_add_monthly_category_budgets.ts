@@ -23,10 +23,11 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 
   await db.schema
-    .createIndex("monthly_category_budgets_budgetId_year_month_idx")
+    .createIndex("monthly_category_budgets_budgetId_categoryId_year_month_idx")
     .on("monthly_category_budgets")
-    .columns(["budgetId", "year", "month"])
+    .columns(["budgetId", "categoryId", "year", "month"])
     .unique()
+    .nullsNotDistinct()
     .execute();
 
   await createUpdateTimestampFunction(db, "monthly_category_budgets");
@@ -36,7 +37,7 @@ export async function down(db: Kysely<any>): Promise<void> {
   await dropUpdateTimestampFunction(db, "monthly_category_budgets");
 
   await db.schema
-    .dropIndex("monthly_category_budgets_budgetId_year_month_idx")
+    .dropIndex("monthly_category_budgets_budgetId_categoryId_year_month_idx")
     .execute();
 
   await db.schema.dropTable("monthly_category_budgets").execute();

@@ -1,11 +1,13 @@
-import type { Kysely } from "kysely";
+import type { ExpressionBuilder, Kysely } from "kysely";
 import { db } from "../db";
 import type { DB } from "../db/models";
 import type { MonthOfYear } from "./models";
 import _, { isEqual, sortBy } from "lodash";
-import { getMonthOfYear } from "./utils";
+import { getMonthOfYear, getNextMonthOfYear, isBefore } from "./utils";
+import { endOfMonth } from "date-fns";
+import { categoryIdIs } from "../db/utils";
 
-export namespace MonthlyBudgetService {
+export namespace monthlyBudgetService {
   const getLatestMonthlyBudgets = async (
     budgetId: string,
     monthOfYear: MonthOfYear
@@ -82,23 +84,22 @@ export namespace MonthlyBudgetService {
     });
   };
 
-  export const updateMonthlyBudget = async (
-    db: Kysely<DB>,
-    budgetId: string,
+  const getEarliestAffectedMonthByCategory = (
     modifiedTransactions: {
       date: Date;
-      categoryId: string | null;
-      oldCategoryId: string | null;
+      categories: (string | null)[];
     }[]
-  ) => {
-    const allAffectedCategories = _(modifiedTransactions)
+  ) =>
+    _(modifiedTransactions)
       .map(({ date, ...ids }) => ({
         ...ids,
         monthOfYear: getMonthOfYear(date),
       }))
-      .flatMap(({ categoryId, oldCategoryId, monthOfYear }) => [
-        { categoryId, monthOfYear },
-        { categoryId: oldCategoryId, monthOfYear },
+      .flatMap(({ categories, monthOfYear }) => [
+        ...categories.map((category) => ({
+          categoryId: category,
+          monthOfYear,
+        })),
       ])
       .uniqWith(isEqual)
       .groupBy((e) => e.categoryId)
@@ -108,15 +109,151 @@ export namespace MonthlyBudgetService {
           (e) => e.monthOfYear.year,
           (e) => e.monthOfYear.month
         );
-        const earliestMonthOfYear = sortedGroup[0]!.monthOfYear;
-        const latestMonthOfYear =
-          sortedGroup[sortedGroup.length - 1]!.monthOfYear;
+        const earliestModifiedMonth = sortedGroup[0]!.monthOfYear;
 
         return {
           categoryId: group[0]!.categoryId,
-          earliestMonthOfYear,
-          latestMonthOfYear,
+          earliestModifiedMonth,
         };
-      });
+      })
+      .value();
+
+  const getPreviousMonthBalance = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string | null,
+    year: number,
+    month: number
+  ) => {
+    // Calculate previous month and year
+    let prevMonth = month - 1;
+    let prevYear = year;
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear--;
+    }
+
+    let previousBalance = 0;
+    if (prevYear > 0) {
+      const prevBalanceResult = await db
+        .selectFrom("monthly_category_budgets")
+        .where("budgetId", "=", budgetId)
+        .where(categoryIdIs(categoryId))
+        .where("year", "=", prevYear)
+        .where("month", "=", prevMonth)
+        .select(["balance"])
+        .executeTakeFirst();
+      if (
+        prevBalanceResult &&
+        prevBalanceResult.balance !== undefined &&
+        prevBalanceResult.balance !== null
+      ) {
+        previousBalance = Number(prevBalanceResult.balance);
+      }
+    }
+
+    return previousBalance;
+  };
+
+  const recalculateAndUpsertBalances = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string | null,
+    start: { year: number; month: number },
+    previousBalance: number
+  ) => {
+    let { year, month } = start;
+
+    const lastExistingMonth = await db
+      .selectFrom("monthly_category_budgets")
+      .where("budgetId", "=", budgetId)
+      .where(categoryIdIs(categoryId))
+      .orderBy("year", "desc")
+      .orderBy("month", "desc")
+      .select(["year", "month"])
+      .executeTakeFirst();
+
+    let lastMonthToUpdate = lastExistingMonth;
+    if (!lastMonthToUpdate || isBefore(lastMonthToUpdate, start)) {
+      lastMonthToUpdate = start;
+    }
+
+    const { year: endYear, month: endMonth } = lastMonthToUpdate;
+
+    while (year < endYear || (year === endYear && month <= endMonth)) {
+      const monthStart = new Date(year, month - 1, 1);
+      const monthEnd = endOfMonth(monthStart);
+
+      // Sum only the transactions for this month
+      const query = db
+        .selectFrom("transactions")
+        .innerJoin("accounts", "transactions.accountId", "accounts.id")
+        .where("accounts.budgetId", "=", budgetId)
+        .where(categoryIdIs(categoryId))
+        .where("date", ">=", monthStart)
+        .where("date", "<=", monthEnd)
+        .select(db.fn.sum("amount").as("balance"));
+
+      console.log({ query: query.compile() });
+
+      const sumResult = await query.executeTakeFirst();
+      const monthSum = sumResult?.balance ? Number(sumResult.balance) : 0;
+      console.log({ monthSum });
+      const balance = previousBalance + monthSum;
+
+      await db
+        .insertInto("monthly_category_budgets")
+        .values({
+          budgetId,
+          categoryId,
+          year,
+          month,
+          balance,
+          assignedAmount: 0,
+        })
+        .onConflict((oc) =>
+          oc.columns(["budgetId", "categoryId", "year", "month"]).doUpdateSet({
+            balance,
+          })
+        )
+        .execute();
+
+      previousBalance = balance;
+
+      ({ year, month } = getNextMonthOfYear({ year, month }));
+    }
+  };
+
+  export const updateMonthlyBudgets = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    modifiedTransactions: {
+      date: Date;
+      categories: (string | null)[];
+    }[]
+  ) => {
+    console.log({ modifiedTransactions });
+    const affectedCategories =
+      getEarliestAffectedMonthByCategory(modifiedTransactions);
+
+    for (const category of affectedCategories) {
+      const { earliestModifiedMonth, categoryId } = category;
+
+      const previousMonthBalance = await getPreviousMonthBalance(
+        db,
+        budgetId,
+        categoryId,
+        earliestModifiedMonth.year,
+        earliestModifiedMonth.month
+      );
+
+      await recalculateAndUpsertBalances(
+        db,
+        budgetId,
+        categoryId,
+        earliestModifiedMonth,
+        previousMonthBalance
+      );
+    }
   };
 }

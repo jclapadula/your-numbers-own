@@ -1,0 +1,6 @@
+---
+description: 
+globs: *.ts
+alwaysApply: false
+---
+when using 'categoryId' column in a query, remember it can be null and we cannot compare using '=' only
