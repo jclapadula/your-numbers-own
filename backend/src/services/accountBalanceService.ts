@@ -3,9 +3,14 @@ import type { DB } from "../db/models";
 import { endOfMonth } from "date-fns";
 import { db } from "../db";
 import { getMonthOfYear } from "./utils";
+import { budgetsService } from "./budgetsService";
+import type { ZonedDate } from "./ZonedDate";
+import { TZDate } from "@date-fns/tz";
 
 export namespace accountBalanceService {
-  const getEarliestAffectedMonth = (sortedTransactions: { date: Date }[]) => {
+  const getEarliestAffectedMonth = (
+    sortedTransactions: { date: ZonedDate }[]
+  ) => {
     if (!sortedTransactions.length) return null;
 
     const earliest = sortedTransactions[0]!.date;
@@ -66,16 +71,19 @@ export namespace accountBalanceService {
 
   const recalculateAndUpsertBalances = async (
     db: Kysely<DB>,
+    budgetId: string,
     accountId: string,
     start: { year: number; month: number },
     end: { year: number; month: number },
     previousBalance: number
   ) => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     let { year, month } = start;
     const { year: endYear, month: endMonth } = end;
 
     while (year < endYear || (year === endYear && month <= endMonth)) {
-      const monthStart = new Date(year, month - 1, 1);
+      const monthStart = new TZDate(year, month - 1, 1, timezone);
       const monthEnd = endOfMonth(monthStart);
 
       // Sum only the transactions for this month
@@ -132,8 +140,9 @@ export namespace accountBalanceService {
 
   export const updateAccountBalance = async (
     db: Kysely<DB>,
+    budgetId: string,
     accountId: string,
-    modifiedTransactions: { date: Date }[]
+    modifiedTransactions: { date: ZonedDate }[]
   ) => {
     const sortedTransactions = [...modifiedTransactions].sort(
       (a, b) => a.date.getTime() - b.date.getTime()
@@ -156,6 +165,7 @@ export namespace accountBalanceService {
 
     await recalculateAndUpsertBalances(
       db,
+      budgetId,
       accountId,
       start,
       end,

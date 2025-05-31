@@ -6,10 +6,10 @@
       "dependencies": {
         "@date-fns/tz": "^1.2.0",
         "@types/cors": "^2.8.17",
-        "@types/lodash": "^4.17.17",
         "body-parser": "^2.2.0",
         "cors": "^2.8.5",
         "date-fns": "^4.1.0",
+        "date-fns-tz": "^3.2.0",
         "dotenv": "^16.4.7",
         "express": "^5.0.1",
         "express-oauth2-jwt-bearer": "^1.6.1",
@@ -21,6 +21,7 @@
       "devDependencies": {
         "@types/bun": "latest",
         "@types/express": "^5.0.1",
+        "@types/lodash": "^4.17.17",
         "@types/pg": "^8.11.11",
         "daisyui": "^5.0.12",
         "drizzle-kit": "^0.30.5",
@@ -177,6 +178,8 @@
     "daisyui": ["daisyui@5.0.12", "", {}, "sha512-01DU0eYBcHgPtuf5fxcrkGkIN6/Uyaqmkle5Yo3ZyW9YVAu036ALZbjv2KH5euvUbeQ4r9q3gAarGcf7Tywhng=="],
 
     "date-fns": ["date-fns@4.1.0", "", {}, "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg=="],
+
+    "date-fns-tz": ["date-fns-tz@3.2.0", "", { "peerDependencies": { "date-fns": "^3.0.0 || ^4.0.0" } }, "sha512-sg8HqoTEulcbbbVXeg84u5UnlsQa8GS5QXMqjjYIhS4abEVVKIUwe0/l/UhrZdKaL/W5eWZNlbTeEIiOXTcsBQ=="],
 
     "debug": ["debug@4.4.0", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA=="],
 

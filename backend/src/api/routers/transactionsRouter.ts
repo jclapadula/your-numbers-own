@@ -8,6 +8,9 @@ import type {
 } from "../../services/models";
 import { accountBalanceService } from "../../services/accountBalanceService";
 import { transactionsService } from "../../services/transactionsService";
+import { budgetsService } from "../../services/budgetsService";
+import { toZonedDate } from "../../services/ZonedDate";
+import { monthlyBudgetService } from "../../services/monthlyBudgetService";
 
 export const transactionsRouter = Router();
 
@@ -99,14 +102,28 @@ transactionsRouter.delete(
           .deleteFrom("transactions")
           .where("id", "in", transactionIds)
           .where("accountId", "=", req.params.accountId)
-          .returning(["date"])
+          .returning(["date", "categoryId"])
           .execute();
+
+        const timezone = await budgetsService.getBudgetTimezone(
+          req.params.budgetId
+        );
 
         if (dates.length > 0) {
           await accountBalanceService.updateAccountBalance(
             trx,
+            req.params.budgetId,
             req.params.accountId,
-            dates
+            dates.map(({ date }) => ({ date: toZonedDate(date, timezone) }))
+          );
+
+          await monthlyBudgetService.updateMonthlyBudgets(
+            trx,
+            req.params.budgetId,
+            dates.map(({ date, categoryId }) => ({
+              date: toZonedDate(date, timezone),
+              categories: [categoryId],
+            }))
           );
         }
       });

@@ -6,6 +6,9 @@ import _, { isEqual, sortBy } from "lodash";
 import { getMonthOfYear, getNextMonthOfYear, isBefore } from "./utils";
 import { endOfMonth } from "date-fns";
 import { categoryIdIs } from "../db/utils";
+import type { ZonedDate } from "./ZonedDate";
+import { TZDate } from "@date-fns/tz";
+import { budgetsService } from "./budgetsService";
 
 export namespace monthlyBudgetService {
   const getLatestMonthlyBudgets = async (
@@ -86,7 +89,7 @@ export namespace monthlyBudgetService {
 
   const getEarliestAffectedMonthByCategory = (
     modifiedTransactions: {
-      date: Date;
+      date: ZonedDate;
       categories: (string | null)[];
     }[]
   ) =>
@@ -162,6 +165,8 @@ export namespace monthlyBudgetService {
     start: { year: number; month: number },
     previousBalance: number
   ) => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     let { year, month } = start;
 
     const lastExistingMonth = await db
@@ -181,7 +186,7 @@ export namespace monthlyBudgetService {
     const { year: endYear, month: endMonth } = lastMonthToUpdate;
 
     while (year < endYear || (year === endYear && month <= endMonth)) {
-      const monthStart = new Date(year, month - 1, 1);
+      const monthStart = new TZDate(year, month - 1, 1, timezone);
       const monthEnd = endOfMonth(monthStart);
 
       // Sum only the transactions for this month
@@ -228,7 +233,7 @@ export namespace monthlyBudgetService {
     db: Kysely<DB>,
     budgetId: string,
     modifiedTransactions: {
-      date: Date;
+      date: ZonedDate;
       categories: (string | null)[];
     }[]
   ) => {

@@ -21,6 +21,7 @@
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
     "express-oauth2-jwt-bearer": "^1.6.1",

@@ -31,6 +31,7 @@ export interface Budgets {
   id: Generated<string>;
   name: string;
   ownerId: string;
+  timezone: Generated<string>;
 }
 
 export interface Categories {

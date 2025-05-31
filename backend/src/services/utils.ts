@@ -1,4 +1,5 @@
 import type { MonthOfYear } from "./models";
+import type { ZonedDate } from "./ZonedDate";
 
 export const isValidMonthOfYear = (monthOfYear: MonthOfYear) => {
   return (
@@ -15,7 +16,7 @@ export const isBefore = (date1: MonthOfYear, date2: MonthOfYear) => {
   return date1.month < date2.month;
 };
 
-export const getMonthOfYear = (date: Date) => {
+export const getMonthOfYear = (date: ZonedDate) => {
   return {
     year: date.getFullYear(),
     month: date.getMonth() + 1,

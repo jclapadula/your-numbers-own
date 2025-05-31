@@ -3,6 +3,8 @@ import type { CreateTransaction, UpdateTransaction } from "./models";
 import type { DB } from "../db/models";
 import { accountBalanceService } from "./accountBalanceService";
 import { monthlyBudgetService } from "./monthlyBudgetService";
+import { toZonedDate } from "./ZonedDate";
+import { budgetsService } from "./budgetsService";
 
 export namespace transactionsService {
   export const insertTransaction = async (
@@ -22,15 +24,20 @@ export namespace transactionsService {
             .execute()
         )[0]!;
 
+        // post insert side effects
+        const timezone = await budgetsService.getBudgetTimezone(budgetId);
+        const zonedDate = toZonedDate(date, timezone);
+
         if (!isNaN(transaction.amount)) {
           await accountBalanceService.updateAccountBalance(
             trx,
+            budgetId,
             transaction.accountId,
-            [{ date }]
+            [{ date: zonedDate }]
           );
 
           await monthlyBudgetService.updateMonthlyBudgets(trx, budgetId, [
-            { date, categories: [transaction.categoryId] },
+            { date: zonedDate, categories: [transaction.categoryId] },
           ]);
         }
       });
@@ -43,7 +50,9 @@ export namespace transactionsService {
     transactionId: string,
     transactionUpdates: UpdateTransaction
   ) => {
-    const { date: oldDate, categoryId: oldCategoryId } =
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
+    let { date: oldDate, categoryId: oldCategoryId } =
       (await db
         .selectFrom("transactions")
         .where("id", "=", transactionId)
@@ -63,14 +72,23 @@ export namespace transactionsService {
             .execute()
         )[0]!;
 
+        // Post update side effects
         const amountChanged =
           !!transactionUpdates.amount || transactionUpdates.amount === 0;
         const dateChanged = !!transactionUpdates.date;
 
         if (amountChanged || dateChanged) {
-          await accountBalanceService.updateAccountBalance(trx, accountId, [
-            { date, ...(oldDate ? [oldDate] : []) },
-          ]);
+          await accountBalanceService.updateAccountBalance(
+            trx,
+            budgetId,
+            accountId,
+            [
+              {
+                date: toZonedDate(date, timezone),
+                ...(oldDate ? [toZonedDate(oldDate, timezone)] : []),
+              },
+            ]
+          );
         }
 
         const categoryChanged = transactionUpdates.categoryId !== undefined;
@@ -81,7 +99,7 @@ export namespace transactionsService {
           ].filter((category) => category !== undefined);
 
           await monthlyBudgetService.updateMonthlyBudgets(trx, budgetId, [
-            { date, categories },
+            { date: toZonedDate(date, timezone), categories },
           ]);
         }
       });
