@@ -7,19 +7,20 @@ import { useNavigate } from "react-router";
 
 const useEnsureUser = () => {
   const { ensureUser } = useUsersApi();
-  const { setBudgetId } = useCurrentBudgetContext();
+  const { setBudgetId, setTimezone } = useCurrentBudgetContext();
 
   return useMutation({
     mutationFn: ensureUser,
     onSuccess: (data) => {
       setBudgetId(data.budgetId);
+      setTimezone(data.timezone);
     },
   });
 };
 
 export const useLogin = () => {
   const { isLoading, isAuthenticated, loginWithRedirect } = useAuth0();
-  const { mutate: ensureUser, data } = useEnsureUser();
+  const { mutate: ensureUser } = useEnsureUser();
   const navigate = useNavigate();
 
   useEffect(() => {

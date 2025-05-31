@@ -47,3 +47,18 @@ export type Category = {
   id: string;
   name: string;
 };
+
+export type MonthOfYear = {
+  month: number;
+  year: number;
+};
+
+export type MonthlyBudget = {
+  monthCategories: {
+    categoryId: string;
+    categoryName: string;
+    assignedAmount: number;
+    balance: number;
+  }[];
+  monthOfYear: MonthOfYear;
+};

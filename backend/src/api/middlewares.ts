@@ -69,7 +69,7 @@ export const authorizeRequest = async (
     }
   }
 
-  if (params.categoryId) {
+  if (params.categoryId && params.categoryId !== "null") {
     const { count } = await db
       .selectFrom("categories")
       .select(db.fn.countAll().as("count"))

@@ -26,25 +26,3 @@ export const useCreatePayee = () => {
     },
   });
 };
-
-export const useCategories = () => {
-  const budgetApi = useBudgetApi();
-
-  return useQuery({
-    queryKey: queryKeys.categories,
-    queryFn: () => budgetApi.getCategories(),
-    initialData: [],
-  });
-};
-
-export const useCreateCategory = () => {
-  const budgetApi = useBudgetApi();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (name: string) => budgetApi.createCategory(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
-    },
-  });
-};

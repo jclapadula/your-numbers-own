@@ -10,9 +10,5 @@ export const useBudgetApi = () => {
     getPayees: () => httpClient.get<Payee[]>(`/budgets/${budgetId}/payees`),
     createPayee: (name: string) =>
       httpClient.post<Payee>(`/budgets/${budgetId}/payees`, { name }),
-    getCategories: () =>
-      httpClient.get<Category[]>(`/budgets/${budgetId}/categories`),
-    createCategory: (name: string) =>
-      httpClient.post<Category>(`/budgets/${budgetId}/categories`, { name }),
   };
 };

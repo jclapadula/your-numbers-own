@@ -1,7 +1,7 @@
 import type { ExpressionBuilder, Kysely } from "kysely";
 import { db } from "../db";
 import type { DB } from "../db/models";
-import type { MonthOfYear } from "./models";
+import type { MonthlyBudget, MonthOfYear } from "./models";
 import _, { isEqual, sortBy } from "lodash";
 import { getMonthOfYear, getNextMonthOfYear, isBefore } from "./utils";
 import { endOfMonth } from "date-fns";
@@ -15,7 +15,7 @@ export namespace monthlyBudgetService {
     budgetId: string,
     monthOfYear: MonthOfYear
   ) => {
-    return await db
+    const query = db
       .selectFrom("monthly_category_budgets")
       .innerJoin(
         db
@@ -39,10 +39,15 @@ export namespace monthlyBudgetService {
         (join) =>
           join
             .onRef("monthly_category_budgets.budgetId", "=", "latest.budgetId")
-            .onRef(
-              "monthly_category_budgets.categoryId",
-              "=",
-              "latest.categoryId"
+            .on(({ eb, or, ref }) =>
+              or([
+                eb(
+                  "monthly_category_budgets.categoryId",
+                  "=",
+                  ref("latest.categoryId")
+                ),
+                eb("latest.categoryId", "is", null),
+              ])
             )
             .onRef("monthly_category_budgets.year", "=", "latest.year")
             .onRef("monthly_category_budgets.month", "=", "latest.month")
@@ -54,8 +59,9 @@ export namespace monthlyBudgetService {
         "monthly_category_budgets.assignedAmount",
         "monthly_category_budgets.balance",
       ])
-      .where("monthly_category_budgets.budgetId", "=", budgetId)
-      .execute();
+      .where("monthly_category_budgets.budgetId", "=", budgetId);
+
+    return await query.execute();
   };
 
   export const getMonthlyBudget = async (
@@ -67,6 +73,11 @@ export namespace monthlyBudgetService {
       .where("budgetId", "=", budgetId)
       .selectAll()
       .execute();
+    categories.push({
+      id: null as any,
+      name: "Available Budget",
+      budgetId,
+    });
 
     const latestMonthlyBudgets = await getLatestMonthlyBudgets(
       budgetId,
@@ -85,6 +96,11 @@ export namespace monthlyBudgetService {
         balance: latestMonthlyBudget?.balance ?? 0,
       };
     });
+
+    return {
+      monthCategories,
+      monthOfYear,
+    } satisfies MonthlyBudget;
   };
 
   const getEarliestAffectedMonthByCategory = (

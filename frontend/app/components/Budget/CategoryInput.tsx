@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useCategories } from "./budgetQueries";
+import { useCategories } from "../Categories/CategoriesQueries";
 
 type CategoryInputProps = {
   value: string | null;
@@ -12,7 +12,7 @@ export const CategoryInput = ({
   onCategorySelected,
   onBlur,
 }: CategoryInputProps) => {
-  const { data: categories } = useCategories();
+  const { data: categories = [] } = useCategories();
   const [searchTerm, setSearchTerm] = useState(value || "");
   const [isOpen, setIsOpen] = useState(false);
   const wasOpen = useRef(false);

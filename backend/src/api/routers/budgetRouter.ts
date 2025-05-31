@@ -42,35 +42,3 @@ budgetRouter.post(
     res.json({ id: payee.id, name: payee.name });
   }
 );
-
-budgetRouter.get(
-  "/budgets/:budgetId/categories",
-  async (req: Request<{ budgetId: string }>, res: Response) => {
-    const categories = await db
-      .selectFrom("categories")
-      .where("budgetId", "=", req.params.budgetId)
-      .orderBy("name", "asc")
-      .selectAll()
-      .execute();
-
-    res.json(categories.map((c) => ({ id: c.id, name: c.name })));
-  }
-);
-
-budgetRouter.post(
-  "/budgets/:budgetId/categories",
-  async (
-    req: Request<{ budgetId: string }, {}, { name: string }>,
-    res: Response
-  ) => {
-    const { name } = req.body;
-
-    const category = await db
-      .insertInto("categories")
-      .values({ budgetId: req.params.budgetId, name })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-
-    res.json({ id: category.id, name: category.name });
-  }
-);

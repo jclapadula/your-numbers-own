@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { config } from "~/config";
 import { CurrentBudgetContextProvider } from "./Contexts/CurrentBudgetContext";
 import { ToastProvider } from "./Common/ToastContext";
+import { SelectedMonthContextProvider } from "./Budget/SelectedMonthContext";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export const ContextProviders = ({
   children,
@@ -40,7 +42,10 @@ export const ContextProviders = ({
       <ToastProvider>
         <QueryClientProvider client={queryClient}>
           <CurrentBudgetContextProvider>
-            {children}
+            <SelectedMonthContextProvider>
+              {children}
+              <ReactQueryDevtools initialIsOpen={false} />
+            </SelectedMonthContextProvider>
           </CurrentBudgetContextProvider>
         </QueryClientProvider>
       </ToastProvider>

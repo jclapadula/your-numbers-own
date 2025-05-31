@@ -15,6 +15,7 @@ categoriesRouter.get(
     const categories = await db
       .selectFrom("categories")
       .where("budgetId", "=", req.params.budgetId)
+      .orderBy("name", "asc")
       .select(["id", "name"])
       .execute();
 
@@ -30,12 +31,13 @@ categoriesRouter.post(
   ) => {
     const { name } = req.body;
 
-    await db
+    const category = await db
       .insertInto("categories")
       .values({ name, budgetId: req.params.budgetId })
-      .execute();
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
 
-    res.status(200).send({});
+    res.status(200).send(category);
   }
 );
 

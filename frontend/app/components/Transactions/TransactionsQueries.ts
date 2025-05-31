@@ -7,6 +7,8 @@ import type {
 import { useTransactionsApi } from "~/api/transactionsApi";
 import { useToast } from "../Common/ToastContext";
 import { accountsQueryKeys } from "../Accounts/AccountsQueries";
+import { monthlyBudgetQueryKeys } from "../MonthlyBudget/MonthlyBudgetQueries";
+import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 const queryKeys = {
   transactions: (accountId: string) => ["accounts", accountId, "transactions"],
@@ -22,6 +24,7 @@ export const useTransactions = (accountId: string) => {
 };
 
 export const useCreateTransaction = (accountId: string) => {
+  const { budgetId } = useCurrentBudgetContext();
   const { create } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
   const { setToast } = useToast();
@@ -35,6 +38,9 @@ export const useCreateTransaction = (accountId: string) => {
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,
       });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
+      });
     },
     onError: (error) => {
       console.error(error);
@@ -44,6 +50,7 @@ export const useCreateTransaction = (accountId: string) => {
 };
 
 export const useUpdateTransaction = (accountId: string) => {
+  const { budgetId } = useCurrentBudgetContext();
   const { patch } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
   const { setToast } = useToast();
@@ -59,6 +66,9 @@ export const useUpdateTransaction = (accountId: string) => {
     onSuccess: (_, { transactionId, changes }) => {
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
       });
     },
     onError: (error) => {
@@ -85,6 +95,7 @@ export const useUpdateTransaction = (accountId: string) => {
 };
 
 export const useDeleteTransactions = (accountId: string) => {
+  const { budgetId } = useCurrentBudgetContext();
   const { deleteMany } = useTransactionsApi(accountId);
   const queryClient = useQueryClient();
   const { setToast } = useToast();
@@ -97,6 +108,9 @@ export const useDeleteTransactions = (accountId: string) => {
       });
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
       });
     },
     onError: (error) => {

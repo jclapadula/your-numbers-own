@@ -28,7 +28,7 @@ usersRouter.post("/users/me", async (req, res) => {
 
   let userBudget = await db
     .selectFrom("budgets")
-    .select("id")
+    .select(["id", "timezone"])
     .where("ownerId", "=", existingUser.id)
     .executeTakeFirst();
 
@@ -36,11 +36,12 @@ usersRouter.post("/users/me", async (req, res) => {
     userBudget = await db
       .insertInto("budgets")
       .values({ name: "My Budget", ownerId: existingUser.id })
-      .returning("id")
+      .returning(["id", "timezone"])
       .executeTakeFirstOrThrow();
   }
 
   res.status(200).send({
     budgetId: userBudget.id,
+    timezone: userBudget.timezone,
   });
 });

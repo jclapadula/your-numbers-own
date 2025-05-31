@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCategories, usePayees } from "~/components/Budget/budgetQueries";
+import { usePayees } from "~/components/Budget/budgetQueries";
 import { CategoryInput } from "~/components/Budget/CategoryInput";
 import { PayeeInput } from "~/components/Budget/PayeeInput";
 import { TransactionTableWidths } from "./TransactionListHeader";
@@ -7,6 +7,7 @@ import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
 import { RowCell } from "./RowCell";
 import { format, formatISO } from "date-fns";
+import { useCategories } from "~/components/Categories/CategoriesQueries";
 
 type TransactionDateFieldProps = {
   value: string;
@@ -103,7 +104,7 @@ export const TransactionCategoryCell = ({
   onChange,
 }: TransactionCategoryFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const { data: categories } = useCategories();
+  const { data: categories = [] } = useCategories();
 
   const category = categories.find((c) => c.id === value);
 
