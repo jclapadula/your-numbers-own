@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { authenticate, authorizeRequest } from "../middlewares";
 import type { MonthOfYear } from "../../services/models";
 import { isValidMonthOfYear } from "../../services/utils";
+import { monthlyBudgetService } from "../../services/monthlyBudgetService";
 
 export const monthlyBudgetsRouter = Router();
 
@@ -15,18 +16,17 @@ monthlyBudgetsRouter.get(
     req: Request<{ budgetId: string }, any, any, MonthOfYear>,
     res: Response
   ) => {
-    if (!isValidMonthOfYear(req.query)) {
+    const monthOfYear = req.query;
+    if (!isValidMonthOfYear(monthOfYear)) {
       res.status(400).json({ error: "Invalid month of year" });
       return;
     }
 
-    // const transactions = await db
-    //   .selectFrom("transactions")
-    //   .where("accountId", "=", req.params.accountId)
-    //   .orderBy("date", "desc")
-    //   .selectAll()
-    //   .execute();
+    const monthlyBudgets = await monthlyBudgetService.getMonthlyBudget(
+      req.params.budgetId,
+      monthOfYear
+    );
 
-    res.json(transactions);
+    res.json(monthlyBudgets);
   }
 );

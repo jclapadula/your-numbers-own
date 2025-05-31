@@ -31,6 +31,7 @@ export const routerLogger = (
 type AuthorizeRequestParams = {
   budgetId?: string;
   accountId?: string;
+  categoryId?: string;
 };
 
 export const authorizeRequest = async (
@@ -65,6 +66,19 @@ export const authorizeRequest = async (
 
     if (count === 0) {
       throw new Error("Account not found");
+    }
+  }
+
+  if (params.categoryId) {
+    const { count } = await db
+      .selectFrom("categories")
+      .select(db.fn.countAll().as("count"))
+      .where("id", "=", params.categoryId)
+      .where("budgetId", "=", params.budgetId || "")
+      .executeTakeFirstOrThrow();
+
+    if (count === 0) {
+      throw new Error("Category not found");
     }
   }
 
