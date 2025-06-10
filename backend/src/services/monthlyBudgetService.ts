@@ -77,6 +77,8 @@ export namespace monthlyBudgetService {
       id: null as any,
       name: "Available Budget",
       budgetId,
+      position: -1,
+      groupId: null as any,
     });
 
     const latestMonthlyBudgets = await getLatestMonthlyBudgets(

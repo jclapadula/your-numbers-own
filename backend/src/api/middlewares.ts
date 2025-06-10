@@ -32,6 +32,7 @@ type AuthorizeRequestParams = {
   budgetId?: string;
   accountId?: string;
   categoryId?: string;
+  categoryGroupId?: string;
 };
 
 export const authorizeRequest = async (
@@ -66,6 +67,19 @@ export const authorizeRequest = async (
 
     if (count === 0) {
       throw new Error("Account not found");
+    }
+  }
+
+  if (params.categoryGroupId) {
+    const { count } = await db
+      .selectFrom("category_groups")
+      .select(db.fn.countAll().as("count"))
+      .where("id", "=", params.categoryGroupId)
+      .where("budgetId", "=", params.budgetId || "")
+      .executeTakeFirstOrThrow();
+
+    if (count === 0) {
+      throw new Error("Category group not found");
     }
   }
 

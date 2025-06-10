@@ -36,8 +36,17 @@ export interface Budgets {
 
 export interface Categories {
   budgetId: string;
+  groupId: string;
   id: Generated<string>;
   name: string;
+  position: Generated<number>;
+}
+
+export interface CategoryGroups {
+  budgetId: string;
+  id: Generated<string>;
+  name: string;
+  position: Generated<number>;
 }
 
 export interface MonthlyCategoryBudgets {
@@ -79,6 +88,7 @@ export interface DB {
   accounts: Accounts;
   budgets: Budgets;
   categories: Categories;
+  category_groups: CategoryGroups;
   monthly_category_budgets: MonthlyCategoryBudgets;
   payees: Payees;
   transactions: Transactions;
