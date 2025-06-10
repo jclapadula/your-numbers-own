@@ -7,7 +7,7 @@ import type {
 import { useTransactionsApi } from "~/api/transactionsApi";
 import { useToast } from "../Common/ToastContext";
 import { accountsQueryKeys } from "../Accounts/AccountsQueries";
-import { monthlyBudgetQueryKeys } from "../MonthlyBudget/MonthlyBudgetQueries";
+import { monthlyBudgetQueryKeys } from "../Budget/MonthlyBudgetQueries";
 import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 const queryKeys = {

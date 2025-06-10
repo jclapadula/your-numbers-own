@@ -19,15 +19,17 @@ export const rawNumberToAmount = (rawNumber: number | null) => {
 export default function Amount({
   amount,
   className,
+  hideSign,
 }: {
   amount: number;
   className?: string;
+  hideSign?: boolean;
 }) {
   const dollars = amount / 100;
 
   return (
     <span className={twMerge(`text-sm`, className)}>
-      {`$ ${dollars.toFixed(2)}`}
+      {`${hideSign ? "" : "$ "}${dollars.toFixed(2)}`}
     </span>
   );
 }

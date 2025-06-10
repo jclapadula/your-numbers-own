@@ -23,7 +23,7 @@ export const useSelectedMonthContext = () => {
   return context;
 };
 
-export const SelectedMonthContextProvider = ({
+export const SelectedMonthProvider = ({
   children,
 }: {
   children: ReactNode;

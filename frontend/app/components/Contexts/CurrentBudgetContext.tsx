@@ -16,7 +16,7 @@ export const useCurrentBudgetContext = () => {
   return useContext(CurrentBudgetContext);
 };
 
-export const CurrentBudgetContextProvider = ({
+export const CurrentBudgetProvider = ({
   children,
 }: {
   children: React.ReactNode;

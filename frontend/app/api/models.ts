@@ -55,7 +55,7 @@ export type MonthOfYear = {
 
 export type MonthlyBudget = {
   monthCategories: {
-    categoryId: string;
+    categoryId: string | null;
     categoryName: string;
     assignedAmount: number;
     balance: number;
