@@ -122,7 +122,7 @@ categoriesRouter.get(
       .selectFrom("categories")
       .where("budgetId", "=", req.params.budgetId)
       .orderBy("name", "asc")
-      .select(["id", "name", "position"])
+      .select(["id", "name", "position", "groupId"])
       .execute();
 
     res.json(categories);

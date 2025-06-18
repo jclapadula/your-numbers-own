@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useCategories } from "../Categories/CategoriesQueries";
+import { useCategories } from "./Categories/CategoriesQueries";
 
 type CategoryInputProps = {
   value: string | null;

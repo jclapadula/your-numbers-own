@@ -7,7 +7,7 @@ import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
 import { RowCell } from "./RowCell";
 import { format, formatISO } from "date-fns";
-import { useCategories } from "~/components/Categories/CategoriesQueries";
+import { useCategories } from "~/components/Budget/Categories/CategoriesQueries";
 
 type TransactionDateFieldProps = {
   value: string;

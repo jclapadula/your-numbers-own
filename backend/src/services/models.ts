@@ -53,6 +53,7 @@ export type Category = {
   id: string;
   name: string;
   position: number;
+  groupId: string;
 };
 
 export type MonthOfYear = {

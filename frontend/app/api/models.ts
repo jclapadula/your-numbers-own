@@ -46,6 +46,14 @@ export type Payee = {
 export type Category = {
   id: string;
   name: string;
+  position: number;
+  groupId: string;
+};
+
+export type CategoryGroup = {
+  id: string;
+  name: string;
+  position: number;
 };
 
 export type MonthOfYear = {
