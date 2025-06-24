@@ -2,6 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMonthlyBudgetApi } from "~/api/monthlyBudgetApi";
 import type { MonthOfYear } from "~/api/models";
 import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
+import {
+  getNextMonthOfYear,
+  getPreviousMonthOfYear,
+} from "../Common/dateUtils";
 
 export const monthlyBudgetQueryKeys = {
   monthlyBudget: (budgetId: string, monthOfYear?: MonthOfYear) => [
@@ -15,6 +19,23 @@ export const monthlyBudgetQueryKeys = {
 export const useMonthlyBudget = (monthOfYear: MonthOfYear) => {
   const { budgetId } = useCurrentBudgetContext();
   const { getMonthlyBudget } = useMonthlyBudgetApi();
+
+  // eager load of next month
+  const nextMonthOfYear = getNextMonthOfYear(monthOfYear);
+  useQuery({
+    queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, nextMonthOfYear),
+    queryFn: () => getMonthlyBudget(nextMonthOfYear),
+  });
+
+  // eager load of previous month
+  const previousMonthOfYear = getPreviousMonthOfYear(monthOfYear);
+  useQuery({
+    queryKey: monthlyBudgetQueryKeys.monthlyBudget(
+      budgetId,
+      previousMonthOfYear
+    ),
+    queryFn: () => getMonthlyBudget(previousMonthOfYear),
+  });
 
   return useQuery({
     queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, monthOfYear),

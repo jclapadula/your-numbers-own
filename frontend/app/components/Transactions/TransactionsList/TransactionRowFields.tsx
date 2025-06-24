@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { usePayees } from "~/components/Budget/budgetQueries";
-import { CategoryInput } from "~/components/Budget/CategoryInput";
-import { PayeeInput } from "~/components/Budget/PayeeInput";
+import { CategoryInput } from "~/components/Budget/Inputs/CategoryInput";
 import { TransactionTableWidths } from "./TransactionListHeader";
 import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
 import { RowCell } from "./RowCell";
 import { format, formatISO } from "date-fns";
 import { useCategories } from "~/components/Budget/Categories/CategoriesQueries";
+import { PayeeInput } from "~/components/Budget/Inputs/PayeeInput";
 
 type TransactionDateFieldProps = {
   value: string;
@@ -116,7 +116,10 @@ export const TransactionCategoryCell = ({
   return (
     <RowCell
       grows
-      onClick={() => setIsFocused(true)}
+      onClick={(e) => {
+        e.stopPropagation();
+        setIsFocused(true);
+      }}
       onFocus={() => setIsFocused(true)}
     >
       {isFocused ? (
@@ -126,7 +129,7 @@ export const TransactionCategoryCell = ({
           onBlur={() => setIsFocused(false)}
         />
       ) : category ? (
-        <span>{category.name}</span>
+        <span className="block w-full">{category.name}</span>
       ) : (
         <span className="text-primary">Categorize</span>
       )}

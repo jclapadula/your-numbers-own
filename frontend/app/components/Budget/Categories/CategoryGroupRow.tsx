@@ -25,9 +25,12 @@ export const CategoryGroupRow = ({
   return (
     <>
       <div className="flex justify-between border-b border-neutral-content/10 [&>div]:p-2 bg-base-300">
-        <CategoryCell className="flex items-center justify-between font-semibold">
-          <span>{categoryGroup.name}</span>
-          <div className="tooltip" data-tip="Add category">
+        <CategoryCell className="flex items-center justify-between group">
+          <span className="font-semibold">{categoryGroup.name}</span>
+          <div
+            className="tooltip group-hover:opacity-100 opacity-0 transition-opacity"
+            data-tip="Add category"
+          >
             <button
               onClick={() => setShowCreateModal(true)}
               className="btn btn-xs btn-primary btn-soft"

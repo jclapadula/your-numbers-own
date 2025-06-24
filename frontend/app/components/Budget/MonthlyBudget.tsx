@@ -66,12 +66,14 @@ const AvailableBudget = () => {
   const isOverSpent = availableBudget < 0;
 
   return (
-    <div className="flex flex-col items-center m-3 prose relative">
-      {isLoadingMonthlyBudget && (
-        <div className="top-0 skeleton w-full h-full absolute"></div>
+    <div
+      className={twMerge(
+        "flex flex-col items-center m-3 prose relative",
+        isLoadingMonthlyBudget && "animate-pulse"
       )}
+    >
       <span className="prose-sm">
-        {isOverSpent ? "Over spent" : "Available"}
+        {isOverSpent ? "Overspent" : "Available"}
       </span>
       <Amount
         className={twMerge(

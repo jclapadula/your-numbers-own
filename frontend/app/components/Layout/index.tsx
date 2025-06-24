@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AccountsList } from "./AccountsList";
 import { CreateAccountModal } from "../Accounts/CreateAccountModal";
@@ -11,6 +11,7 @@ export default function Layout() {
   const { logout } = useAuth0();
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
   const { budgetId } = useCurrentBudgetContext();
+  const { pathname } = useLocation();
 
   if (isLoading || !isAuthenticated || !budgetId) {
     return (
@@ -33,7 +34,12 @@ export default function Layout() {
         <div className="menu flex flex-col h-full justify-between">
           <ul className="w-64 p-4">
             <li>
-              <Link to="/">Budget</Link>
+              <Link
+                to="/"
+                className={pathname === "/" ? "text-primary font-semibold" : ""}
+              >
+                Budget
+              </Link>
             </li>
             <li className="menu-disabled">
               <a>

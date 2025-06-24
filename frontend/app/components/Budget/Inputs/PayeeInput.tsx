@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { usePayees, useCreatePayee } from "./budgetQueries";
 import { twMerge } from "tailwind-merge";
+import { useCreatePayee, usePayees } from "../budgetQueries";
 
 type PayeeInputProps = {
   value: string | null;
@@ -79,7 +79,7 @@ export const PayeeInput = ({
         }}
         autoFocus
       />
-      <ul className="dropdown-content menu p-2 shadow bg-base-100 rounded-box mt-1 w-max max-w-xs">
+      <ul className="dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs">
         {filteredPayees.map((payee) => (
           <li key={payee.id}>
             <button

@@ -34,9 +34,12 @@ const TableHeaders = () => {
   return (
     <>
       <div className="flex justify-between border-b border-neutral-content/20 [&>div]:p-2">
-        <CategoryCell className="text-neutral-content/50 content-center flex items-center justify-between">
+        <CategoryCell className="text-neutral-content/50 content-center flex items-center justify-between group">
           <span>Category</span>
-          <div className="tooltip" data-tip="Add category group">
+          <div
+            className="tooltip group-hover:opacity-100 opacity-0 transition-opacity"
+            data-tip="Add category group"
+          >
             <button
               onClick={() => setShowCreateModal(true)}
               className="btn btn-xs btn-primary btn-soft"
