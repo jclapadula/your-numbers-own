@@ -18,7 +18,7 @@ const TableHeaders = () => {
   const { data: monthlyBudget } = useMonthlyBudget(selectedMonth);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const totalBudgeted =
+  const totalAssigned =
     monthlyBudget?.monthCategories.reduce(
       (acc, category) =>
         category.categoryId ? acc + category.assignedAmount : acc,
@@ -29,7 +29,7 @@ const TableHeaders = () => {
       (acc, category) => (category.categoryId ? acc + category.balance : acc),
       0
     ) || 0;
-  const totalSpent = totalBalance - totalBudgeted;
+  const totalSpent = totalAssigned - totalBalance;
 
   return (
     <>
@@ -52,7 +52,7 @@ const TableHeaders = () => {
           <BudgetedCell>
             <div className="flex flex-col font-bold text-neutral-content/50">
               Budgeted
-              <Amount amount={totalBudgeted} hideSign />
+              <Amount amount={totalAssigned} hideSign />
             </div>
           </BudgetedCell>
           <SpentCell>
@@ -82,24 +82,21 @@ export const MonthlyBudgetTable = () => {
   const { data: categoryGroups = [] } = useCategoryGroups();
   const { data: categories = [] } = useCategories();
 
-  // Create a map of budget data by category ID for quick lookup
   const budgetDataByCategoryId =
     monthlyBudget?.monthCategories.reduce((acc, mc) => {
       if (mc.categoryId) {
         acc[mc.categoryId] = {
           budgeted: mc.assignedAmount,
           balance: mc.balance,
-          spent: mc.balance - mc.assignedAmount,
+          spent: mc.assignedAmount - mc.balance,
         };
       }
       return acc;
     }, {} as Record<string, { budgeted: number; spent: number; balance: number }>) ||
     {};
 
-  // Group categories by their category group using lodash
   const categoriesByGroup = groupBy(categories, "groupId");
 
-  // Calculate totals for each group using lodash
   const groupTotals = mapValues(categoriesByGroup, (groupCategories) => ({
     budgeted: sumBy(
       groupCategories,

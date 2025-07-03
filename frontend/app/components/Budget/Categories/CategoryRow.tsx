@@ -1,10 +1,13 @@
 import { useState } from "react";
-import Amount from "../../Amount";
+import Amount, { rawNumberToAmount } from "../../Amount";
 import { BalanceCell, BudgetedCell, SpentCell } from "../BudgetCells";
 import { CategoryCell } from "../BudgetCells";
 import type { Category } from "~/api/models";
 import { Menu, MenuItem } from "~/components/Common/Menu";
 import { EditCategoryModal } from "./EditCategoryModal";
+import { CategoryAssignedBudgetInput } from "./CategoryAssignedBudgetInput";
+import { useUpdateMonthlyBudget } from "../MonthlyBudgetQueries";
+import { useSelectedMonthContext } from "../SelectedMonthContext";
 
 type CategoryRowProps = {
   category: Category;
@@ -20,6 +23,9 @@ export const CategoryRow = ({
   balance,
 }: CategoryRowProps) => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const { selectedMonth } = useSelectedMonthContext();
+
+  const { mutateAsync: updateMonthlyBudget } = useUpdateMonthlyBudget();
 
   return (
     <div className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200">
@@ -37,7 +43,16 @@ export const CategoryRow = ({
       </CategoryCell>
       <div className="flex max-w-lg w-full items-center">
         <BudgetedCell>
-          <Amount amount={budgeted} hideSign />
+          <CategoryAssignedBudgetInput
+            rawValue={budgeted}
+            onChange={(newValue) =>
+              updateMonthlyBudget({
+                assignedAmount: rawNumberToAmount(newValue),
+                categoryId: category.id,
+                monthOfYear: selectedMonth,
+              })
+            }
+          />
         </BudgetedCell>
         <SpentCell>
           <Amount amount={spent} hideSign />

@@ -9,11 +9,12 @@ export const rawValueToString = (rawValue: number | null) => {
   return (rawValue / 100).toString();
 };
 
-export const rawNumberToAmount = (rawNumber: number | null) => {
+export const rawNumberToAmount = <T extends number | null>(rawNumber: T): T => {
   if (rawNumber === null) {
-    return null;
+    return rawNumber;
   }
-  return rawNumber * 100;
+
+  return (rawNumber * 100) as T;
 };
 
 export default function Amount({
