@@ -20,15 +20,20 @@ export namespace accountBalanceService {
 
   const getLatestMonthWithTransactions = async (
     db: Kysely<DB>,
-    accountId: string
+    accountId: string,
+    sortedTransactions: { date: ZonedDate }[]
   ) => {
-    const latestTransaction = await db
-      .selectFrom("transactions")
-      .where("accountId", "=", accountId)
-      .select(["date"])
-      .orderBy("date", "desc")
-      .executeTakeFirst();
+    const latestTransaction =
+      (await db
+        .selectFrom("transactions")
+        .where("accountId", "=", accountId)
+        .select(["date"])
+        .orderBy("date", "desc")
+        .executeTakeFirst()) ||
+      sortedTransactions[sortedTransactions.length - 1];
+
     if (!latestTransaction) return null;
+
     const latestDate = new Date(latestTransaction.date);
     return { year: latestDate.getFullYear(), month: latestDate.getMonth() + 1 };
   };
@@ -152,7 +157,11 @@ export namespace accountBalanceService {
     const start = getEarliestAffectedMonth(sortedTransactions);
     if (!start) return;
 
-    const end = await getLatestMonthWithTransactions(db, accountId);
+    const end = await getLatestMonthWithTransactions(
+      db,
+      accountId,
+      sortedTransactions
+    );
     // if there is nothing saved, which shouldn't happen, we can't calculate anything
     if (!end) return;
 

@@ -98,7 +98,7 @@ transactionsRouter.delete(
       .transaction()
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
-        const dates = await trx
+        const deletedTransactions = await trx
           .deleteFrom("transactions")
           .where("id", "in", transactionIds)
           .where("accountId", "=", req.params.accountId)
@@ -109,18 +109,20 @@ transactionsRouter.delete(
           req.params.budgetId
         );
 
-        if (dates.length > 0) {
+        if (deletedTransactions.length > 0) {
           await accountBalanceService.updateAccountBalance(
             trx,
             req.params.budgetId,
             req.params.accountId,
-            dates.map(({ date }) => ({ date: toZonedDate(date, timezone) }))
+            deletedTransactions.map(({ date }) => ({
+              date: toZonedDate(date, timezone),
+            }))
           );
 
           await monthlyBudgetService.updateMonthlyBudgets(
             trx,
             req.params.budgetId,
-            dates.map(({ date, categoryId }) => ({
+            deletedTransactions.map(({ date, categoryId }) => ({
               date: toZonedDate(date, timezone),
               categories: [categoryId],
             }))
