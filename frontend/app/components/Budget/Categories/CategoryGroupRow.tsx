@@ -39,7 +39,7 @@ export const CategoryGroupRow = ({
             </button>
           </div>
         </CategoryCell>
-        <div className="flex max-w-lg w-full">
+        <div className="flex max-w-lg w-full items-center">
           <BudgetedCell>
             <Amount amount={budgeted} hideSign />
           </BudgetedCell>
