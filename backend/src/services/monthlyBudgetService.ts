@@ -1,4 +1,4 @@
-import { sql, type ExpressionBuilder, type Kysely } from "kysely";
+import { type Kysely } from "kysely";
 import { db } from "../db";
 import type { DB } from "../db/models";
 import type { MonthlyBudget, MonthOfYear } from "./models";
@@ -69,8 +69,6 @@ export namespace monthlyBudgetService {
         "previous_balance.balance as previousBalance",
       ]);
 
-    console.log(query.compile().sql);
-
     return await query.execute();
   };
 
@@ -100,13 +98,6 @@ export namespace monthlyBudgetService {
       const latestMonthlyBudget = latestMonthlyBudgets.find(
         (latestMonthlyBudget) => latestMonthlyBudget.categoryId === category.id
       );
-
-      if (category.id === "7a64d1b6-60d7-43ac-b185-5e4015bbbf26") {
-        console.log({
-          latestMonthlyBudget,
-          monthOfYear,
-        });
-      }
 
       const assignedAmount =
         latestMonthlyBudget?.year === monthOfYear.year &&
@@ -170,31 +161,24 @@ export namespace monthlyBudgetService {
     year: number,
     month: number
   ) => {
-    // Calculate previous month and year
-    let prevMonth = month - 1;
-    let prevYear = year;
-    if (prevMonth === 0) {
-      prevMonth = 12;
-      prevYear--;
-    }
-
     let previousBalance = 0;
-    if (prevYear > 0) {
-      const prevBalanceResult = await db
-        .selectFrom("monthly_category_budgets")
-        .where("budgetId", "=", budgetId)
-        .where(categoryIdOrNull(categoryId))
-        .where("year", "=", prevYear)
-        .where("month", "=", prevMonth)
-        .select(["balance"])
-        .executeTakeFirst();
-      if (
-        prevBalanceResult &&
-        prevBalanceResult.balance !== undefined &&
-        prevBalanceResult.balance !== null
-      ) {
-        previousBalance = Number(prevBalanceResult.balance);
-      }
+    const prevBalanceResult = await db
+      .selectFrom("monthly_category_budgets")
+      .where("budgetId", "=", budgetId)
+      .where(categoryIdOrNull(categoryId))
+      .where(({ eb, tuple, refTuple }) =>
+        eb(refTuple("year", "month"), "<=", tuple(year, month))
+      )
+      .orderBy("year", "desc")
+      .orderBy("month", "desc")
+      .select(["balance"])
+      .executeTakeFirst();
+    if (
+      prevBalanceResult &&
+      prevBalanceResult.balance !== undefined &&
+      prevBalanceResult.balance !== null
+    ) {
+      previousBalance = Number(prevBalanceResult.balance);
     }
 
     return previousBalance;
@@ -255,7 +239,6 @@ export namespace monthlyBudgetService {
         : 0;
 
       const balance = startBalance + spent + assigned;
-      console.log({ startBalance, spent, assigned, year, month });
 
       await db
         .insertInto("monthly_category_budgets")
@@ -301,6 +284,7 @@ export namespace monthlyBudgetService {
         earliestModifiedMonth.year,
         earliestModifiedMonth.month
       );
+      console.log({ startBalance, earliestModifiedMonth });
 
       await recalculateAndUpsertBalances(
         db,
