@@ -6,6 +6,7 @@ import {
   getNextMonthOfYear,
   getPreviousMonthOfYear,
 } from "../Common/dateUtils";
+import { useToast } from "../Common/ToastContext";
 
 export const monthlyBudgetQueryKeys = {
   monthlyBudget: (budgetId: string, monthOfYear?: MonthOfYear) => [
@@ -20,33 +21,38 @@ export const useMonthlyBudget = (monthOfYear: MonthOfYear) => {
   const { budgetId } = useCurrentBudgetContext();
   const { getMonthlyBudget } = useMonthlyBudgetApi();
 
-  // eager load of next month
-  const nextMonthOfYear = getNextMonthOfYear(monthOfYear);
-  useQuery({
-    queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, nextMonthOfYear),
-    queryFn: () => getMonthlyBudget(nextMonthOfYear),
-  });
-
-  // eager load of previous month
-  const previousMonthOfYear = getPreviousMonthOfYear(monthOfYear);
-  useQuery({
-    queryKey: monthlyBudgetQueryKeys.monthlyBudget(
-      budgetId,
-      previousMonthOfYear
-    ),
-    queryFn: () => getMonthlyBudget(previousMonthOfYear),
-  });
-
-  return useQuery({
+  const query = useQuery({
     queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, monthOfYear),
     queryFn: () => getMonthlyBudget(monthOfYear),
   });
+
+  // // eager load of next month
+  // const nextMonthOfYear = getNextMonthOfYear(monthOfYear);
+  // useQuery({
+  //   queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, nextMonthOfYear),
+  //   queryFn: () => getMonthlyBudget(nextMonthOfYear),
+  //   enabled: !query.isLoading,
+  // });
+
+  // // eager load of previous month
+  // const previousMonthOfYear = getPreviousMonthOfYear(monthOfYear);
+  // useQuery({
+  //   queryKey: monthlyBudgetQueryKeys.monthlyBudget(
+  //     budgetId,
+  //     previousMonthOfYear
+  //   ),
+  //   queryFn: () => getMonthlyBudget(previousMonthOfYear),
+  //   enabled: !query.isLoading,
+  // });
+
+  return query;
 };
 
 export const useUpdateMonthlyBudget = () => {
   const { budgetId } = useCurrentBudgetContext();
   const { updateMonthlyBudget } = useMonthlyBudgetApi();
   const queryClient = useQueryClient();
+  const { setToast } = useToast();
 
   return useMutation({
     mutationFn: ({
@@ -58,10 +64,16 @@ export const useUpdateMonthlyBudget = () => {
       monthOfYear: MonthOfYear;
       assignedAmount: number;
     }) => updateMonthlyBudget(categoryId, monthOfYear, assignedAmount),
-    onSuccess: (_, { monthOfYear }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId, monthOfYear),
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
       });
+    },
+    onError: (error) => {
+      setToast(
+        "There was an error updating the budget. Please try again later.",
+        "error"
+      );
     },
   });
 };

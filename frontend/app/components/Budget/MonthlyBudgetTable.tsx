@@ -29,7 +29,7 @@ const TableHeaders = () => {
       (acc, category) => (category.categoryId ? acc + category.balance : acc),
       0
     ) || 0;
-  const totalSpent = totalAssigned - totalBalance;
+  const totalSpent = totalBalance - totalAssigned;
 
   return (
     <>
@@ -88,7 +88,7 @@ export const MonthlyBudgetTable = () => {
         acc[mc.categoryId] = {
           budgeted: mc.assignedAmount,
           balance: mc.balance,
-          spent: mc.assignedAmount - mc.balance,
+          spent: mc.assignedAmount + mc.previousBalance - mc.balance,
         };
       }
       return acc;
@@ -138,6 +138,7 @@ export const MonthlyBudgetTable = () => {
                   spent: 0,
                   balance: 0,
                 };
+
                 return (
                   <CategoryRow
                     key={category.id}

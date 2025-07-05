@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Amount, { rawValueToString } from "~/components/Amount";
 
 type CategoryAssignedBudgetInputProps = {
@@ -15,9 +15,17 @@ export const CategoryAssignedBudgetInput = ({
   const initialValue = rawValueToString(rawValue || 0);
   const [amount, setAmount] = useState(initialValue);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setAmount(initialValue);
   }, [initialValue]);
+
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [isFocused]);
 
   return (
     <div
@@ -53,6 +61,7 @@ export const CategoryAssignedBudgetInput = ({
           }}
           accept="[0-9]*[.,]?[0-9]*"
           autoFocus
+          ref={inputRef}
         />
       ) : (
         rawValue !== null && <Amount amount={rawValue} hideSign />

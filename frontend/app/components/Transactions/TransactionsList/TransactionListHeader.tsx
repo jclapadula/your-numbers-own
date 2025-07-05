@@ -1,7 +1,7 @@
 export const TransactionTableWidths = {
   selection: { width: "30px" },
   date: { width: "130px" },
-  paymentDeposit: { width: "100px" },
+  paymentDeposit: { width: "100px", textAlign: "right" as const },
   reconciled: { width: "30px" },
 };
 

@@ -1,7 +1,7 @@
 import type { ExpressionBuilder } from "kysely";
 import type { DB } from "./models";
 
-export const categoryIdIs =
+export const categoryIdOrNull =
   (categoryId: string | null) =>
   ({
     eb,

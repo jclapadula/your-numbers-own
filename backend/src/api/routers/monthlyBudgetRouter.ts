@@ -5,6 +5,9 @@ import type { MonthOfYear } from "../../services/models";
 import { isValidMonthOfYear } from "../../services/utils";
 import { monthlyBudgetService } from "../../services/monthlyBudgetService";
 import { db } from "../../db";
+import { toZonedDate } from "../../services/ZonedDate";
+import { budgetsService } from "../../services/budgetsService";
+import { parseMonthOfYear } from "../../services/MonthOfYear";
 
 export const monthlyBudgetsRouter = Router();
 
@@ -17,7 +20,7 @@ monthlyBudgetsRouter.get(
     req: Request<{ budgetId: string }, any, any, MonthOfYear>,
     res: Response
   ) => {
-    const monthOfYear = req.query;
+    const monthOfYear = parseMonthOfYear(req.query);
     if (!isValidMonthOfYear(monthOfYear)) {
       res.status(400).json({ error: "Invalid month of year" });
       return;
@@ -46,28 +49,45 @@ monthlyBudgetsRouter.put(
     let { budgetId } = req.params;
     const categoryId =
       req.params.categoryId === "null" ? null : req.params.categoryId;
-    const monthOfYear = req.query;
+    const monthOfYear = parseMonthOfYear(req.query);
 
     if (!isValidMonthOfYear(monthOfYear)) {
       res.status(400).json({ error: "Invalid month of year" });
       return;
     }
 
-    await db
-      .insertInto("monthly_category_budgets")
-      .values({
-        assignedAmount: req.body.assignedAmount,
-        budgetId,
-        categoryId,
-        year: monthOfYear.year,
-        month: monthOfYear.month,
-      })
-      .onConflict((oc) =>
-        oc.columns(["budgetId", "categoryId", "year", "month"]).doUpdateSet({
+    const timezone = await budgetsService.getBudgetTimezone(
+      req.params.budgetId
+    );
+
+    await db.transaction().execute(async (db) => {
+      await db
+        .insertInto("monthly_category_budgets")
+        .values({
           assignedAmount: req.body.assignedAmount,
+          budgetId,
+          categoryId,
+          year: monthOfYear.year,
+          month: monthOfYear.month,
         })
-      )
-      .execute();
+        .onConflict((oc) =>
+          oc.columns(["budgetId", "categoryId", "year", "month"]).doUpdateSet({
+            assignedAmount: req.body.assignedAmount,
+          })
+        )
+        .execute();
+
+      const date = toZonedDate(
+        new Date(monthOfYear.year, monthOfYear.month - 1, 3),
+        timezone
+      );
+      await monthlyBudgetService.updateMonthlyBudgets(db, budgetId, [
+        {
+          date,
+          categories: [categoryId],
+        },
+      ]);
+    });
 
     res.status(200).json({});
   }

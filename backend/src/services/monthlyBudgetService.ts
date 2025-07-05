@@ -1,11 +1,11 @@
-import type { ExpressionBuilder, Kysely } from "kysely";
+import { sql, type ExpressionBuilder, type Kysely } from "kysely";
 import { db } from "../db";
 import type { DB } from "../db/models";
 import type { MonthlyBudget, MonthOfYear } from "./models";
 import _, { isEqual, sortBy } from "lodash";
 import { getMonthOfYear, getNextMonthOfYear, isBefore } from "./utils";
 import { endOfMonth } from "date-fns";
-import { categoryIdIs } from "../db/utils";
+import { categoryIdOrNull } from "../db/utils";
 import type { ZonedDate } from "./ZonedDate";
 import { TZDate } from "@date-fns/tz";
 import { budgetsService } from "./budgetsService";
@@ -16,50 +16,60 @@ export namespace monthlyBudgetService {
     monthOfYear: MonthOfYear
   ) => {
     const query = db
-      .selectFrom("monthly_category_budgets")
-      .innerJoin(
-        db
+      .selectFrom((query) =>
+        query
           .selectFrom("monthly_category_budgets")
-          .select(["budgetId", "categoryId", "year", "month"])
-          .where(({ or, eb }) =>
-            or([
-              eb("year", "=", monthOfYear.year).and(
-                "month",
-                "<=",
-                monthOfYear.month
-              ),
-              eb("year", "<", monthOfYear.year),
-            ])
+          .select([
+            "budgetId",
+            "categoryId",
+            "year",
+            "month",
+            "assignedAmount",
+            "balance",
+          ])
+          .where(({ eb, refTuple }) =>
+            eb(
+              refTuple("year", "month"),
+              "<=",
+              eb.tuple(monthOfYear.year, monthOfYear.month)
+            )
           )
+          .where("budgetId", "=", budgetId)
           .orderBy("categoryId")
           .orderBy("year", "desc")
           .orderBy("month", "desc")
           .distinctOn("categoryId")
-          .as("latest"),
-        (join) =>
-          join
-            .onRef("monthly_category_budgets.budgetId", "=", "latest.budgetId")
-            .on(({ eb, or, ref }) =>
-              or([
-                eb(
-                  "monthly_category_budgets.categoryId",
-                  "=",
-                  ref("latest.categoryId")
-                ),
-                eb("latest.categoryId", "is", null),
-              ])
+          .as("latest")
+      )
+      .leftJoinLateral(
+        ({ eb, ref }) =>
+          eb
+            .selectFrom("monthly_category_budgets")
+            .select(["balance"])
+            .where("categoryId", "=", ref("latest.categoryId"))
+            .where(({ eb, refTuple }) =>
+              eb(
+                refTuple("year", "month"),
+                "<=",
+                eb.tuple(monthOfYear.year, monthOfYear.month)
+              )
             )
-            .onRef("monthly_category_budgets.year", "=", "latest.year")
-            .onRef("monthly_category_budgets.month", "=", "latest.month")
+            .orderBy("year", "desc")
+            .orderBy("month", "desc")
+            .limit(1)
+            .as("previous_balance"),
+        (join) => join.onTrue()
       )
       .select([
         "latest.categoryId",
-        "monthly_category_budgets.year",
-        "monthly_category_budgets.month",
-        "monthly_category_budgets.assignedAmount",
-        "monthly_category_budgets.balance",
-      ])
-      .where("monthly_category_budgets.budgetId", "=", budgetId);
+        "latest.year",
+        "latest.month",
+        "latest.assignedAmount",
+        "latest.balance",
+        "previous_balance.balance as previousBalance",
+      ]);
+
+    console.log(query.compile().sql);
 
     return await query.execute();
   };
@@ -91,11 +101,25 @@ export namespace monthlyBudgetService {
         (latestMonthlyBudget) => latestMonthlyBudget.categoryId === category.id
       );
 
+      if (category.id === "7a64d1b6-60d7-43ac-b185-5e4015bbbf26") {
+        console.log({
+          latestMonthlyBudget,
+          monthOfYear,
+        });
+      }
+
+      const assignedAmount =
+        latestMonthlyBudget?.year === monthOfYear.year &&
+        latestMonthlyBudget?.month === monthOfYear.month
+          ? latestMonthlyBudget?.assignedAmount
+          : 0;
+
       return {
         categoryId: category.id,
         categoryName: category.name,
-        assignedAmount: latestMonthlyBudget?.assignedAmount ?? 0,
+        assignedAmount,
         balance: latestMonthlyBudget?.balance ?? 0,
+        previousBalance: latestMonthlyBudget?.previousBalance ?? 0,
       };
     });
 
@@ -139,7 +163,7 @@ export namespace monthlyBudgetService {
       })
       .value();
 
-  const getPreviousMonthBalance = async (
+  const getStartBalance = async (
     db: Kysely<DB>,
     budgetId: string,
     categoryId: string | null,
@@ -159,7 +183,7 @@ export namespace monthlyBudgetService {
       const prevBalanceResult = await db
         .selectFrom("monthly_category_budgets")
         .where("budgetId", "=", budgetId)
-        .where(categoryIdIs(categoryId))
+        .where(categoryIdOrNull(categoryId))
         .where("year", "=", prevYear)
         .where("month", "=", prevMonth)
         .select(["balance"])
@@ -181,21 +205,18 @@ export namespace monthlyBudgetService {
     budgetId: string,
     categoryId: string | null,
     start: { year: number; month: number },
-    previousBalance: number
+    startBalance: number
   ) => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
-
-    let { year, month } = start;
 
     const lastExistingMonth = await db
       .selectFrom("monthly_category_budgets")
       .where("budgetId", "=", budgetId)
-      .where(categoryIdIs(categoryId))
+      .where(categoryIdOrNull(categoryId))
       .orderBy("year", "desc")
       .orderBy("month", "desc")
       .select(["year", "month"])
       .executeTakeFirst();
-
     let lastMonthToUpdate = lastExistingMonth;
     if (!lastMonthToUpdate || isBefore(lastMonthToUpdate, start)) {
       lastMonthToUpdate = start;
@@ -203,26 +224,38 @@ export namespace monthlyBudgetService {
 
     const { year: endYear, month: endMonth } = lastMonthToUpdate;
 
+    let { year, month } = start;
     while (year < endYear || (year === endYear && month <= endMonth)) {
       const monthStart = new TZDate(year, month - 1, 1, timezone);
       const monthEnd = endOfMonth(monthStart);
 
-      // Sum only the transactions for this month
-      const query = db
+      const spentOnMonthResult = await db
         .selectFrom("transactions")
         .innerJoin("accounts", "transactions.accountId", "accounts.id")
         .where("accounts.budgetId", "=", budgetId)
-        .where(categoryIdIs(categoryId))
+        .where(categoryIdOrNull(categoryId))
         .where("date", ">=", monthStart)
         .where("date", "<=", monthEnd)
-        .select(db.fn.sum("amount").as("balance"));
+        .select(db.fn.sum("amount").as("amount"))
+        .executeTakeFirst();
+      const spent = spentOnMonthResult?.amount
+        ? Number(spentOnMonthResult.amount)
+        : 0;
 
-      console.log({ query: query.compile() });
+      const assignedResult = await db
+        .selectFrom("monthly_category_budgets")
+        .select(db.fn.sum("assignedAmount").as("assignedAmount"))
+        .where("budgetId", "=", budgetId)
+        .where(categoryIdOrNull(categoryId))
+        .where("year", "=", year)
+        .where("month", "=", month)
+        .executeTakeFirst();
+      const assigned = assignedResult?.assignedAmount
+        ? Number(assignedResult.assignedAmount)
+        : 0;
 
-      const sumResult = await query.executeTakeFirst();
-      const monthSum = sumResult?.balance ? Number(sumResult.balance) : 0;
-      console.log({ monthSum });
-      const balance = previousBalance + monthSum;
+      const balance = startBalance + spent + assigned;
+      console.log({ startBalance, spent, assigned, year, month });
 
       await db
         .insertInto("monthly_category_budgets")
@@ -241,7 +274,7 @@ export namespace monthlyBudgetService {
         )
         .execute();
 
-      previousBalance = balance;
+      startBalance = balance;
 
       ({ year, month } = getNextMonthOfYear({ year, month }));
     }
@@ -255,14 +288,13 @@ export namespace monthlyBudgetService {
       categories: (string | null)[];
     }[]
   ) => {
-    console.log({ modifiedTransactions });
     const affectedCategories =
       getEarliestAffectedMonthByCategory(modifiedTransactions);
 
     for (const category of affectedCategories) {
       const { earliestModifiedMonth, categoryId } = category;
 
-      const previousMonthBalance = await getPreviousMonthBalance(
+      const startBalance = await getStartBalance(
         db,
         budgetId,
         categoryId,
@@ -275,7 +307,7 @@ export namespace monthlyBudgetService {
         budgetId,
         categoryId,
         earliestModifiedMonth,
-        previousMonthBalance
+        startBalance
       );
     }
   };

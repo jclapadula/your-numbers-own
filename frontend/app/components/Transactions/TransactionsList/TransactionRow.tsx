@@ -42,10 +42,6 @@ export const TransactionRow = ({
 }) => {
   const { accountId } = useAccountTransactions();
 
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof Transaction, string>>
-  >({});
-
   const transactionAmount = transaction.amount || null;
 
   const { mutateAsync: updateTransaction, isPending } =
@@ -58,9 +54,6 @@ export const TransactionRow = ({
       .safeParse(changes);
 
     if (!result.success) {
-      setErrors(toObjectErrors(result.error));
-      console.log(result.error);
-      console.log(changes);
       return;
     }
 
@@ -193,6 +186,10 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
   return (
     <>
       <div className="flex flex-row text-sm">
+        <div
+          style={TransactionTableWidths.selection}
+          className="flex items-center justify-center"
+        />
         <TransactionDateCell
           value={newTransaction.date}
           onChange={(date) => {
