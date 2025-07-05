@@ -50,7 +50,7 @@ export namespace monthlyBudgetService {
             .where(({ eb, refTuple }) =>
               eb(
                 refTuple("year", "month"),
-                "<=",
+                "<",
                 eb.tuple(monthOfYear.year, monthOfYear.month)
               )
             )
@@ -154,34 +154,26 @@ export namespace monthlyBudgetService {
       })
       .value();
 
-  const getStartBalance = async (
+  const getPreviousBalance = async (
     db: Kysely<DB>,
     budgetId: string,
     categoryId: string | null,
     year: number,
     month: number
   ) => {
-    let previousBalance = 0;
     const prevBalanceResult = await db
       .selectFrom("monthly_category_budgets")
       .where("budgetId", "=", budgetId)
       .where(categoryIdOrNull(categoryId))
       .where(({ eb, tuple, refTuple }) =>
-        eb(refTuple("year", "month"), "<=", tuple(year, month))
+        eb(refTuple("year", "month"), "<", tuple(year, month))
       )
       .orderBy("year", "desc")
       .orderBy("month", "desc")
       .select(["balance"])
       .executeTakeFirst();
-    if (
-      prevBalanceResult &&
-      prevBalanceResult.balance !== undefined &&
-      prevBalanceResult.balance !== null
-    ) {
-      previousBalance = Number(prevBalanceResult.balance);
-    }
 
-    return previousBalance;
+    return prevBalanceResult?.balance ? Number(prevBalanceResult.balance) : 0;
   };
 
   const recalculateAndUpsertBalances = async (
@@ -189,8 +181,9 @@ export namespace monthlyBudgetService {
     budgetId: string,
     categoryId: string | null,
     start: { year: number; month: number },
-    startBalance: number
+    previousBalance: number
   ) => {
+    console.log({ start, previousBalance });
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
     const lastExistingMonth = await db
@@ -202,6 +195,7 @@ export namespace monthlyBudgetService {
       .select(["year", "month"])
       .executeTakeFirst();
     let lastMonthToUpdate = lastExistingMonth;
+
     if (!lastMonthToUpdate || isBefore(lastMonthToUpdate, start)) {
       lastMonthToUpdate = start;
     }
@@ -238,7 +232,7 @@ export namespace monthlyBudgetService {
         ? Number(assignedResult.assignedAmount)
         : 0;
 
-      const balance = startBalance + spent + assigned;
+      const balance = previousBalance + spent + assigned;
 
       await db
         .insertInto("monthly_category_budgets")
@@ -257,7 +251,7 @@ export namespace monthlyBudgetService {
         )
         .execute();
 
-      startBalance = balance;
+      previousBalance = balance;
 
       ({ year, month } = getNextMonthOfYear({ year, month }));
     }
@@ -277,21 +271,20 @@ export namespace monthlyBudgetService {
     for (const category of affectedCategories) {
       const { earliestModifiedMonth, categoryId } = category;
 
-      const startBalance = await getStartBalance(
+      const previousBalance = await getPreviousBalance(
         db,
         budgetId,
         categoryId,
         earliestModifiedMonth.year,
         earliestModifiedMonth.month
       );
-      console.log({ startBalance, earliestModifiedMonth });
 
       await recalculateAndUpsertBalances(
         db,
         budgetId,
         categoryId,
         earliestModifiedMonth,
-        startBalance
+        previousBalance
       );
     }
   };

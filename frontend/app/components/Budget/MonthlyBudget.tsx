@@ -55,12 +55,12 @@ const AvailableBudget = () => {
       (acc, category) => acc + category.assignedAmount,
       0
     );
-    const totalBalance = monthlyBudget?.monthCategories.reduce(
-      (acc, category) => acc + category.balance,
+    const totalPreviousBalance = monthlyBudget?.monthCategories.reduce(
+      (acc, category) => acc + category.previousBalance,
       0
     );
 
-    return totalBalance - totalAssignedAmount;
+    return totalPreviousBalance - totalAssignedAmount;
   }, [monthlyBudget]);
 
   const isOverSpent = availableBudget < 0;
