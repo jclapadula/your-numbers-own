@@ -59,11 +59,15 @@ const AvailableBudget = () => {
       (acc, category) => acc + category.previousBalance,
       0
     );
+    const totalSpent = monthlyBudget?.monthCategories.reduce(
+      (acc, category) => acc + category.spent,
+      0
+    );
 
-    return totalPreviousBalance - totalAssignedAmount;
+    return totalPreviousBalance + totalSpent - totalAssignedAmount;
   }, [monthlyBudget]);
 
-  const isOverSpent = availableBudget < 0;
+  const isOverBudgeted = availableBudget < 0;
 
   return (
     <div
@@ -73,13 +77,13 @@ const AvailableBudget = () => {
       )}
     >
       <span className="prose-sm">
-        {isOverSpent ? "Overspent" : "Available"}
+        {isOverBudgeted ? "Over budgeted" : "Available"}
       </span>
       <Amount
         className={twMerge(
           "text-success",
           "text-2xl",
-          isOverSpent && "text-error"
+          isOverBudgeted && "text-error"
         )}
         amount={availableBudget}
       />

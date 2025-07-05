@@ -104,13 +104,17 @@ export namespace monthlyBudgetService {
         latestMonthlyBudget?.month === monthOfYear.month
           ? latestMonthlyBudget?.assignedAmount
           : 0;
+      const balance = latestMonthlyBudget?.balance ?? 0;
+      const previousBalance = latestMonthlyBudget?.previousBalance ?? 0;
+      const spent = balance - assignedAmount - previousBalance;
 
       return {
         categoryId: category.id,
         categoryName: category.name,
         assignedAmount,
-        balance: latestMonthlyBudget?.balance ?? 0,
-        previousBalance: latestMonthlyBudget?.previousBalance ?? 0,
+        balance,
+        previousBalance,
+        spent,
       };
     });
 

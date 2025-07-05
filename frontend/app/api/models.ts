@@ -68,6 +68,7 @@ export type MonthlyBudget = {
     assignedAmount: number;
     balance: number;
     previousBalance: number;
+    spent: number;
   }[];
   monthOfYear: MonthOfYear;
 };

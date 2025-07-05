@@ -12,6 +12,7 @@ import { useCategoryGroups } from "./Categories/CategoryGroupsQueries";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
 import type { Category, CategoryGroup } from "~/api/models";
+import _ from "lodash";
 
 const TableHeaders = () => {
   const { selectedMonth } = useSelectedMonthContext();
@@ -29,7 +30,11 @@ const TableHeaders = () => {
       (acc, category) => (category.categoryId ? acc + category.balance : acc),
       0
     ) || 0;
-  const totalSpent = totalBalance - totalAssigned;
+  const totalSpent =
+    monthlyBudget?.monthCategories.reduce(
+      (acc, category) => (category.categoryId ? acc + category.spent : acc),
+      0
+    ) || 0;
 
   return (
     <>
@@ -82,25 +87,17 @@ export const MonthlyBudgetTable = () => {
   const { data: categoryGroups = [] } = useCategoryGroups();
   const { data: categories = [] } = useCategories();
 
-  const budgetDataByCategoryId =
-    monthlyBudget?.monthCategories.reduce((acc, mc) => {
-      if (mc.categoryId) {
-        acc[mc.categoryId] = {
-          budgeted: mc.assignedAmount,
-          balance: mc.balance,
-          spent: mc.assignedAmount + mc.previousBalance - mc.balance,
-        };
-      }
-      return acc;
-    }, {} as Record<string, { budgeted: number; spent: number; balance: number }>) ||
-    {};
+  const budgetDataByCategoryId = _.keyBy(
+    monthlyBudget?.monthCategories,
+    "categoryId"
+  );
 
   const categoriesByGroup = groupBy(categories, "groupId");
 
   const groupTotals = mapValues(categoriesByGroup, (groupCategories) => ({
-    budgeted: sumBy(
+    assignedAmount: sumBy(
       groupCategories,
-      (category) => budgetDataByCategoryId[category.id]?.budgeted || 0
+      (category) => budgetDataByCategoryId[category.id]?.assignedAmount || 0
     ),
     spent: sumBy(
       groupCategories,
@@ -119,7 +116,7 @@ export const MonthlyBudgetTable = () => {
         {categoryGroups.map((categoryGroup: CategoryGroup) => {
           const groupCategories = categoriesByGroup[categoryGroup.id] || [];
           const groupTotalsData = groupTotals[categoryGroup.id] || {
-            budgeted: 0,
+            assignedAmount: 0,
             spent: 0,
             balance: 0,
           };
@@ -128,7 +125,7 @@ export const MonthlyBudgetTable = () => {
             <CategoryGroupRow
               key={categoryGroup.id}
               categoryGroup={categoryGroup}
-              budgeted={groupTotalsData.budgeted}
+              budgeted={groupTotalsData.assignedAmount}
               spent={groupTotalsData.spent}
               balance={groupTotalsData.balance}
             >
@@ -143,7 +140,7 @@ export const MonthlyBudgetTable = () => {
                   <CategoryRow
                     key={category.id}
                     category={category}
-                    budgeted={budgetData.budgeted}
+                    budgeted={budgetData.assignedAmount}
                     spent={budgetData.spent}
                     balance={budgetData.balance}
                   />
