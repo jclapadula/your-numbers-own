@@ -33,8 +33,10 @@ export const useCategoryGroupsApi = () => {
       httpClient.get<CategoryGroup[]>(`/budgets/${budgetId}/category-groups`),
     create: (categoryGroup: { name: string }) =>
       httpClient.post(`/budgets/${budgetId}/category-groups`, categoryGroup),
-    delete: (id: string) =>
-      httpClient.delete(`/budgets/${budgetId}/category-groups/${id}`),
+    delete: (id: string, moveToCategoryId: string) =>
+      httpClient.delete(`/budgets/${budgetId}/category-groups/${id}`, {
+        moveToCategoryId,
+      }),
     update: (id: string, name: string) =>
       httpClient.put(`/budgets/${budgetId}/category-groups/${id}`, {
         name,

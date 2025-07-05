@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCategoryGroupsApi } from "~/api/categoriesApi";
+import { categoriesQueryKeys } from "../Categories/CategoriesQueries";
+import { monthlyBudgetQueryKeys } from "../MonthlyBudgetQueries";
+import { useCurrentBudgetContext } from "~/components/Contexts/CurrentBudgetContext";
+import { transactionsQueryKeys } from "~/components/Transactions/TransactionsQueries";
+import { useToast } from "~/components/Common/ToastContext";
 
 export const categoryGroupsQueryKeys = {
   categoryGroups: ["categoryGroups"],
@@ -44,15 +49,37 @@ export const useUpdateCategoryGroup = () => {
 };
 
 export const useDeleteCategoryGroup = () => {
+  const { budgetId } = useCurrentBudgetContext();
   const { delete: deleteCategoryGroup } = useCategoryGroupsApi();
   const queryClient = useQueryClient();
+  const { setToast } = useToast();
 
   return useMutation({
-    mutationFn: (id: string) => deleteCategoryGroup(id),
+    mutationFn: ({
+      id,
+      moveToCategoryId,
+    }: {
+      id: string;
+      moveToCategoryId: string;
+    }) => deleteCategoryGroup(id, moveToCategoryId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: categoryGroupsQueryKeys.categoryGroups,
       });
+      queryClient.invalidateQueries({
+        queryKey: categoriesQueryKeys.categories,
+      });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: transactionsQueryKeys.transactions(budgetId),
+      });
+      setToast("Category group deleted successfully", "success");
+    },
+    onError: (error) => {
+      console.error("Failed to delete category group:", error);
+      setToast("Failed to delete category group", "error");
     },
   });
 };

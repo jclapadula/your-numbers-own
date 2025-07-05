@@ -10,7 +10,7 @@ import { accountsQueryKeys } from "../Accounts/AccountsQueries";
 import { monthlyBudgetQueryKeys } from "../Budget/MonthlyBudgetQueries";
 import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
-const queryKeys = {
+export const transactionsQueryKeys = {
   transactions: (accountId: string) => ["accounts", accountId, "transactions"],
 };
 
@@ -18,7 +18,7 @@ export const useTransactions = (accountId: string) => {
   const { getAll } = useTransactionsApi(accountId);
 
   return useQuery({
-    queryKey: queryKeys.transactions(accountId),
+    queryKey: transactionsQueryKeys.transactions(accountId),
     queryFn: () => getAll(),
   });
 };
@@ -33,7 +33,7 @@ export const useCreateTransaction = (accountId: string) => {
     mutationFn: (transaction: CreateTransaction) => create(transaction),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.transactions(accountId),
+        queryKey: transactionsQueryKeys.transactions(accountId),
       });
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,
@@ -77,12 +77,12 @@ export const useUpdateTransaction = (accountId: string) => {
     },
     onMutate: async ({ transactionId, changes }) => {
       await queryClient.cancelQueries({
-        queryKey: queryKeys.transactions(accountId),
+        queryKey: transactionsQueryKeys.transactions(accountId),
       });
 
       // update transaction with new backend data
       queryClient.setQueryData(
-        queryKeys.transactions(accountId),
+        transactionsQueryKeys.transactions(accountId),
         (previous: Transaction[]) =>
           previous.map((transaction) =>
             transaction.id === transactionId
@@ -104,7 +104,7 @@ export const useDeleteTransactions = (accountId: string) => {
     mutationFn: (transactionIds: string[]) => deleteMany(transactionIds),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.transactions(accountId),
+        queryKey: transactionsQueryKeys.transactions(accountId),
       });
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,

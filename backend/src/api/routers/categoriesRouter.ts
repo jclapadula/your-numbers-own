@@ -4,6 +4,7 @@ import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import type { Category, CategoryGroup } from "../../services/models";
 import { categoriesService } from "../../services/categoriesService";
+import { categoryGroupsService } from "../../services/categoryGroupsService";
 
 export const categoriesRouter = Router();
 
@@ -79,16 +80,22 @@ categoriesRouter.put(
 categoriesRouter.delete(
   "/budgets/:budgetId/category-groups/:categoryGroupId",
   async (
-    req: Request<{ budgetId: string; categoryGroupId: string }>,
+    req: Request<
+      { budgetId: string; categoryGroupId: string },
+      any,
+      { moveToCategoryId: string }
+    >,
     res: Response
   ) => {
     const { categoryGroupId } = req.params;
-    await db
-      .deleteFrom("category_groups")
-      .where("id", "=", categoryGroupId)
-      // Income category group can't be deleted
-      .where("isIncome", "=", false)
-      .execute();
+
+    await categoryGroupsService.deleteCategoryGroup(
+      db,
+      req.params.budgetId,
+      categoryGroupId,
+      req.body.moveToCategoryId
+    );
+
     res.status(200).send({});
   }
 );

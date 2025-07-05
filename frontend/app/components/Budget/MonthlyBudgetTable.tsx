@@ -4,16 +4,16 @@ import Amount from "../Amount";
 import { BalanceCell } from "./BudgetCells";
 import { BudgetedCell, SpentCell } from "./BudgetCells";
 import { CategoryCell } from "./BudgetCells";
-import { CategoryGroupRow } from "./Categories/CategoryGroupRow";
+import { CategoryGroupRow } from "./CategoryGroups/CategoryGroupRow";
 import { CategoryRow } from "./Categories/CategoryRow";
-import { CreateCategoryGroupModal } from "./Categories/CreateCategoryGroupModal";
+import { CreateCategoryGroupModal } from "./CategoryGroups/CreateCategoryGroupModal";
 import { useCategories } from "./Categories/CategoriesQueries";
-import { useCategoryGroups } from "./Categories/CategoryGroupsQueries";
+import { useCategoryGroups } from "./CategoryGroups/CategoryGroupsQueries";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
 import type { Category, CategoryGroup } from "~/api/models";
 import _ from "lodash";
-import { IncomeCategoryGroupRow } from "./Categories/IncomeCategoryGroupRow";
+import { IncomeCategoryGroupRow } from "./CategoryGroups/IncomeCategoryGroupRow";
 import { IncomeCategoryRow } from "./Categories/IncomeCategoryRow";
 
 const TableHeaders = () => {

@@ -2,24 +2,20 @@ import { useState } from "react";
 import Amount from "../../Amount";
 import { BalanceCell, BudgetedCell, SpentCell } from "../BudgetCells";
 import { CategoryCell } from "../BudgetCells";
-import { CreateCategoryModal } from "./CreateCategoryModal";
+import { CreateCategoryModal } from "../Categories/CreateCategoryModal";
 import type { CategoryGroup } from "~/api/models";
 
-type CategoryGroupRowProps = {
+type IncomeCategoryGroupRowProps = {
   categoryGroup: CategoryGroup;
-  budgeted: number;
-  spent: number;
   balance: number;
   children: React.ReactNode;
 };
 
-export const CategoryGroupRow = ({
+export const IncomeCategoryGroupRow = ({
   categoryGroup,
-  budgeted,
-  spent,
   balance,
   children,
-}: CategoryGroupRowProps) => {
+}: IncomeCategoryGroupRowProps) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
@@ -40,12 +36,8 @@ export const CategoryGroupRow = ({
           </div>
         </CategoryCell>
         <div className="flex max-w-lg w-full items-center">
-          <BudgetedCell>
-            <Amount amount={budgeted} hideSign />
-          </BudgetedCell>
-          <SpentCell>
-            <Amount amount={spent} hideSign />
-          </SpentCell>
+          <BudgetedCell>{""}</BudgetedCell>
+          <SpentCell>{""}</SpentCell>
           <BalanceCell>
             <Amount amount={balance} hideSign />
           </BalanceCell>

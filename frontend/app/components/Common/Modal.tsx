@@ -4,7 +4,7 @@ type ModalProps = {
   onClose: () => void;
   children: React.ReactNode;
   title: string;
-  onSave: () => void;
+  onSave?: () => void;
   disabled?: boolean;
 };
 
@@ -37,13 +37,15 @@ export const Modal = ({
             >
               Close
             </button>
-            <button
-              onClick={onSave}
-              className="btn btn-primary"
-              disabled={disabled}
-            >
-              Save
-            </button>
+            {onSave && (
+              <button
+                onClick={onSave}
+                className="btn btn-primary"
+                disabled={disabled}
+              >
+                Save
+              </button>
+            )}
           </div>
         </div>
       </div>

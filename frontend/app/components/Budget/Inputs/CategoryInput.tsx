@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useCategories } from "../Categories/CategoriesQueries";
-import { useCategoryGroups } from "../Categories/CategoryGroupsQueries";
+import { useCategoryGroups } from "../CategoryGroups/CategoryGroupsQueries";
 
 type CategoryInputProps = {
   value: string | null;
   onCategorySelected: (categoryId: string) => void;
-  onBlur: () => void;
+  onBlur?: () => void;
 };
 
 export const CategoryInput = ({
@@ -28,7 +28,7 @@ export const CategoryInput = ({
         divRef.current !== event.target &&
         !divRef.current?.contains(event.target as Node)
       ) {
-        onBlur();
+        onBlur?.();
       }
     };
 

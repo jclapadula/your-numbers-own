@@ -47,7 +47,10 @@ export const MenuItem = ({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={twMerge("w-full text-left overflow-clip", className)}
+        className={twMerge(
+          "w-full text-left overflow-clip text-nowrap",
+          className
+        )}
       >
         {children}
       </button>
