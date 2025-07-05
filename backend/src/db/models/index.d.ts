@@ -38,6 +38,7 @@ export interface Categories {
   budgetId: string;
   groupId: string;
   id: Generated<string>;
+  isIncome: Generated<boolean>;
   name: string;
   position: Generated<number>;
 }
@@ -45,6 +46,7 @@ export interface Categories {
 export interface CategoryGroups {
   budgetId: string;
   id: Generated<string>;
+  isIncome: Generated<boolean>;
   name: string;
   position: Generated<number>;
 }

@@ -13,6 +13,8 @@ import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
 import type { Category, CategoryGroup } from "~/api/models";
 import _ from "lodash";
+import { IncomeCategoryGroupRow } from "./Categories/IncomeCategoryGroupRow";
+import { IncomeCategoryRow } from "./Categories/IncomeCategoryRow";
 
 const TableHeaders = () => {
   const { selectedMonth } = useSelectedMonthContext();
@@ -20,18 +22,18 @@ const TableHeaders = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const totalAssigned =
-    monthlyBudget?.monthCategories.reduce(
+    monthlyBudget?.spendCategories.reduce(
       (acc, category) =>
         category.categoryId ? acc + category.assignedAmount : acc,
       0
     ) || 0;
   const totalBalance =
-    monthlyBudget?.monthCategories.reduce(
+    monthlyBudget?.spendCategories.reduce(
       (acc, category) => (category.categoryId ? acc + category.balance : acc),
       0
     ) || 0;
   const totalSpent =
-    monthlyBudget?.monthCategories.reduce(
+    monthlyBudget?.spendCategories.reduce(
       (acc, category) => (category.categoryId ? acc + category.spent : acc),
       0
     ) || 0;
@@ -87,8 +89,12 @@ export const MonthlyBudgetTable = () => {
   const { data: categoryGroups = [] } = useCategoryGroups();
   const { data: categories = [] } = useCategories();
 
-  const budgetDataByCategoryId = _.keyBy(
-    monthlyBudget?.monthCategories,
+  const spendCategoriesById = _.keyBy(
+    monthlyBudget?.spendCategories,
+    "categoryId"
+  );
+  const incomeCategoriesById = _.keyBy(
+    monthlyBudget?.incomeCategories,
     "categoryId"
   );
 
@@ -97,23 +103,33 @@ export const MonthlyBudgetTable = () => {
   const groupTotals = mapValues(categoriesByGroup, (groupCategories) => ({
     assignedAmount: sumBy(
       groupCategories,
-      (category) => budgetDataByCategoryId[category.id]?.assignedAmount || 0
+      (category) => spendCategoriesById[category.id]?.assignedAmount || 0
     ),
     spent: sumBy(
       groupCategories,
-      (category) => budgetDataByCategoryId[category.id]?.spent || 0
+      (category) => spendCategoriesById[category.id]?.spent || 0
     ),
     balance: sumBy(
       groupCategories,
-      (category) => budgetDataByCategoryId[category.id]?.balance || 0
+      (category) =>
+        spendCategoriesById[category.id]?.balance ||
+        incomeCategoriesById[category.id]?.balance ||
+        0
     ),
   }));
+
+  const spendCategoryGroups = categoryGroups.filter(
+    (categoryGroup) => !categoryGroup.isIncome
+  );
+  const incomeCategoryGroups = categoryGroups.filter(
+    (categoryGroup) => categoryGroup.isIncome
+  );
 
   return (
     <div className="text-sm bg-neutral/50 rounded-sm">
       <TableHeaders />
       <div>
-        {categoryGroups.map((categoryGroup: CategoryGroup) => {
+        {spendCategoryGroups.map((categoryGroup: CategoryGroup) => {
           const groupCategories = categoriesByGroup[categoryGroup.id] || [];
           const groupTotalsData = groupTotals[categoryGroup.id] || {
             assignedAmount: 0,
@@ -130,7 +146,7 @@ export const MonthlyBudgetTable = () => {
               balance={groupTotalsData.balance}
             >
               {groupCategories.map((category: Category) => {
-                const budgetData = budgetDataByCategoryId[category.id] || {
+                const budgetData = spendCategoriesById[category.id] || {
                   budgeted: 0,
                   spent: 0,
                   balance: 0,
@@ -147,6 +163,36 @@ export const MonthlyBudgetTable = () => {
                 );
               })}
             </CategoryGroupRow>
+          );
+        })}
+        <div className="divider -mt-2 mb-0" />
+        <div className="divider -mb-2 mt-0" />
+        {incomeCategoryGroups.map((categoryGroup: CategoryGroup) => {
+          const groupCategories = categoriesByGroup[categoryGroup.id] || [];
+          const groupTotalsData = groupTotals[categoryGroup.id] || {
+            balance: 0,
+          };
+
+          return (
+            <IncomeCategoryGroupRow
+              key={categoryGroup.id}
+              categoryGroup={categoryGroup}
+              balance={groupTotalsData.balance}
+            >
+              {groupCategories.map((category: Category) => {
+                const budgetData = incomeCategoriesById[category.id] || {
+                  balance: 0,
+                };
+
+                return (
+                  <IncomeCategoryRow
+                    key={category.id}
+                    category={category}
+                    balance={budgetData.balance}
+                  />
+                );
+              })}
+            </IncomeCategoryGroupRow>
           );
         })}
       </div>

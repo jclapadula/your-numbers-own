@@ -185,6 +185,8 @@ export namespace accountBalanceService {
   };
 
   export const getAccountsBalances = async (accountsIds: string[]) => {
+    if (!accountsIds.length) return [];
+
     return await db
       .selectFrom("account_partial_balances")
       .innerJoin(

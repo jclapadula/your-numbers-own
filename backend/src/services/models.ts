@@ -47,6 +47,7 @@ export type CategoryGroup = {
   id: string;
   name: string;
   position: number;
+  isIncome: boolean;
 };
 
 export type Category = {
@@ -62,13 +63,19 @@ export type MonthOfYear = {
 };
 
 export type MonthlyBudget = {
-  monthCategories: {
-    categoryId: string | null;
+  spendCategories: {
+    categoryId: string;
     categoryName: string;
     assignedAmount: number;
     balance: number;
     previousBalance: number;
     spent: number;
+  }[];
+  incomeCategories: {
+    categoryId: string;
+    categoryName: string;
+    balance: number;
+    previousBalance: number;
   }[];
   monthOfYear: MonthOfYear;
 };

@@ -81,45 +81,62 @@ export namespace monthlyBudgetService {
       .where("budgetId", "=", budgetId)
       .selectAll()
       .execute();
-    categories.push({
-      id: null as any,
-      name: "Available Budget",
-      budgetId,
-      position: -1,
-      groupId: null as any,
-    });
 
     const latestMonthlyBudgets = await getLatestMonthlyBudgets(
       budgetId,
       monthOfYear
     );
 
-    const monthCategories = categories.map((category) => {
-      const latestMonthlyBudget = latestMonthlyBudgets.find(
-        (latestMonthlyBudget) => latestMonthlyBudget.categoryId === category.id
-      );
+    const spendCategories = categories
+      .filter((category) => !category.isIncome)
+      .map((category) => {
+        const latestMonthlyBudget = latestMonthlyBudgets.find(
+          (latestMonthlyBudget) =>
+            latestMonthlyBudget.categoryId === category.id
+        );
 
-      const assignedAmount =
-        latestMonthlyBudget?.year === monthOfYear.year &&
-        latestMonthlyBudget?.month === monthOfYear.month
-          ? latestMonthlyBudget?.assignedAmount
-          : 0;
-      const balance = latestMonthlyBudget?.balance ?? 0;
-      const previousBalance = latestMonthlyBudget?.previousBalance ?? 0;
-      const spent = balance - assignedAmount - previousBalance;
+        const assignedAmount =
+          latestMonthlyBudget?.year === monthOfYear.year &&
+          latestMonthlyBudget?.month === monthOfYear.month
+            ? latestMonthlyBudget?.assignedAmount
+            : 0;
+        const balance = latestMonthlyBudget?.balance ?? 0;
+        const previousBalance = latestMonthlyBudget?.previousBalance ?? 0;
+        const spent = balance - assignedAmount - previousBalance;
 
-      return {
-        categoryId: category.id,
-        categoryName: category.name,
-        assignedAmount,
-        balance,
-        previousBalance,
-        spent,
-      };
-    });
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          isIncome: category.isIncome,
+          assignedAmount,
+          balance,
+          previousBalance,
+          spent,
+        };
+      });
+
+    const incomeCategories = categories
+      .filter((category) => category.isIncome)
+      .map((category) => {
+        const latestMonthlyBudget = latestMonthlyBudgets.find(
+          (latestMonthlyBudget) =>
+            latestMonthlyBudget.categoryId === category.id
+        );
+
+        const balance = latestMonthlyBudget?.balance ?? 0;
+        const previousBalance = latestMonthlyBudget?.previousBalance ?? 0;
+
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          balance,
+          previousBalance,
+        };
+      });
 
     return {
-      monthCategories,
+      spendCategories,
+      incomeCategories,
       monthOfYear,
     } satisfies MonthlyBudget;
   };
@@ -246,7 +263,7 @@ export namespace monthlyBudgetService {
           year,
           month,
           balance,
-          assignedAmount: 0,
+          assignedAmount: assigned,
         })
         .onConflict((oc) =>
           oc.columns(["budgetId", "categoryId", "year", "month"]).doUpdateSet({

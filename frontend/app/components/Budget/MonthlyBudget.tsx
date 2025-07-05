@@ -51,15 +51,15 @@ const AvailableBudget = () => {
       return 0;
     }
 
-    const totalAssignedAmount = monthlyBudget.monthCategories.reduce(
+    const totalAssignedAmount = monthlyBudget.spendCategories.reduce(
       (acc, category) => acc + category.assignedAmount,
       0
     );
-    const totalPreviousBalance = monthlyBudget?.monthCategories.reduce(
+    const totalPreviousBalance = monthlyBudget?.spendCategories.reduce(
       (acc, category) => acc + category.previousBalance,
       0
     );
-    const totalSpent = monthlyBudget?.monthCategories.reduce(
+    const totalSpent = monthlyBudget?.spendCategories.reduce(
       (acc, category) => acc + category.spent,
       0
     );

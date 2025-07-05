@@ -20,7 +20,7 @@ categoriesRouter.get(
       .selectFrom("category_groups")
       .where("budgetId", "=", req.params.budgetId)
       .orderBy("position", "asc")
-      .select(["id", "name", "position"])
+      .select(["id", "name", "position", "isIncome"])
       .execute();
 
     res.json(categoryGroups);
@@ -86,6 +86,8 @@ categoriesRouter.delete(
     await db
       .deleteFrom("category_groups")
       .where("id", "=", categoryGroupId)
+      // Income category group can't be deleted
+      .where("isIncome", "=", false)
       .execute();
     res.status(200).send({});
   }

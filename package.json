@@ -2,7 +2,8 @@
   "name": "your-numbers-own",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"cd frontend && bun dev\" \"cd backend && bun dev\""
+    "dev": "concurrently \"cd frontend && bun dev\" \"cd backend && bun dev\"",
+    "check": "concurrently \"cd frontend && bun tsc\" \"cd backend && bun tsc\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
