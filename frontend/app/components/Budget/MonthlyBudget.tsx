@@ -30,7 +30,7 @@ const MonthAndArrows = () => {
   const isFuture = !isCurrentMonth && !isPast;
 
   return (
-    <div className="flex justify-between gap-5 items-center">
+    <div className="grid grid-cols-3 gap-5 items-center">
       <div className="flex gap-2">
         <div className="tooltip tooltip-bottom" data-tip="Previous month">
           <button className="btn btn-md btn-ghost" onClick={subtractMonth}>
@@ -55,7 +55,7 @@ const MonthAndArrows = () => {
           )}
         </h1>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 justify-end">
         {isPast && (
           <div className="tooltip tooltip-bottom" data-tip="To current month">
             <button className="btn btn-md btn-ghost" onClick={toCurrentMonth}>
