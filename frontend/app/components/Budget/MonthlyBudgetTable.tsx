@@ -11,7 +11,7 @@ import { useCategories } from "./Categories/CategoriesQueries";
 import { useCategoryGroups } from "./CategoryGroups/CategoryGroupsQueries";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
-import type { Category, CategoryGroup } from "~/api/models";
+import type { Category, CategoryGroup, MonthlyBudget } from "~/api/models";
 import _ from "lodash";
 import { IncomeCategoryGroupRow } from "./CategoryGroups/IncomeCategoryGroupRow";
 import { IncomeCategoryRow } from "./Categories/IncomeCategoryRow";
@@ -83,9 +83,11 @@ const TableHeaders = () => {
   );
 };
 
-export const MonthlyBudgetTable = () => {
-  const { selectedMonth } = useSelectedMonthContext();
-  const { data: monthlyBudget } = useMonthlyBudget(selectedMonth);
+export const MonthlyBudgetTable = ({
+  monthlyBudget,
+}: {
+  monthlyBudget: MonthlyBudget;
+}) => {
   const { data: categoryGroups = [] } = useCategoryGroups();
   const { data: categories = [] } = useCategories();
 

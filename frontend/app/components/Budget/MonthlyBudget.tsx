@@ -124,13 +124,26 @@ const AvailableBudget = () => {
 };
 
 export const MonthlyBudget = () => {
+  const { selectedMonth } = useSelectedMonthContext();
+  const { data: monthlyBudget, isLoading } = useMonthlyBudget(selectedMonth);
+
+  if (isLoading) {
+    return (
+      <div className="h-full max-w-xl w-full m-auto">
+        <div className="pt-4">
+          <div className="loading-spinner" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full max-w-xl w-full m-auto">
       <div className="pt-4">
         <MonthAndArrows />
         <AvailableBudget />
       </div>
-      <MonthlyBudgetTable />
+      {monthlyBudget && <MonthlyBudgetTable monthlyBudget={monthlyBudget} />}
     </div>
   );
 };
