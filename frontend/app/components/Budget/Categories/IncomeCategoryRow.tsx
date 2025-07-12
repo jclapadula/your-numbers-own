@@ -4,7 +4,7 @@ import { BalanceCell, BudgetedCell, SpentCell } from "../BudgetCells";
 import { CategoryCell } from "../BudgetCells";
 import type { Category } from "~/api/models";
 import { Menu, MenuItem } from "~/components/Common/Menu";
-import { EditCategoryModal } from "./EditCategoryModal";
+import { RenameCategoryModal } from "./RenameCategoryModal";
 
 type IncomeCategoryRowProps = {
   category: Category;
@@ -24,7 +24,7 @@ export const IncomeCategoryRow = ({
         <Menu className="group-focus-within:opacity-100 group-hover:opacity-100 opacity-0 transition-opacity">
           <MenuItem onClick={() => setShowEditModal(true)}>Edit</MenuItem>
           {showEditModal && (
-            <EditCategoryModal
+            <RenameCategoryModal
               category={category}
               onClose={() => setShowEditModal(false)}
             />

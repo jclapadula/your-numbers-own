@@ -83,7 +83,7 @@ categoriesRouter.delete(
     req: Request<
       { budgetId: string; categoryGroupId: string },
       any,
-      { moveToCategoryId: string }
+      { moveToGroupId: string }
     >,
     res: Response
   ) => {
@@ -93,7 +93,7 @@ categoriesRouter.delete(
       db,
       req.params.budgetId,
       categoryGroupId,
-      req.body.moveToCategoryId
+      req.body.moveToGroupId
     );
 
     res.status(200).send({});
@@ -131,7 +131,7 @@ categoriesRouter.get(
       .selectFrom("categories")
       .where("budgetId", "=", req.params.budgetId)
       .orderBy("name", "asc")
-      .select(["id", "name", "position", "groupId"])
+      .select(["id", "name", "position", "groupId", "isIncome"])
       .execute();
 
     res.json(categories);
@@ -201,12 +201,21 @@ categoriesRouter.put(
 categoriesRouter.delete(
   "/budgets/:budgetId/categories/:categoryId",
   async (
-    req: Request<{ budgetId: string; categoryId: string }>,
+    req: Request<
+      { budgetId: string; categoryId: string },
+      any,
+      { moveTransactionsToCategoryId: string }
+    >,
     res: Response
   ) => {
     const { categoryId = "" } = req.params;
 
-    await db.deleteFrom("categories").where("id", "=", categoryId).execute();
+    await categoriesService.deleteCategory(
+      db,
+      req.params.budgetId,
+      categoryId,
+      req.body.moveTransactionsToCategoryId
+    );
 
     res.status(200).send({});
   }

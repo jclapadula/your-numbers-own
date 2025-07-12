@@ -1,6 +1,9 @@
 import _ from "lodash";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
+import { monthlyBudgetService } from "./monthlyBudgetService";
+import { budgetsService } from "./budgetsService";
+import { toZonedDate } from "./ZonedDate";
 
 export namespace categoriesService {
   const getSortedElements = <T extends { id: string; position: number }>(
@@ -126,5 +129,77 @@ export namespace categoriesService {
         .where("id", "=", group.id)
         .execute();
     }
+  };
+
+  const moveTransactionsToOtherCategory = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string,
+    moveToCategoryId: string
+  ) => {
+    const { earliestTransactionDate } =
+      (await db
+        .selectFrom("transactions")
+        .select((eb) => [eb.fn.min("date").as("earliestTransactionDate")])
+        .where("categoryId", "=", categoryId)
+        .executeTakeFirst()) || {};
+
+    if (earliestTransactionDate && !moveToCategoryId) {
+      throw new Error(
+        "Category has transactions. Please select a category to move the transactions to."
+      );
+    }
+
+    if (moveToCategoryId) {
+      await db
+        .updateTable("transactions")
+        .set({ categoryId: moveToCategoryId })
+        .where("categoryId", "=", categoryId)
+        .execute();
+    }
+
+    if (earliestTransactionDate) {
+      const timeZone = await budgetsService.getBudgetTimezone(budgetId);
+
+      await monthlyBudgetService.updateMonthlyBudgets(db, budgetId, [
+        {
+          date: toZonedDate(earliestTransactionDate, timeZone),
+          categories: [moveToCategoryId],
+        },
+      ]);
+    }
+  };
+
+  export const deleteCategory = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string,
+    moveTransactionsToCategoryId: string
+  ) => {
+    await db.transaction().execute(async (db) => {
+      await moveTransactionsToOtherCategory(
+        db,
+        budgetId,
+        categoryId,
+        moveTransactionsToCategoryId
+      );
+
+      const category = await db
+        .selectFrom("categories")
+        .select(["id", "groupId"])
+        .where("budgetId", "=", budgetId)
+        .where("id", "=", categoryId)
+        .executeTakeFirstOrThrow();
+
+      await categoriesService.moveCategory(
+        db,
+        budgetId,
+        category.groupId,
+        categoryId,
+        10_000 // Put in the last position of the group
+      );
+
+      await db.deleteFrom("categories").where("id", "=", categoryId).execute();
+    });
   };
 }

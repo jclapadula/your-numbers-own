@@ -10,8 +10,10 @@ export const useCategoriesApi = () => {
     getAll: () => httpClient.get<Category[]>(`/budgets/${budgetId}/categories`),
     create: (category: { name: string; categoryGroupId: string }) =>
       httpClient.post(`/budgets/${budgetId}/categories`, category),
-    delete: (id: string) =>
-      httpClient.delete(`/budgets/${budgetId}/categories/${id}`),
+    delete: (id: string, moveTransactionsToCategoryId: string) =>
+      httpClient.delete(`/budgets/${budgetId}/categories/${id}`, {
+        moveTransactionsToCategoryId,
+      }),
     update: (id: string, name: string) =>
       httpClient.put(`/budgets/${budgetId}/categories/${id}`, {
         name,
@@ -33,9 +35,9 @@ export const useCategoryGroupsApi = () => {
       httpClient.get<CategoryGroup[]>(`/budgets/${budgetId}/category-groups`),
     create: (categoryGroup: { name: string }) =>
       httpClient.post(`/budgets/${budgetId}/category-groups`, categoryGroup),
-    delete: (id: string, moveToCategoryId: string) =>
+    delete: (id: string, moveToGroupId: string) =>
       httpClient.delete(`/budgets/${budgetId}/category-groups/${id}`, {
-        moveToCategoryId,
+        moveToGroupId,
       }),
     update: (id: string, name: string) =>
       httpClient.put(`/budgets/${budgetId}/category-groups/${id}`, {

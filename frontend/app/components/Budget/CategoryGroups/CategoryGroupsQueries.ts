@@ -57,11 +57,11 @@ export const useDeleteCategoryGroup = () => {
   return useMutation({
     mutationFn: ({
       id,
-      moveToCategoryId,
+      moveToGroupId,
     }: {
       id: string;
-      moveToCategoryId: string;
-    }) => deleteCategoryGroup(id, moveToCategoryId),
+      moveToGroupId: string;
+    }) => deleteCategoryGroup(id, moveToGroupId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: categoryGroupsQueryKeys.categoryGroups,

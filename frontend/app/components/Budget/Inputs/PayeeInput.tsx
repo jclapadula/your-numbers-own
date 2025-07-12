@@ -79,7 +79,11 @@ export const PayeeInput = ({
         }}
         autoFocus
       />
-      <ul className="dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs">
+      <ul
+        className={twMerge(
+          "dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs min-w-full"
+        )}
+      >
         {filteredPayees.map((payee) => (
           <li key={payee.id}>
             <button

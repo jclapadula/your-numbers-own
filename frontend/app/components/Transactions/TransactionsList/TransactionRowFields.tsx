@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePayees } from "~/components/Budget/budgetQueries";
-import { CategoryInput } from "~/components/Budget/Inputs/CategoryInput";
+import { CategorySelect } from "~/components/Budget/Inputs/CategorySelect";
 import { TransactionTableWidths } from "./TransactionListHeader";
 import Amount, { rawValueToString } from "~/components/Amount";
 import { twMerge } from "tailwind-merge";
@@ -103,6 +103,8 @@ export const TransactionCategoryCell = ({
   value,
   onChange,
 }: TransactionCategoryFieldProps) => {
+  const cellRef = useRef<HTMLDivElement | null>(null);
+
   const [isFocused, setIsFocused] = useState(false);
   const { data: categories = [] } = useCategories();
 
@@ -121,12 +123,15 @@ export const TransactionCategoryCell = ({
         setIsFocused(true);
       }}
       onFocus={() => setIsFocused(true)}
+      ref={cellRef}
     >
       {isFocused ? (
-        <CategoryInput
+        <CategorySelect
           value={category?.name || ""}
           onCategorySelected={handleChange}
           onBlur={() => setIsFocused(false)}
+          autoFocus
+          containerRef={cellRef}
         />
       ) : category ? (
         <span className="block w-full">{category.name}</span>
@@ -153,6 +158,11 @@ export const TransactionNotesCell = ({
     setNotes(notes);
   };
 
+  const handleBlur = () => {
+    onChange(notes);
+    setIsFocused(false);
+  };
+
   useEffect(() => {
     setNotes(value ?? "");
   }, [value]);
@@ -168,14 +178,11 @@ export const TransactionNotesCell = ({
           className="input w-full h-auto pl-0 !outline-0"
           value={notes}
           onChange={(e) => handleChange(e.target.value)}
-          onBlur={() => {
-            setIsFocused(false);
-            onChange(notes);
-          }}
+          onBlur={handleBlur}
           autoFocus
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              setIsFocused(false);
+              handleBlur();
             }
           }}
         />

@@ -48,6 +48,7 @@ export type Category = {
   name: string;
   position: number;
   groupId: string;
+  isIncome: boolean;
 };
 
 export type CategoryGroup = {

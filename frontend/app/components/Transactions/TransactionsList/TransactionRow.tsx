@@ -131,11 +131,11 @@ export const TransactionRow = ({
         />
         <div
           style={TransactionTableWidths.reconciled}
-          className="flex items-center justify-center"
+          className="tooltip tooltip-left flex items-center justify-center"
+          data-tip="Reconciled"
         >
           <input
             type="checkbox"
-            title="Reconciled"
             defaultChecked={transaction.isReconciled}
             onChange={(e) => {
               saveChanges({
@@ -243,11 +243,11 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
         />
         <div
           style={TransactionTableWidths.reconciled}
-          className="flex items-center justify-center"
+          className="tooltip tooltip-left flex items-center justify-center"
+          data-tip="Reconciled"
         >
           <input
             type="checkbox"
-            title="Reconciled"
             checked={newTransaction.isReconciled}
             onChange={(e) => {
               setNewTransaction({

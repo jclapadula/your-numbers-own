@@ -6,7 +6,7 @@ export namespace categoryGroupsService {
     db: Kysely<DB>,
     budgetId: string,
     categoryGroupId: string,
-    moveToCategoryId: string
+    moveToGroupId: string
   ) => {
     const categoryGroup = await db
       .selectFrom("category_groups")
@@ -26,17 +26,17 @@ export namespace categoryGroupsService {
         .select("id")
         .execute();
 
-      if (assignedCategories.length > 0 && !moveToCategoryId) {
+      if (assignedCategories.length > 0 && !moveToGroupId) {
         throw new Error(
           "Category group is not empty. Please select a category to move the categories to."
         );
       }
 
-      if (moveToCategoryId) {
+      if (moveToGroupId) {
         const highestPosition = await db
           .selectFrom("categories")
           .where("budgetId", "=", budgetId)
-          .where("groupId", "=", moveToCategoryId)
+          .where("groupId", "=", moveToGroupId)
           .select("position")
           .orderBy("position", "asc")
           .executeTakeFirst();
@@ -55,7 +55,7 @@ export namespace categoryGroupsService {
         for (const category of categoriesToUpdate) {
           await db
             .updateTable("categories")
-            .set({ groupId: moveToCategoryId, position: category.newPosition })
+            .set({ groupId: moveToGroupId, position: category.newPosition })
             .where("id", "=", category.id)
             .execute();
         }

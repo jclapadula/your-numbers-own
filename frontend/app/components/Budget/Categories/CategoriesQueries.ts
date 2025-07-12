@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCategoriesApi } from "~/api/categoriesApi";
 import { categoryGroupsQueryKeys } from "../CategoryGroups/CategoryGroupsQueries";
+import { useToast } from "~/components/Common/ToastContext";
 
 export const categoriesQueryKeys = {
   categories: ["categories"],
@@ -51,9 +52,16 @@ export const useUpdateCategory = () => {
 export const useDeleteCategory = () => {
   const { delete: deleteCategory } = useCategoriesApi();
   const queryClient = useQueryClient();
+  const { setToast } = useToast();
 
   return useMutation({
-    mutationFn: (id: string) => deleteCategory(id),
+    mutationFn: ({
+      id,
+      moveTransactionsToCategoryId,
+    }: {
+      id: string;
+      moveTransactionsToCategoryId: string;
+    }) => deleteCategory(id, moveTransactionsToCategoryId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: categoriesQueryKeys.categories,
@@ -61,6 +69,11 @@ export const useDeleteCategory = () => {
       queryClient.invalidateQueries({
         queryKey: categoryGroupsQueryKeys.categoryGroups,
       });
+      setToast("Category deleted successfully", "success");
+    },
+    onError: (error) => {
+      console.error("Failed to delete category:", error);
+      setToast("Failed to delete category", "error");
     },
   });
 };

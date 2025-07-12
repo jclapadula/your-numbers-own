@@ -5,7 +5,6 @@ import { useCategories } from "../Categories/CategoriesQueries";
 import { useCategoryGroups } from "./CategoryGroupsQueries";
 import type { CategoryGroup } from "~/api/models";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
-import { CategoryInput } from "../Inputs/CategoryInput";
 
 export const DeleteCategoryGroupModal = ({
   onClose,
@@ -40,7 +39,7 @@ export const DeleteCategoryGroupModal = ({
 
     await deleteCategoryGroup({
       id: categoryGroup.id,
-      moveToCategoryId: selectedCategoryGroupId || "",
+      moveToGroupId: selectedCategoryGroupId || "",
     });
 
     onClose();

@@ -23,7 +23,7 @@ export const Modal = ({
 
   return (
     <dialog className="modal inset-0 absolute" ref={modalRef} onClose={onClose}>
-      <div className="modal-box">
+      <div className="modal-box overflow-visible">
         <div className="flex flex-col gap-3">
           <div>
             <h2 className="text-lg font-bold">{title}</h2>

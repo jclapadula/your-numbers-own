@@ -3,7 +3,7 @@ import { Modal } from "../../Common/Modal";
 import { useUpdateCategory } from "./CategoriesQueries";
 import type { Category } from "~/api/models";
 
-export const EditCategoryModal = ({
+export const RenameCategoryModal = ({
   onClose,
   category,
 }: {
