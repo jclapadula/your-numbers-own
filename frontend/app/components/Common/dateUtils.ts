@@ -44,3 +44,14 @@ export const getPreviousMonthOfYear = ({ month, year }: MonthOfYear) => {
     month,
   };
 };
+
+export const isPastMonth = (
+  pastMonth: MonthOfYear,
+  compareToMonth: MonthOfYear
+) => {
+  return (
+    pastMonth.year < compareToMonth.year ||
+    (pastMonth.year === compareToMonth.year &&
+      pastMonth.month < compareToMonth.month)
+  );
+};

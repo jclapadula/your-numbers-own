@@ -7,6 +7,7 @@ type SelectedMonthContextType = {
   selectedMonth: MonthOfYear;
   addMonth: () => void;
   subtractMonth: () => void;
+  toCurrentMonth: () => void;
 };
 
 const SelectedMonthContext = createContext<
@@ -57,9 +58,14 @@ export const SelectedMonthProvider = ({
     updateSelectedMonth(date);
   };
 
+  const toCurrentMonth = () => {
+    const date = getZonedDate(new Date());
+    updateSelectedMonth(date);
+  };
+
   return (
     <SelectedMonthContext.Provider
-      value={{ selectedMonth, addMonth, subtractMonth }}
+      value={{ selectedMonth, addMonth, subtractMonth, toCurrentMonth }}
     >
       {children}
     </SelectedMonthContext.Provider>

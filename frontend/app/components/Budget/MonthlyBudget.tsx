@@ -1,30 +1,51 @@
-import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import Amount from "../Amount";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
-import { getMonthOfYear, useGetZonedDate } from "../Common/dateUtils";
+import {
+  getMonthOfYear,
+  isPastMonth,
+  useGetZonedDate,
+} from "../Common/dateUtils";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
 import _ from "lodash";
 import { MonthlyBudgetTable } from "./MonthlyBudgetTable";
 
 const MonthAndArrows = () => {
   const getZonedDate = useGetZonedDate();
-  const { selectedMonth, addMonth, subtractMonth } = useSelectedMonthContext();
+  const { selectedMonth, addMonth, subtractMonth, toCurrentMonth } =
+    useSelectedMonthContext();
 
-  const isCurrentMonth = _.isEqual(
-    getMonthOfYear(getZonedDate(new Date())),
-    selectedMonth
-  );
+  const currentMonth = getMonthOfYear(getZonedDate(new Date()));
+
+  const isCurrentMonth = _.isEqual(currentMonth, selectedMonth);
+  const isPast = isPastMonth(selectedMonth, currentMonth);
+  const isFuture = !isCurrentMonth && !isPast;
 
   return (
     <div className="flex justify-between gap-5 items-center">
-      <button className="btn btn-md btn-ghost" onClick={subtractMonth}>
-        <ChevronLeftIcon className="w-4 h-4" />
-      </button>
-      <div className="prose prose-md min-w-44 text-center">
+      <div className="flex gap-2">
+        <div className="tooltip tooltip-bottom" data-tip="Previous month">
+          <button className="btn btn-md btn-ghost" onClick={subtractMonth}>
+            <ChevronLeftIcon className="w-3 h-3" />
+          </button>
+        </div>
+        {isFuture && (
+          <div className="tooltip tooltip-bottom" data-tip="To current month">
+            <button className="btn btn-md btn-ghost" onClick={toCurrentMonth}>
+              <ChevronDoubleLeftIcon className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="prose prose-sm min-w-44 text-center">
         <h1 className={twMerge(!isCurrentMonth && "text-base-content/50")}>
           {format(
             getZonedDate(
@@ -34,9 +55,20 @@ const MonthAndArrows = () => {
           )}
         </h1>
       </div>
-      <button className="btn btn-md btn-ghost" onClick={addMonth}>
-        <ChevronRightIcon className="w-4 h-4" />
-      </button>
+      <div className="flex gap-2">
+        {isPast && (
+          <div className="tooltip tooltip-bottom" data-tip="To current month">
+            <button className="btn btn-md btn-ghost" onClick={toCurrentMonth}>
+              <ChevronDoubleRightIcon className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+        <div className="tooltip tooltip-bottom" data-tip="Next month">
+          <button className="btn btn-md btn-ghost" onClick={addMonth}>
+            <ChevronRightIcon className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
