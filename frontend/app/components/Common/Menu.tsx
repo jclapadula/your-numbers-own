@@ -11,7 +11,7 @@ export const Menu = ({ children, className }: MenuProps) => {
   return (
     <div className={twMerge("dropdown", className)}>
       <div
-        tabIndex={0}
+        tabIndex={-1}
         role="button"
         className={"btn btn-xs btn-primary btn-soft px-1.5"}
       >

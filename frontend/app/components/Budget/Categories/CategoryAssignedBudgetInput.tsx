@@ -4,11 +4,15 @@ import Amount, { rawValueToString } from "~/components/Amount";
 type CategoryAssignedBudgetInputProps = {
   rawValue: number | null;
   onChange: (value: number) => void;
+  focusable?: boolean;
+  onNext?: (currentElement: HTMLElement) => void;
 };
 
 export const CategoryAssignedBudgetInput = ({
   rawValue,
   onChange,
+  focusable = false,
+  onNext,
 }: CategoryAssignedBudgetInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -16,6 +20,7 @@ export const CategoryAssignedBudgetInput = ({
   const [amount, setAmount] = useState(initialValue);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const divRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setAmount(initialValue);
@@ -32,6 +37,8 @@ export const CategoryAssignedBudgetInput = ({
       onClick={() => setIsFocused(true)}
       onFocus={() => setIsFocused(true)}
       className="w-full h-full p-0 m-0"
+      tabIndex={focusable ? 0 : undefined}
+      ref={divRef}
     >
       {isFocused ? (
         <input
@@ -57,6 +64,9 @@ export const CategoryAssignedBudgetInput = ({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               (e.target as any).blur();
+            }
+            if (e.key === "Enter" && onNext) {
+              divRef.current && onNext(divRef.current);
             }
           }}
           accept="[0-9]*[.,]?[0-9]*"

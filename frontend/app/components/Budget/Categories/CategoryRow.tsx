@@ -18,6 +18,28 @@ type CategoryRowProps = {
   balance: number;
 };
 
+const focusNextElement = (currentElement: HTMLElement) => {
+  var divsWithTabIndex = "div[tabindex]:not([tabindex='-1'])";
+  if (currentElement) {
+    var focusable = Array.prototype.filter.call(
+      document.querySelectorAll(divsWithTabIndex),
+      function (element) {
+        //check for visibility while always include the current activeElement
+        return (
+          element.offsetWidth > 0 ||
+          element.offsetHeight > 0 ||
+          element === currentElement
+        );
+      }
+    );
+    var index = focusable.indexOf(currentElement);
+    if (index > -1) {
+      var nextElement = focusable[index + 1] || focusable[0];
+      nextElement.focus();
+    }
+  }
+};
+
 export const CategoryRow = ({
   category,
   budgeted,
@@ -42,14 +64,16 @@ export const CategoryRow = ({
       <div className="flex max-w-lg w-full items-center">
         <BudgetedCell>
           <CategoryAssignedBudgetInput
+            focusable
             rawValue={budgeted}
-            onChange={(newValue) =>
+            onChange={(newValue) => {
               updateMonthlyBudget({
                 assignedAmount: rawNumberToAmount(newValue),
                 categoryId: category.id,
                 monthOfYear: selectedMonth,
-              })
-            }
+              });
+            }}
+            onNext={focusNextElement}
           />
         </BudgetedCell>
         <SpentCell>
