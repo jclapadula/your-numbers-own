@@ -27,6 +27,13 @@ export interface Accounts {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface BudgetMonthlyBalances {
+  balance: Generated<Int8>;
+  budgetId: string;
+  month: number;
+  year: number;
+}
+
 export interface Budgets {
   id: Generated<string>;
   name: string;
@@ -88,6 +95,7 @@ export interface Users {
 export interface DB {
   account_partial_balances: AccountPartialBalances;
   accounts: Accounts;
+  budget_monthly_balances: BudgetMonthlyBalances;
   budgets: Budgets;
   categories: Categories;
   category_groups: CategoryGroups;

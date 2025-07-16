@@ -1,9 +1,9 @@
 import _ from "lodash";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
-import { monthlyBudgetService } from "./monthlyBudgetService";
 import { budgetsService } from "./budgetsService";
 import { toZonedDate } from "./ZonedDate";
+import { balanceUpdater } from "./balanceUpdater";
 
 export namespace categoriesService {
   const getSortedElements = <T extends { id: string; position: number }>(
@@ -161,7 +161,7 @@ export namespace categoriesService {
     if (earliestTransactionDate) {
       const timeZone = await budgetsService.getBudgetTimezone(budgetId);
 
-      await monthlyBudgetService.updateMonthlyBudgets(db, budgetId, [
+      await balanceUpdater.updateMonthlyBalances(db, budgetId, [
         {
           date: toZonedDate(earliestTransactionDate, timeZone),
           categories: [moveToCategoryId],
@@ -201,5 +201,21 @@ export namespace categoriesService {
 
       await db.deleteFrom("categories").where("id", "=", categoryId).execute();
     });
+  };
+
+  export const isIncomeCategory = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string | null
+  ) => {
+    if (!categoryId) return false;
+
+    const category = await db
+      .selectFrom("categories")
+      .select("isIncome")
+      .where("budgetId", "=", budgetId)
+      .where("id", "=", categoryId)
+      .executeTakeFirst();
+    return category?.isIncome ?? false;
   };
 }

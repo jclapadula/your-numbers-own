@@ -68,9 +68,8 @@ export type MonthlyBudget = {
     categoryId: string;
     categoryName: string;
     assignedAmount: number;
-    balance: number;
-    previousBalance: number;
     spent: number;
+    balance: number;
   }[];
   incomeCategories: {
     categoryId: string;
@@ -79,4 +78,5 @@ export type MonthlyBudget = {
     previousBalance: number;
   }[];
   monthOfYear: MonthOfYear;
+  lastMonthCarryOver: number;
 };

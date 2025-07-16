@@ -2,9 +2,9 @@ import type { Kysely } from "kysely";
 import type { CreateTransaction, UpdateTransaction } from "./models";
 import type { DB } from "../db/models";
 import { accountBalanceService } from "./accountBalanceService";
-import { monthlyBudgetService } from "./monthlyBudgetService";
 import { toZonedDate } from "./ZonedDate";
 import { budgetsService } from "./budgetsService";
+import { balanceUpdater } from "./balanceUpdater";
 
 export namespace transactionsService {
   export const insertTransaction = async (
@@ -36,7 +36,7 @@ export namespace transactionsService {
             [{ date: zonedDate }]
           );
 
-          await monthlyBudgetService.updateMonthlyBudgets(trx, budgetId, [
+          await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
             { date: zonedDate, categories: [transaction.categoryId] },
           ]);
         }
@@ -98,7 +98,7 @@ export namespace transactionsService {
             oldCategoryId,
           ].filter((category) => category !== undefined);
 
-          await monthlyBudgetService.updateMonthlyBudgets(trx, budgetId, [
+          await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
             { date: toZonedDate(date, timezone), categories },
           ]);
         }

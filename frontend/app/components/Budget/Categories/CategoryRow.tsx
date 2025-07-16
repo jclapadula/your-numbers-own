@@ -9,6 +9,7 @@ import { DeleteCategoryModal } from "./DeleteCategoryModal";
 import { CategoryAssignedBudgetInput } from "./CategoryAssignedBudgetInput";
 import { useUpdateMonthlyBudget } from "../MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "../SelectedMonthContext";
+import { twMerge } from "tailwind-merge";
 
 type CategoryRowProps = {
   category: Category;
@@ -55,7 +56,11 @@ export const CategoryRow = ({
           <Amount amount={spent} hideSign />
         </SpentCell>
         <BalanceCell>
-          <Amount amount={balance} hideSign />
+          <Amount
+            amount={balance}
+            hideSign
+            className={twMerge(balance < 0 && "text-error")}
+          />
         </BalanceCell>
       </div>
       {showEditModal && (

@@ -10,7 +10,7 @@ import { accountBalanceService } from "../../services/accountBalanceService";
 import { transactionsService } from "../../services/transactionsService";
 import { budgetsService } from "../../services/budgetsService";
 import { toZonedDate } from "../../services/ZonedDate";
-import { monthlyBudgetService } from "../../services/monthlyBudgetService";
+import { balanceUpdater } from "../../services/balanceUpdater";
 
 export const transactionsRouter = Router();
 
@@ -119,7 +119,7 @@ transactionsRouter.delete(
             }))
           );
 
-          await monthlyBudgetService.updateMonthlyBudgets(
+          await balanceUpdater.updateMonthlyBalances(
             trx,
             req.params.budgetId,
             deletedTransactions.map(({ date, categoryId }) => ({

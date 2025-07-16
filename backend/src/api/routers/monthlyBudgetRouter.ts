@@ -8,6 +8,7 @@ import { db } from "../../db";
 import { toZonedDate } from "../../services/ZonedDate";
 import { budgetsService } from "../../services/budgetsService";
 import { parseMonthOfYear } from "../../services/MonthOfYear";
+import { balanceUpdater } from "../../services/balanceUpdater";
 
 export const monthlyBudgetsRouter = Router();
 
@@ -81,7 +82,7 @@ monthlyBudgetsRouter.put(
         new Date(monthOfYear.year, monthOfYear.month - 1, 3),
         timezone
       );
-      await monthlyBudgetService.updateMonthlyBudgets(db, budgetId, [
+      await balanceUpdater.updateMonthlyBalances(db, budgetId, [
         {
           date,
           categories: [categoryId],

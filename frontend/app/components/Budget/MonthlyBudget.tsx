@@ -87,16 +87,14 @@ const AvailableBudget = () => {
       (acc, category) => acc + category.assignedAmount,
       0
     );
-    const totalPreviousBalance = monthlyBudget?.spendCategories.reduce(
-      (acc, category) => acc + category.previousBalance,
-      0
-    );
-    const totalSpent = monthlyBudget?.spendCategories.reduce(
-      (acc, category) => acc + category.spent,
+    const totalPreviousBalance = monthlyBudget.lastMonthCarryOver;
+
+    const totalIncome = monthlyBudget.incomeCategories.reduce(
+      (acc, category) => acc + category.balance,
       0
     );
 
-    return totalPreviousBalance + totalSpent - totalAssignedAmount;
+    return totalPreviousBalance - totalAssignedAmount + totalIncome;
   }, [monthlyBudget]);
 
   const isOverBudgeted = availableBudget < 0;
@@ -109,7 +107,7 @@ const AvailableBudget = () => {
       )}
     >
       <span className="prose-sm">
-        {isOverBudgeted ? "Over budgeted" : "Available"}
+        {isOverBudgeted ? "Over budgeted" : "To budget"}
       </span>
       <Amount
         className={twMerge(
