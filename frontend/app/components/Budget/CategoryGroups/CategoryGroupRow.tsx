@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import Amount from "../../Amount";
 import { BalanceCell, BudgetedCell, SpentCell } from "../BudgetCells";
 import { CategoryCell } from "../BudgetCells";
@@ -7,6 +7,8 @@ import type { CategoryGroup } from "~/api/models";
 import { Menu, MenuItem } from "~/components/Common/Menu";
 import { EditCategoryGroupModal } from "./EditCategoryGroupModal";
 import { DeleteCategoryGroupModal } from "./DeleteCategoryGroupModal";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type CategoryGroupRowProps = {
   categoryGroup: CategoryGroup;
@@ -26,9 +28,29 @@ export const CategoryGroupRow = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: categoryGroup.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0 : 1,
+  };
 
   return (
-    <>
+    <div
+      className="relative"
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       <div className="flex justify-between border-b border-neutral-content/10 [&>div]:p-2 bg-base-300">
         <CategoryCell className="flex items-center justify-between group">
           <span className="font-semibold">{categoryGroup.name}</span>
@@ -71,6 +93,39 @@ export const CategoryGroupRow = ({
           categoryGroup={categoryGroup}
         />
       )}
-    </>
+    </div>
   );
 };
+
+type CategoryGroupRowOverlayProps = {
+  categoryGroup: CategoryGroup;
+  budgeted: number;
+  spent: number;
+  balance: number;
+};
+
+export const CategoryGroupRowOverlay = forwardRef<
+  HTMLDivElement,
+  CategoryGroupRowOverlayProps
+>(({ categoryGroup, budgeted, spent, balance }, ref) => {
+  return (
+    <div className="relative z-50" ref={ref}>
+      <div className="flex justify-between border-b border-neutral-content/10 [&>div]:p-2 bg-base-300">
+        <CategoryCell className="flex items-center justify-between group">
+          <span className="font-semibold">{categoryGroup.name}</span>
+        </CategoryCell>
+        <div className="flex max-w-lg w-full items-center">
+          <BudgetedCell>
+            <Amount amount={budgeted} hideSign />
+          </BudgetedCell>
+          <SpentCell>
+            <Amount amount={spent} hideSign />
+          </SpentCell>
+          <BalanceCell>
+            <Amount amount={balance} hideSign />
+          </BalanceCell>
+        </div>
+      </div>
+    </div>
+  );
+});

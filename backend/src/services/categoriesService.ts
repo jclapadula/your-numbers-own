@@ -115,11 +115,13 @@ export namespace categoriesService {
       .orderBy("position", "asc")
       .execute();
 
+    console.log({ allGroups, categoryGroupId, newPosition });
     const resortedGroups = getSortedElements(
       allGroups,
       categoryGroupId,
       newPosition
     );
+    console.log("resortedGroups", resortedGroups);
 
     for (const group of resortedGroups) {
       db.updateTable("account_partial_balances").set;

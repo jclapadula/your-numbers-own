@@ -116,7 +116,7 @@ categoriesRouter.put(
         tx,
         req.params.budgetId,
         req.params.categoryGroupId,
-        req.body.newPosition
+        req.query.newPosition
       );
     });
 
