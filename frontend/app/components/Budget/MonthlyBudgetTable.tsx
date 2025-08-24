@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { compact, groupBy, mapValues, sumBy } from "lodash";
+import { groupBy, mapValues, sumBy } from "lodash";
 import Amount from "../Amount";
 import { BalanceCell } from "./BudgetCells";
 import { BudgetedCell, SpentCell } from "./BudgetCells";
@@ -9,6 +9,10 @@ import {
   CategoryGroupRowOverlay,
 } from "./CategoryGroups/CategoryGroupRow";
 import { CategoryRow, CategoryRowOverlay } from "./Categories/CategoryRow";
+import {
+  EmptyCategoryDropZone,
+  getEmptyCategoryDropZoneId,
+} from "./Categories/EmptyCategoryDropZone";
 import { CreateCategoryGroupModal } from "./CategoryGroups/CreateCategoryGroupModal";
 import { useCategories, useMoveCategory } from "./Categories/CategoriesQueries";
 import {
@@ -34,6 +38,7 @@ import {
   type Active,
   type CollisionDetection,
   closestCenter,
+  type Over,
 } from "@dnd-kit/core";
 import {
   rectSwappingStrategy,
@@ -170,6 +175,9 @@ const isCategoryGroup = (container: DroppableContainer | Active) =>
 const isCategory = (container: DroppableContainer | Active) =>
   container.data.current?.type === "category";
 
+const isEmptyGroup = (container: Over) =>
+  container.data.current?.type === "emptygroup";
+
 export const MonthlyBudgetTable = ({
   monthlyBudget,
 }: {
@@ -220,6 +228,20 @@ export const MonthlyBudgetTable = ({
   };
 
   const handleDragEnd = async (e: DragEndEvent) => {
+    // Handle drops on empty groups
+    if (e.over && isEmptyGroup(e.over) && isCategory(e.active)) {
+      const targetGroupId = e.over.data.current?.categoryGroupId;
+      if (targetGroupId) {
+        await moveCategory({
+          id: e.active.id as string,
+          newPosition: 0, // First position in empty group
+          categoryGroupId: targetGroupId,
+        });
+      }
+      setDraggingCategory(null);
+      return;
+    }
+
     if (!e.over?.data.current?.sortable) {
       setDraggingCategoryGroup(null);
       setDraggingCategory(null);
@@ -303,6 +325,9 @@ export const MonthlyBudgetTable = ({
               balance: 0,
             };
 
+            const showEmptyGroup =
+              groupCategories.length === 0 && draggingCategory;
+
             return (
               <CategoryGroupRow
                 key={categoryGroup.id}
@@ -312,27 +337,35 @@ export const MonthlyBudgetTable = ({
                 balance={groupTotalsData.balance}
               >
                 <SortableContext
-                  items={groupCategories}
+                  items={
+                    showEmptyGroup
+                      ? [getEmptyCategoryDropZoneId(categoryGroup.id)]
+                      : groupCategories
+                  }
                   id={`category-group-${categoryGroup.id}`}
                   strategy={verticalListSortingStrategy}
                 >
-                  {groupCategories.map((category: Category) => {
-                    const budgetData = spendCategoriesById[category.id] || {
-                      budgeted: 0,
-                      spent: 0,
-                      balance: 0,
-                    };
+                  {showEmptyGroup ? (
+                    <EmptyCategoryDropZone categoryGroupId={categoryGroup.id} />
+                  ) : (
+                    groupCategories.map((category: Category) => {
+                      const budgetData = spendCategoriesById[category.id] || {
+                        budgeted: 0,
+                        spent: 0,
+                        balance: 0,
+                      };
 
-                    return (
-                      <CategoryRow
-                        key={category.id}
-                        category={category}
-                        budgeted={budgetData.assignedAmount}
-                        spent={budgetData.spent}
-                        balance={budgetData.balance}
-                      />
-                    );
-                  })}
+                      return (
+                        <CategoryRow
+                          key={category.id}
+                          category={category}
+                          budgeted={budgetData.assignedAmount}
+                          spent={budgetData.spent}
+                          balance={budgetData.balance}
+                        />
+                      );
+                    })
+                  )}
                 </SortableContext>
               </CategoryGroupRow>
             );
