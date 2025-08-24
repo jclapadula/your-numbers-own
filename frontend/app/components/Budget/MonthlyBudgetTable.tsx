@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { groupBy, mapValues, sumBy } from "lodash";
+import { compact, groupBy, mapValues, sumBy } from "lodash";
 import Amount from "../Amount";
 import { BalanceCell } from "./BudgetCells";
 import { BudgetedCell, SpentCell } from "./BudgetCells";
@@ -23,7 +23,6 @@ import { IncomeCategoryGroupRow } from "./CategoryGroups/IncomeCategoryGroupRow"
 import { IncomeCategoryRow } from "./Categories/IncomeCategoryRow";
 import {
   DndContext,
-  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -31,10 +30,16 @@ import {
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
+  type DroppableContainer,
+  type Active,
+  type CollisionDetection,
+  closestCenter,
 } from "@dnd-kit/core";
 import {
+  rectSwappingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { twMerge } from "tailwind-merge";
 
@@ -118,7 +123,10 @@ const useMonthlyBudgetData = (monthlyBudget: MonthlyBudget) => {
     "categoryId"
   );
 
-  const categoriesByGroup = groupBy(categories, "groupId");
+  const categoriesByGroup = groupBy(
+    categories.sort((a, b) => a.position - b.position),
+    "groupId"
+  );
 
   const groupTotals = mapValues(categoriesByGroup, (groupCategories) => ({
     assignedAmount: sumBy(
@@ -156,6 +164,12 @@ const useMonthlyBudgetData = (monthlyBudget: MonthlyBudget) => {
   };
 };
 
+const isCategoryGroup = (container: DroppableContainer | Active) =>
+  container.data.current?.type === "categoryGroup";
+
+const isCategory = (container: DroppableContainer | Active) =>
+  container.data.current?.type === "category";
+
 export const MonthlyBudgetTable = ({
   monthlyBudget,
 }: {
@@ -189,6 +203,22 @@ export const MonthlyBudgetTable = ({
     null
   );
 
+  const customCollisionDetection: CollisionDetection = (args) => {
+    const { active, droppableContainers } = args;
+
+    if (isCategoryGroup(active)) {
+      const categoryGroupContainers =
+        droppableContainers.filter(isCategoryGroup);
+      console.log(categoryGroupContainers);
+      return closestCenter({
+        ...args,
+        droppableContainers: categoryGroupContainers,
+      });
+    }
+
+    return closestCenter(args);
+  };
+
   const handleDragEnd = async (e: DragEndEvent) => {
     if (!e.over?.data.current?.sortable) {
       setDraggingCategoryGroup(null);
@@ -197,13 +227,12 @@ export const MonthlyBudgetTable = ({
     }
 
     const { containerId, index } = e.over.data.current.sortable;
-    const activeType = e.active.data.current?.type;
 
-    if (activeType === "category") {
+    if (isCategory(e.active)) {
       // Only handle within-group reordering for now
       if (containerId.startsWith("category-group-")) {
         const targetGroupId = containerId.replace("category-group-", "");
-        
+
         await moveCategory({
           id: e.active.id as string,
           newPosition: index,
@@ -211,7 +240,7 @@ export const MonthlyBudgetTable = ({
         });
       }
       setDraggingCategory(null);
-    } else if (activeType === "categoryGroup") {
+    } else if (isCategoryGroup(e.active)) {
       if (containerId === "spend-category-groups") {
         // Dropped on the main container
         await moveCategoryGroup({
@@ -226,19 +255,16 @@ export const MonthlyBudgetTable = ({
           newPosition: index,
         });
       }
-      
+
       setDraggingCategoryGroup(null);
     }
   };
 
   const handleDragStart = (e: DragStartEvent) => {
-    const activeType = e.active.data.current?.type;
-
-    // Clear both states first
     setDraggingCategory(null);
     setDraggingCategoryGroup(null);
 
-    if (activeType === "category") {
+    if (isCategory(e.active)) {
       const category = categories.find(
         (cat: Category) => cat.id === e.active.id
       );
@@ -265,134 +291,130 @@ export const MonthlyBudgetTable = ({
       <TableHeaders />
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
         onDragEnd={handleDragEnd}
         onDragStart={handleDragStart}
+        collisionDetection={customCollisionDetection}
       >
-        <div>
-          <SortableContext
-            items={spendCategoryGroups}
-            id="spend-category-groups"
-          >
-            {spendCategoryGroups.map((categoryGroup: CategoryGroup) => {
-              const groupCategories = categoriesByGroup[categoryGroup.id] || [];
-              const groupTotalsData = groupTotals[categoryGroup.id] || {
-                assignedAmount: 0,
-                spent: 0,
-                balance: 0,
-              };
-
-              return (
-                <CategoryGroupRow
-                  key={categoryGroup.id}
-                  categoryGroup={categoryGroup}
-                  budgeted={groupTotalsData.assignedAmount}
-                  spent={groupTotalsData.spent}
-                  balance={groupTotalsData.balance}
-                >
-                  <SortableContext
-                    items={groupCategories}
-                    id={`category-group-${categoryGroup.id}`}
-                  >
-                    {groupCategories
-                      .sort((a, b) => a.position - b.position)
-                      .map((category: Category) => {
-                        const budgetData = spendCategoriesById[category.id] || {
-                          budgeted: 0,
-                          spent: 0,
-                          balance: 0,
-                        };
-
-                        return (
-                          <CategoryRow
-                            key={category.id}
-                            category={category}
-                            budgeted={budgetData.assignedAmount}
-                            spent={budgetData.spent}
-                            balance={budgetData.balance}
-                          />
-                        );
-                      })}
-                  </SortableContext>
-                </CategoryGroupRow>
-              );
-            })}
-            <DragOverlay>
-              {(() => {
-                if (draggingCategoryGroup) {
-                  const groupTotalsData = groupTotals[
-                    draggingCategoryGroup.id
-                  ] || {
-                    assignedAmount: 0,
-                    spent: 0,
-                    balance: 0,
-                  };
-
-                  return (
-                    <CategoryGroupRowOverlay
-                      categoryGroup={draggingCategoryGroup}
-                      budgeted={groupTotalsData.assignedAmount}
-                      spent={groupTotalsData.spent}
-                      balance={groupTotalsData.balance}
-                    />
-                  );
-                }
-
-                if (draggingCategory) {
-                  const budgetData = spendCategoriesById[
-                    draggingCategory.id
-                  ] || {
-                    budgeted: 0,
-                    spent: 0,
-                    balance: 0,
-                  };
-
-                  return (
-                    <CategoryRowOverlay
-                      category={draggingCategory}
-                      budgeted={budgetData.assignedAmount}
-                      spent={budgetData.spent}
-                      balance={budgetData.balance}
-                    />
-                  );
-                }
-
-                return null;
-              })()}
-            </DragOverlay>
-          </SortableContext>
-
-          <div className="divider -mt-2 mb-0" />
-          <div className="divider -mb-2 mt-0" />
-          {incomeCategoryGroups.map((categoryGroup: CategoryGroup) => {
+        <SortableContext
+          items={spendCategoryGroups}
+          id="spend-category-groups"
+          strategy={verticalListSortingStrategy}
+        >
+          {spendCategoryGroups.map((categoryGroup: CategoryGroup) => {
             const groupCategories = categoriesByGroup[categoryGroup.id] || [];
             const groupTotalsData = groupTotals[categoryGroup.id] || {
+              assignedAmount: 0,
+              spent: 0,
               balance: 0,
             };
 
             return (
-              <IncomeCategoryGroupRow
+              <CategoryGroupRow
                 key={categoryGroup.id}
                 categoryGroup={categoryGroup}
+                budgeted={groupTotalsData.assignedAmount}
+                spent={groupTotalsData.spent}
                 balance={groupTotalsData.balance}
               >
-                {groupCategories.map((category: Category) => {
-                  const budgetData = incomeCategoriesById[category.id] || {
-                    balance: 0,
-                  };
+                <SortableContext
+                  items={groupCategories}
+                  id={`category-group-${categoryGroup.id}`}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {groupCategories.map((category: Category) => {
+                    const budgetData = spendCategoriesById[category.id] || {
+                      budgeted: 0,
+                      spent: 0,
+                      balance: 0,
+                    };
 
-                  return (
-                    <IncomeCategoryRow
-                      key={category.id}
-                      category={category}
-                      balance={budgetData.balance}
-                    />
-                  );
-                })}
-              </IncomeCategoryGroupRow>
+                    return (
+                      <CategoryRow
+                        key={category.id}
+                        category={category}
+                        budgeted={budgetData.assignedAmount}
+                        spent={budgetData.spent}
+                        balance={budgetData.balance}
+                      />
+                    );
+                  })}
+                </SortableContext>
+              </CategoryGroupRow>
             );
           })}
-        </div>
+          <DragOverlay>
+            {(() => {
+              if (draggingCategoryGroup) {
+                const groupTotalsData = groupTotals[
+                  draggingCategoryGroup.id
+                ] || {
+                  assignedAmount: 0,
+                  spent: 0,
+                  balance: 0,
+                };
+
+                return (
+                  <CategoryGroupRowOverlay
+                    categoryGroup={draggingCategoryGroup}
+                    budgeted={groupTotalsData.assignedAmount}
+                    spent={groupTotalsData.spent}
+                    balance={groupTotalsData.balance}
+                  />
+                );
+              }
+
+              if (draggingCategory) {
+                const budgetData = spendCategoriesById[draggingCategory.id] || {
+                  budgeted: 0,
+                  spent: 0,
+                  balance: 0,
+                };
+
+                return (
+                  <CategoryRowOverlay
+                    category={draggingCategory}
+                    budgeted={budgetData.assignedAmount}
+                    spent={budgetData.spent}
+                    balance={budgetData.balance}
+                  />
+                );
+              }
+
+              return null;
+            })()}
+          </DragOverlay>
+        </SortableContext>
+
+        <div className="divider -mt-2 mb-0" />
+        <div className="divider -mb-2 mt-0" />
+        {incomeCategoryGroups.map((categoryGroup: CategoryGroup) => {
+          const groupCategories = categoriesByGroup[categoryGroup.id] || [];
+          const groupTotalsData = groupTotals[categoryGroup.id] || {
+            balance: 0,
+          };
+
+          return (
+            <IncomeCategoryGroupRow
+              key={categoryGroup.id}
+              categoryGroup={categoryGroup}
+              balance={groupTotalsData.balance}
+            >
+              {groupCategories.map((category: Category) => {
+                const budgetData = incomeCategoriesById[category.id] || {
+                  balance: 0,
+                };
+
+                return (
+                  <IncomeCategoryRow
+                    key={category.id}
+                    category={category}
+                    balance={budgetData.balance}
+                  />
+                );
+              })}
+            </IncomeCategoryGroupRow>
+          );
+        })}
       </DndContext>
     </div>
   );
