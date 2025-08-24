@@ -35,12 +35,12 @@ export const CategoryGroupRow = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: categoryGroup.id,
     data: {
-      type: 'categoryGroup',
+      type: "categoryGroup",
       categoryGroup,
-    }
+    },
   });
 
   const style = {
@@ -115,7 +115,7 @@ export const CategoryGroupRowOverlay = forwardRef<
   CategoryGroupRowOverlayProps
 >(({ categoryGroup, budgeted, spent, balance }, ref) => {
   return (
-    <div className="relative z-50" ref={ref}>
+    <div className="relative z-50 cursor-grabbing" ref={ref}>
       <div className="flex justify-between border-b border-neutral-content/10 [&>div]:p-2 bg-base-300">
         <CategoryCell className="flex items-center justify-between group">
           <span className="font-semibold">{categoryGroup.name}</span>

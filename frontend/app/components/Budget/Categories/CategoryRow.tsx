@@ -61,12 +61,12 @@ export const CategoryRow = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: category.id,
     data: {
-      type: 'category',
+      type: "category",
       category,
-    }
+    },
   });
 
   const style = {
@@ -76,7 +76,7 @@ export const CategoryRow = ({
   };
 
   return (
-    <div 
+    <div
       className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200"
       ref={setNodeRef}
       style={style}
@@ -144,7 +144,7 @@ export const CategoryRowOverlay = forwardRef<
   CategoryRowOverlayProps
 >(({ category, budgeted, spent, balance }, ref) => {
   return (
-    <div className="relative z-50" ref={ref}>
+    <div className="relative z-50 cursor-grabbing" ref={ref}>
       <div className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200">
         <CategoryCell className="pl-6 text-sm group flex justify-between items-center">
           <span className="text-[13px]">{category.name}</span>
