@@ -211,15 +211,22 @@ export const MonthlyBudgetTable = ({
         });
       }
       setDraggingCategory(null);
-    } else if (
-      activeType === "categoryGroup" &&
-      containerId === "spend-category-groups"
-    ) {
-      // Handle category group movement
-      await moveCategoryGroup({
-        id: e.active.id as string,
-        newPosition: index,
-      });
+    } else if (activeType === "categoryGroup") {
+      if (containerId === "spend-category-groups") {
+        // Dropped on the main container
+        await moveCategoryGroup({
+          id: e.active.id as string,
+          newPosition: index,
+        });
+      } else if (containerId.startsWith("category-group-")) {
+        // Dropped on another category group - treat as reordering
+        // The index should represent where in the overall list this group should go
+        await moveCategoryGroup({
+          id: e.active.id as string,
+          newPosition: index,
+        });
+      }
+      
       setDraggingCategoryGroup(null);
     }
   };

@@ -116,7 +116,7 @@ categoriesRouter.put(
         tx,
         req.params.budgetId,
         req.params.categoryGroupId,
-        req.query.newPosition
+        Number(req.query.newPosition)
       );
     });
 
@@ -236,9 +236,9 @@ categoriesRouter.put(
       await categoriesService.moveCategory(
         tx,
         req.params.budgetId,
-        req.body.categoryGroupId,
+        req.query.categoryGroupId,
         req.params.categoryId,
-        req.body.newPosition
+        Number(req.query.newPosition)
       );
     });
 

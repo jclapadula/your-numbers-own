@@ -83,7 +83,7 @@ export namespace categoriesService {
     const currentCategoryGroupCategories = await db
       .selectFrom("categories")
       .select(["id", "position"])
-      .where("groupId", "=", category.groupId)
+      .where("groupId", "=", categoryGroupId)
       .orderBy("position", "asc")
       .execute();
 
@@ -115,16 +115,13 @@ export namespace categoriesService {
       .orderBy("position", "asc")
       .execute();
 
-    console.log({ allGroups, categoryGroupId, newPosition });
     const resortedGroups = getSortedElements(
       allGroups,
       categoryGroupId,
       newPosition
     );
-    console.log("resortedGroups", resortedGroups);
 
     for (const group of resortedGroups) {
-      db.updateTable("account_partial_balances").set;
       await db
         .updateTable("category_groups")
         .set({ position: group.position })
