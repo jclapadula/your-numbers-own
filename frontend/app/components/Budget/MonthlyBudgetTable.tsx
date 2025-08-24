@@ -8,13 +8,12 @@ import {
   CategoryGroupRow,
   CategoryGroupRowOverlay,
 } from "./CategoryGroups/CategoryGroupRow";
-import { CategoryRow } from "./Categories/CategoryRow";
+import { CategoryRow, CategoryRowOverlay } from "./Categories/CategoryRow";
 import { CreateCategoryGroupModal } from "./CategoryGroups/CreateCategoryGroupModal";
-import { useCategories } from "./Categories/CategoriesQueries";
+import { useCategories, useMoveCategory } from "./Categories/CategoriesQueries";
 import {
   useCategoryGroups,
   useMoveCategoryGroup,
-  useUpdateCategoryGroup,
 } from "./CategoryGroups/CategoryGroupsQueries";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
@@ -24,7 +23,7 @@ import { IncomeCategoryGroupRow } from "./CategoryGroups/IncomeCategoryGroupRow"
 import { IncomeCategoryRow } from "./Categories/IncomeCategoryRow";
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -34,7 +33,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
@@ -154,6 +152,7 @@ const useMonthlyBudgetData = (monthlyBudget: MonthlyBudget) => {
     categoriesByGroup,
     spendCategoriesById,
     incomeCategoriesById,
+    categories,
   };
 };
 
@@ -169,6 +168,7 @@ export const MonthlyBudgetTable = ({
     categoriesByGroup,
     spendCategoriesById,
     incomeCategoriesById,
+    categories,
   } = useMonthlyBudgetData(monthlyBudget);
 
   const sensors = useSensors(
@@ -180,19 +180,42 @@ export const MonthlyBudgetTable = ({
 
   const { mutateAsync: moveCategoryGroup, isPending: isMovingCategoryGroup } =
     useMoveCategoryGroup();
+  const { mutateAsync: moveCategory, isPending: isMovingCategory } =
+    useMoveCategory();
 
   const [draggingCategoryGroup, setDraggingCategoryGroup] =
     useState<CategoryGroup | null>(null);
+  const [draggingCategory, setDraggingCategory] = useState<Category | null>(
+    null
+  );
 
   const handleDragEnd = async (e: DragEndEvent) => {
-    console.log(e);
     if (!e.over?.data.current?.sortable) {
       setDraggingCategoryGroup(null);
+      setDraggingCategory(null);
       return;
     }
 
     const { containerId, index } = e.over.data.current.sortable;
-    if (containerId === "spend-category-groups") {
+    const activeType = e.active.data.current?.type;
+
+    if (activeType === "category") {
+      // Only handle within-group reordering for now
+      if (containerId.startsWith("category-group-")) {
+        const targetGroupId = containerId.replace("category-group-", "");
+        
+        await moveCategory({
+          id: e.active.id as string,
+          newPosition: index,
+          categoryGroupId: targetGroupId,
+        });
+      }
+      setDraggingCategory(null);
+    } else if (
+      activeType === "categoryGroup" &&
+      containerId === "spend-category-groups"
+    ) {
+      // Handle category group movement
       await moveCategoryGroup({
         id: e.active.id as string,
         newPosition: index,
@@ -202,12 +225,26 @@ export const MonthlyBudgetTable = ({
   };
 
   const handleDragStart = (e: DragStartEvent) => {
-    console.log(e);
-    const categoryGroup = spendCategoryGroups.find(
-      (group) => group.id === e.active.id
-    );
-    if (categoryGroup) {
-      setDraggingCategoryGroup(categoryGroup);
+    const activeType = e.active.data.current?.type;
+
+    // Clear both states first
+    setDraggingCategory(null);
+    setDraggingCategoryGroup(null);
+
+    if (activeType === "category") {
+      const category = categories.find(
+        (cat: Category) => cat.id === e.active.id
+      );
+      if (category) {
+        setDraggingCategory(category);
+      }
+    } else {
+      const categoryGroup = spendCategoryGroups.find(
+        (group) => group.id === e.active.id
+      );
+      if (categoryGroup) {
+        setDraggingCategoryGroup(categoryGroup);
+      }
     }
   };
 
@@ -215,13 +252,13 @@ export const MonthlyBudgetTable = ({
     <div
       className={twMerge(
         "text-sm bg-neutral/50 rounded-sm",
-        isMovingCategoryGroup && "animate-pulse"
+        (isMovingCategoryGroup || isMovingCategory) && "animate-pulse"
       )}
     >
       <TableHeaders />
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={closestCorners}
         onDragEnd={handleDragEnd}
         onDragStart={handleDragStart}
       >
@@ -246,48 +283,74 @@ export const MonthlyBudgetTable = ({
                   spent={groupTotalsData.spent}
                   balance={groupTotalsData.balance}
                 >
-                  {groupCategories.map((category: Category) => {
-                    const budgetData = spendCategoriesById[category.id] || {
-                      budgeted: 0,
-                      spent: 0,
-                      balance: 0,
-                    };
+                  <SortableContext
+                    items={groupCategories}
+                    id={`category-group-${categoryGroup.id}`}
+                  >
+                    {groupCategories
+                      .sort((a, b) => a.position - b.position)
+                      .map((category: Category) => {
+                        const budgetData = spendCategoriesById[category.id] || {
+                          budgeted: 0,
+                          spent: 0,
+                          balance: 0,
+                        };
 
-                    return (
-                      <CategoryRow
-                        key={category.id}
-                        category={category}
-                        budgeted={budgetData.assignedAmount}
-                        spent={budgetData.spent}
-                        balance={budgetData.balance}
-                      />
-                    );
-                  })}
+                        return (
+                          <CategoryRow
+                            key={category.id}
+                            category={category}
+                            budgeted={budgetData.assignedAmount}
+                            spent={budgetData.spent}
+                            balance={budgetData.balance}
+                          />
+                        );
+                      })}
+                  </SortableContext>
                 </CategoryGroupRow>
               );
             })}
             <DragOverlay>
               {(() => {
-                if (!draggingCategoryGroup) {
-                  return null;
+                if (draggingCategoryGroup) {
+                  const groupTotalsData = groupTotals[
+                    draggingCategoryGroup.id
+                  ] || {
+                    assignedAmount: 0,
+                    spent: 0,
+                    balance: 0,
+                  };
+
+                  return (
+                    <CategoryGroupRowOverlay
+                      categoryGroup={draggingCategoryGroup}
+                      budgeted={groupTotalsData.assignedAmount}
+                      spent={groupTotalsData.spent}
+                      balance={groupTotalsData.balance}
+                    />
+                  );
                 }
 
-                const groupTotalsData = groupTotals[
-                  draggingCategoryGroup.id
-                ] || {
-                  assignedAmount: 0,
-                  spent: 0,
-                  balance: 0,
-                };
+                if (draggingCategory) {
+                  const budgetData = spendCategoriesById[
+                    draggingCategory.id
+                  ] || {
+                    budgeted: 0,
+                    spent: 0,
+                    balance: 0,
+                  };
 
-                return (
-                  <CategoryGroupRowOverlay
-                    categoryGroup={draggingCategoryGroup}
-                    budgeted={groupTotalsData.assignedAmount}
-                    spent={groupTotalsData.spent}
-                    balance={groupTotalsData.balance}
-                  />
-                );
+                  return (
+                    <CategoryRowOverlay
+                      category={draggingCategory}
+                      budgeted={budgetData.assignedAmount}
+                      spent={budgetData.spent}
+                      balance={budgetData.balance}
+                    />
+                  );
+                }
+
+                return null;
               })()}
             </DragOverlay>
           </SortableContext>

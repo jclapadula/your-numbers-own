@@ -35,7 +35,13 @@ export const CategoryGroupRow = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: categoryGroup.id });
+  } = useSortable({ 
+    id: categoryGroup.id,
+    data: {
+      type: 'categoryGroup',
+      categoryGroup,
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),

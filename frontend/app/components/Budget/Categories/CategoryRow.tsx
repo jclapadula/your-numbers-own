@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import Amount, { rawNumberToAmount } from "../../Amount";
 import { BalanceCell, BudgetedCell, SpentCell } from "../BudgetCells";
 import { CategoryCell } from "../BudgetCells";
@@ -10,6 +10,8 @@ import { CategoryAssignedBudgetInput } from "./CategoryAssignedBudgetInput";
 import { useUpdateMonthlyBudget } from "../MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "../SelectedMonthContext";
 import { twMerge } from "tailwind-merge";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type CategoryRowProps = {
   category: Category;
@@ -52,8 +54,35 @@ export const CategoryRow = ({
 
   const { mutateAsync: updateMonthlyBudget } = useUpdateMonthlyBudget();
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: category.id,
+    data: {
+      type: 'category',
+      category,
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0 : 1,
+  };
+
   return (
-    <div className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200">
+    <div 
+      className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200"
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       <CategoryCell className="pl-6 text-sm group flex justify-between items-center">
         <span className="text-[13px]">{category.name}</span>
         <Menu className="group-focus-within:opacity-100 group-hover:opacity-100 opacity-0 transition-opacity">
@@ -102,3 +131,40 @@ export const CategoryRow = ({
     </div>
   );
 };
+
+type CategoryRowOverlayProps = {
+  category: Category;
+  budgeted: number;
+  spent: number;
+  balance: number;
+};
+
+export const CategoryRowOverlay = forwardRef<
+  HTMLDivElement,
+  CategoryRowOverlayProps
+>(({ category, budgeted, spent, balance }, ref) => {
+  return (
+    <div className="relative z-50" ref={ref}>
+      <div className="flex justify-between border-b border-neutral-content/5 [&>div]:p-2 bg-base-200">
+        <CategoryCell className="pl-6 text-sm group flex justify-between items-center">
+          <span className="text-[13px]">{category.name}</span>
+        </CategoryCell>
+        <div className="flex max-w-lg w-full items-center">
+          <BudgetedCell>
+            <Amount amount={budgeted} hideSign />
+          </BudgetedCell>
+          <SpentCell>
+            <Amount amount={spent} hideSign />
+          </SpentCell>
+          <BalanceCell>
+            <Amount
+              amount={balance}
+              hideSign
+              className={twMerge(balance < 0 && "text-error")}
+            />
+          </BalanceCell>
+        </div>
+      </div>
+    </div>
+  );
+});
