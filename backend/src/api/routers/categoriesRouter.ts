@@ -150,6 +150,16 @@ categoriesRouter.post(
   ) => {
     const { name, categoryGroupId } = req.body;
 
+    const categoryGroup = await db
+      .selectFrom("category_groups")
+      .where("id", "=", categoryGroupId)
+      .select(["isIncome"])
+      .executeTakeFirst();
+
+    if (!categoryGroup) {
+      throw new Error("Category group not found");
+    }
+
     const highestPosition = (
       await db
         .selectFrom("categories")
@@ -167,6 +177,7 @@ categoriesRouter.post(
         groupId: categoryGroupId,
         name,
         position,
+        isIncome: categoryGroup.isIncome,
       })
       .returning(["id"])
       .executeTakeFirstOrThrow();

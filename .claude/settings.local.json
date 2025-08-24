@@ -3,7 +3,8 @@
     "allow": [
       "Bash(bun run:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(bun check:*)"
     ],
     "deny": [],
     "ask": []

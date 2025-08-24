@@ -39,6 +39,9 @@ export const CategoryAssignedBudgetInput = ({
       className="w-full h-full p-0 m-0"
       tabIndex={focusable ? 0 : undefined}
       ref={divRef}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
     >
       {isFocused ? (
         <input

@@ -18,9 +18,8 @@ export const DeleteCategoryModal = ({
   const { mutateAsync: deleteCategory, isPending } = useDeleteCategory();
   const { data: categories = [] } = useCategories();
 
-  // Filter out the current category from available options
   const availableCategories = categories.filter(
-    (cat) => cat.id !== category.id
+    (cat) => cat.id !== category.id && cat.isIncome === category.isIncome
   );
 
   const handleDelete = async () => {
