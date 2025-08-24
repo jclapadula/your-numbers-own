@@ -76,6 +76,9 @@ export const PayeeInput = ({
           if (e.key === "Enter") {
             handleCreatePayee();
           }
+          if (e.key === "Escape") {
+            onBlur();
+          }
         }}
         autoFocus
       />
