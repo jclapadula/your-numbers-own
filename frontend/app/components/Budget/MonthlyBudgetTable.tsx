@@ -228,8 +228,8 @@ export const MonthlyBudgetTable = ({
 
     const { containerId, index } = e.over.data.current.sortable;
 
-    if (isCategory(e.active)) {
-      // Only handle within-group reordering for now
+    const isMovingCategory = isCategory(e.active);
+    if (isMovingCategory) {
       if (containerId.startsWith("category-group-")) {
         const targetGroupId = containerId.replace("category-group-", "");
 
@@ -241,15 +241,10 @@ export const MonthlyBudgetTable = ({
       }
       setDraggingCategory(null);
     } else if (isCategoryGroup(e.active)) {
-      if (containerId === "spend-category-groups") {
-        // Dropped on the main container
-        await moveCategoryGroup({
-          id: e.active.id as string,
-          newPosition: index,
-        });
-      } else if (containerId.startsWith("category-group-")) {
-        // Dropped on another category group - treat as reordering
-        // The index should represent where in the overall list this group should go
+      if (
+        containerId === "spend-category-groups" ||
+        containerId.startsWith("category-group-")
+      ) {
         await moveCategoryGroup({
           id: e.active.id as string,
           newPosition: index,
