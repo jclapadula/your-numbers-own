@@ -127,3 +127,4 @@ The application uses a PostgreSQL database with the following core entities:
 - Database operations use Kysely for type-safe queries
 - Frontend uses React Router v7 with file-based routing
 - Drag-and-drop functionality for category management using `@dnd-kit`
+- the `authorizeRequest` middleware checks if the different entities in the route (budgetId, accountId, etc), belong to the same user, checking that they have access

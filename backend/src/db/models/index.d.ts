@@ -74,15 +74,35 @@ export interface Payees {
   name: string;
 }
 
+export interface PlaidAccounts {
+  access_token: string;
+  account_id: string;
+  account_name: string | null;
+  account_subtype: string | null;
+  account_type: string | null;
+  budget_id: string;
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  institution_id: string | null;
+  institution_name: string | null;
+  plaid_account_id: string;
+  plaid_item_id: string;
+  updated_at: Generated<Timestamp>;
+}
+
 export interface Transactions {
   accountId: string;
   amount: Generated<Int8>;
   categoryId: string | null;
   date: Timestamp;
   id: Generated<string>;
+  is_plaid_transaction: Generated<boolean>;
   isReconciled: Generated<boolean>;
+  merchant_name: string | null;
   notes: string | null;
   payeeId: string | null;
+  plaid_account_id: string | null;
+  plaid_transaction_id: string | null;
 }
 
 export interface Users {
@@ -101,6 +121,7 @@ export interface DB {
   category_groups: CategoryGroups;
   monthly_category_budgets: MonthlyCategoryBudgets;
   payees: Payees;
+  plaid_accounts: PlaidAccounts;
   transactions: Transactions;
   users: Users;
 }
