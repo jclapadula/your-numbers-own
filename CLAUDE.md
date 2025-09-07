@@ -33,6 +33,9 @@ bun run db:create      # Create new migration
 bun run db:migrate     # Run migrations
 bun run db:generate    # Generate TypeScript types from schema
 
+# Direct database access
+psql postgresql://local:localpass@localhost:5432/your-numbers  # Connect to local database
+
 # Run backend only
 bun run index.ts
 ```

@@ -4,7 +4,9 @@
       "Bash(bun run:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(bun check:*)"
+      "Bash(bun check:*)",
+      "Bash(psql:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
