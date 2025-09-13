@@ -11,7 +11,7 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.references("budgets.id").onDelete("cascade").notNull()
     )
     .addColumn("account_id", "uuid", (col) =>
-      col.references("accounts.id").onDelete("cascade").notNull()
+      col.references("accounts.id").onDelete("cascade")
     )
     .addColumn("plaid_account_id", "text", (col) => col.notNull())
     .addColumn("plaid_item_id", "text", (col) => col.notNull())
@@ -43,9 +43,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("plaid_transaction_id", "text")
     .addColumn("plaid_account_id", "text")
     .addColumn("merchant_name", "text")
-    .addColumn("is_plaid_transaction", "boolean", (col) =>
-      col.defaultTo(false).notNull()
-    )
     .execute();
 
   // Create index for Plaid transaction ID lookups
@@ -63,7 +60,6 @@ export async function down(db: Kysely<any>): Promise<void> {
     .dropColumn("plaid_transaction_id")
     .dropColumn("plaid_account_id")
     .dropColumn("merchant_name")
-    .dropColumn("is_plaid_transaction")
     .execute();
 
   // Drop plaid accounts table

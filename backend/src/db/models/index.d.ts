@@ -76,7 +76,7 @@ export interface Payees {
 
 export interface PlaidAccounts {
   access_token: string;
-  account_id: string;
+  account_id: string | null;
   account_name: string | null;
   account_subtype: string | null;
   account_type: string | null;
@@ -96,7 +96,6 @@ export interface Transactions {
   categoryId: string | null;
   date: Timestamp;
   id: Generated<string>;
-  is_plaid_transaction: Generated<boolean>;
   isReconciled: Generated<boolean>;
   merchant_name: string | null;
   notes: string | null;

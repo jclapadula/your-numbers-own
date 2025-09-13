@@ -81,12 +81,12 @@ export type MonthlyBudget = {
 };
 
 export enum PlaidAccountType {
-  DEPOSITORY = "depository",
-  CREDIT = "credit",
-  LOAN = "loan",
   INVESTMENT = "investment",
-  PAYROLL = "payroll",
-  OTHER = "other"
+  CREDIT = "credit",
+  DEPOSITORY = "depository",
+  LOAN = "loan",
+  BROKERAGE = "brokerage",
+  OTHER = "other",
 }
 
 // Depository subtypes
@@ -99,13 +99,13 @@ export enum PlaidDepositorySubtype {
   MONEY_MARKET = "money market",
   PAYPAL = "paypal",
   PREPAID = "prepaid",
-  SAVINGS = "savings"
+  SAVINGS = "savings",
 }
 
 // Credit subtypes
 export enum PlaidCreditSubtype {
   CREDIT_CARD = "credit card",
-  PAYPAL = "paypal"
+  PAYPAL = "paypal",
 }
 
 // Loan subtypes
@@ -121,7 +121,7 @@ export enum PlaidLoanSubtype {
   MORTGAGE = "mortgage",
   OTHER = "other",
   OVERDRAFT = "overdraft",
-  STUDENT = "student"
+  STUDENT = "student",
 }
 
 // Investment subtypes
@@ -170,17 +170,17 @@ export enum PlaidInvestmentSubtype {
   TRUST = "trust",
   UGMA = "ugma",
   UTMA = "utma",
-  VARIABLE_ANNUITY = "variable annuity"
+  VARIABLE_ANNUITY = "variable annuity",
 }
 
 // Payroll subtypes
 export enum PlaidPayrollSubtype {
-  PAYROLL = "payroll"
+  PAYROLL = "payroll",
 }
 
 // Other subtypes
 export enum PlaidOtherSubtype {
-  OTHER = "other"
+  OTHER = "other",
 }
 
 // Union type for all possible subtypes
@@ -196,9 +196,8 @@ export type PlaidLinkToken = {
   link_token: string;
 };
 
-export type PlaidAccountLinkRequest = {
-  public_token: string;
-  account_id: string;
+export type PlaidExchangeTokenRequest = {
+  publicToken: string;
 };
 
 export type PlaidLinkedAccount = {
@@ -206,6 +205,10 @@ export type PlaidLinkedAccount = {
   account_name: string;
   account_type: PlaidAccountType;
   account_subtype: PlaidAccountSubtype | null;
+};
+
+export type PlaidExchangeTokenResponse = {
+  availableAccounts: PlaidLinkedAccount[];
 };
 
 export type PlaidAccountLinkResponse = {

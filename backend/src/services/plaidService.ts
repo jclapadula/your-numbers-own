@@ -76,6 +76,26 @@ export namespace plaidService {
     };
   };
 
+  export const saveLinkedAccounts = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    plaidAccounts: PlaidAccount[],
+    { accessToken, itemId }: { accessToken: string; itemId: string }
+  ) => {
+    await db
+      .insertInto("plaid_accounts")
+      .values(
+        plaidAccounts.map((plaidAccount) => ({
+          budget_id: budgetId,
+          account_id: null,
+          plaid_account_id: plaidAccount.account_id,
+          plaid_item_id: itemId,
+          access_token: accessToken,
+        }))
+      )
+      .execute();
+  };
+
   export const getAccounts = async (
     accessToken: string
   ): Promise<PlaidAccount[]> => {
@@ -176,15 +196,16 @@ export namespace plaidService {
     );
 
     for (const account of connectedAccounts) {
-      await syncTransactionsForAccount(
-        db,
-        account.budget_id,
-        account.account_id,
-        account.plaid_account_id,
-        plaidTransactions.filter(
-          (tx) => tx.account_id === account.plaid_account_id
-        )
-      );
+      account.account_id &&
+        (await syncTransactionsForAccount(
+          db,
+          account.budget_id,
+          account.account_id,
+          account.plaid_account_id,
+          plaidTransactions.filter(
+            (tx) => tx.account_id === account.plaid_account_id
+          )
+        ));
     }
   };
 
@@ -259,7 +280,6 @@ export namespace plaidService {
               plaid_transaction_id: plaidTx.transaction_id,
               plaid_account_id: plaidAccountId,
               merchant_name: plaidTx.merchant_name || null,
-              is_plaid_transaction: true,
             })
             .execute();
 

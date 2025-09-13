@@ -4,6 +4,12 @@ import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import { plaidService } from "../../services/plaidService";
 import { getAuthenticatedUser } from "../utils";
+import type {
+  PlaidAccountSubtype,
+  PlaidAccountType,
+  PlaidExchangeTokenRequest,
+  PlaidExchangeTokenResponse,
+} from "../../services/models";
 
 export const plaidRouter = Router();
 
@@ -22,25 +28,25 @@ plaidRouter.post("/plaid/link-token", async (req: Request, res: Response) => {
   }
 });
 
-// Exchange public token for access token and link account
 plaidRouter.post(
-  "/budgets/:budgetId/plaid/link-account",
-  async (req: Request<{ budgetId: string }>, res: Response) => {
+  "/budgets/:budgetId/plaid/exchange-token",
+  async (
+    req: Request<{ budgetId: string }, {}, PlaidExchangeTokenRequest>,
+    res: Response
+  ) => {
     try {
-      const { public_token, account_id } = req.body;
+      const { publicToken: public_token } = req.body;
       const { budgetId } = req.params;
 
-      if (!public_token || !account_id) {
+      if (!public_token) {
         res.status(400).json({ error: "Missing required fields" });
         return;
       }
 
-      // Exchange public token for access token
       const { accessToken, itemId } = await plaidService.exchangePublicToken(
         public_token
       );
 
-      // Get Plaid accounts
       const plaidAccounts = await plaidService.getAccounts(accessToken);
 
       if (plaidAccounts.length === 0) {
@@ -48,28 +54,21 @@ plaidRouter.post(
         return;
       }
 
-      // For now, link the first account. In a real app, you'd let user choose
-      const plaidAccount = plaidAccounts[0]!;
-
-      // Link the Plaid account to Your Numbers account
-      await plaidService.linkPlaidAccount(
-        db,
-        budgetId,
-        account_id,
+      await plaidService.saveLinkedAccounts(db, budgetId, plaidAccounts, {
         accessToken,
-        plaidAccount,
-        itemId
-      );
+        itemId,
+      });
+
+      const availableAccounts = plaidAccounts.map((plaidAccount) => ({
+        plaid_account_id: plaidAccount.account_id,
+        account_name: plaidAccount.name,
+        account_type: plaidAccount.type as unknown as PlaidAccountType,
+        account_subtype: plaidAccount.subtype as PlaidAccountSubtype | null,
+      }));
 
       res.json({
-        success: true,
-        linked_account: {
-          plaid_account_id: plaidAccount.account_id,
-          account_name: plaidAccount.name,
-          account_type: plaidAccount.type,
-          account_subtype: plaidAccount.subtype,
-        },
-      });
+        availableAccounts,
+      } satisfies PlaidExchangeTokenResponse);
     } catch (error) {
       console.error("Error linking account:", error);
       res.status(500).json({ error: "Failed to link account" });
