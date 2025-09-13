@@ -6,6 +6,7 @@ type ModalProps = {
   title: string;
   onSave?: () => void;
   disabled?: boolean;
+  onBack?: () => void;
 };
 
 export const Modal = ({
@@ -14,6 +15,7 @@ export const Modal = ({
   title,
   onSave,
   disabled,
+  onBack,
 }: ModalProps) => {
   const modalRef = useRef<HTMLDialogElement>(null);
 
@@ -29,23 +31,36 @@ export const Modal = ({
             <h2 className="text-lg font-bold">{title}</h2>
           </div>
           {children}
-          <div className="flex justify-end gap-2 mt-5">
-            <button
-              onClick={onClose}
-              className="btn btn-secondary btn-soft"
-              disabled={disabled}
-            >
-              Close
-            </button>
-            {onSave && (
+          <div className="flex justify-between gap-2 mt-5">
+            <div>
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="btn btn-ghost"
+                  disabled={disabled}
+                >
+                  Back
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
               <button
-                onClick={onSave}
-                className="btn btn-primary"
+                onClick={onClose}
+                className="btn btn-secondary btn-soft"
                 disabled={disabled}
               >
-                Save
+                Close
               </button>
-            )}
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  className="btn btn-primary"
+                  disabled={disabled}
+                >
+                  Save
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
