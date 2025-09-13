@@ -10,6 +10,7 @@ import type {
   ItemPublicTokenExchangeRequest,
   AccountsGetRequest,
   AccountBase as PlaidAccount,
+  TransactionsSyncRequest,
 } from "plaid";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
@@ -91,6 +92,49 @@ export namespace plaidService {
         }))
       )
       .execute();
+  };
+
+  export const connectPlaidAccounts = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    plaidAccountIds: string[]
+  ) => {
+    const accountsToConnect = await db
+      .selectFrom("plaid_accounts")
+      .where("plaid_account_id", "in", plaidAccountIds)
+      .where("budget_id", "=", budgetId)
+      .selectAll()
+      .execute();
+
+    if (accountsToConnect.length === 0) {
+      throw new Error("No accounts to connect");
+    }
+
+    const createdAccounts: string[] = [];
+
+    for (const account of accountsToConnect) {
+      await db.transaction().execute(async (db) => {
+        const { id: createdAccountId } = await db
+          .insertInto("accounts")
+          .values({
+            budgetId: budgetId,
+            name: account.account_name,
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        await db
+          .updateTable("plaid_accounts")
+          .set({
+            account_id: createdAccountId,
+          })
+          .where("id", "=", account.id)
+          .where("budget_id", "=", budgetId)
+          .execute();
+
+        createdAccounts.push(createdAccountId);
+      });
+    }
   };
 
   export const getAccounts = async (

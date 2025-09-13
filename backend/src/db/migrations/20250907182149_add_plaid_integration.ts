@@ -20,8 +20,9 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("plaid_account_id", "text", (col) => col.notNull())
     .addColumn("plaid_item_id", "text", (col) => col.notNull())
     .addColumn("access_token", "text", (col) => col.notNull())
-    .addColumn("account_name", "text")
-    .addColumn("account_type", "text")
+    .addColumn("next_cursor", "text")
+    .addColumn("account_name", "text", (col) => col.notNull())
+    .addColumn("account_type", "text", (col) => col.notNull())
     .addColumn("account_subtype", "text")
     .addColumn("created_at", "timestamptz", (col) =>
       col.defaultTo(sql`now()`).notNull()
@@ -41,6 +42,12 @@ export async function up(db: Kysely<any>): Promise<void> {
     .unique()
     .execute();
 
+  await db.schema
+    .createIndex("idx_plaid_accounts_account_id")
+    .on("plaid_accounts")
+    .column("account_id")
+    .execute();
+
   // Add Plaid-specific fields to transactions table
   await db.schema
     .alterTable("transactions")
@@ -53,7 +60,8 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createIndex("idx_transactions_plaid_id")
     .on("transactions")
-    .column("plaid_transaction_id")
+    .columns(["plaid_transaction_id", "plaid_account_id"])
+    .unique()
     .execute();
 }
 

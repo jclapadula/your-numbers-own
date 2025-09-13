@@ -9,7 +9,7 @@ interface SelectAccountModalProps {
   onLinkAccounts: (selectedAccounts: PlaidLinkedAccount[]) => void;
 }
 
-export const SelectAccountModal = ({
+export const SelectPlaidAccountsModal = ({
   onClose,
   onBack,
   availableAccounts,

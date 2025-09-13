@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useExchangeToken } from "../Plaid/PlaidQueries";
 import { AccountTypeSelectionModal } from "./AccountTypeSelectionModal";
 import { CreateUnlinkedAccountModal } from "./CreateUnlinkedAccountModal";
-import { SelectAccountModal } from "./SelectAccountModal";
+import { SelectPlaidAccountsModal } from "./SelectPlaidAccountsModal";
 import { useToast } from "../Common/ToastContext";
 import type { PlaidLinkedAccount } from "~/api/models";
 
@@ -16,7 +16,9 @@ enum Step {
 
 export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
   const [step, setStep] = useState<Step>(Step.SELECT_TYPE);
-  const [availableAccounts, setAvailableAccounts] = useState<PlaidLinkedAccount[]>([]);
+  const [availableAccounts, setAvailableAccounts] = useState<
+    PlaidLinkedAccount[]
+  >([]);
 
   const handleAccountTypeSelect = (type: AccountType) => {
     if (type === "unlinked") {
@@ -70,7 +72,7 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
 
   if (step === Step.SELECT_ACCOUNT) {
     return (
-      <SelectAccountModal
+      <SelectPlaidAccountsModal
         onClose={onClose}
         onBack={handleBack}
         availableAccounts={availableAccounts}

@@ -77,12 +77,13 @@ export interface Payees {
 export interface PlaidAccounts {
   access_token: string;
   account_id: string | null;
-  account_name: string | null;
+  account_name: string;
   account_subtype: string | null;
-  account_type: string | null;
+  account_type: string;
   budget_id: string;
   created_at: Generated<Timestamp>;
   id: Generated<string>;
+  next_cursor: string | null;
   plaid_account_id: string;
   plaid_item_id: string;
   updated_at: Generated<Timestamp>;
