@@ -119,7 +119,9 @@ export const CategoryRow = ({
       {showEditModal && (
         <RenameCategoryModal
           category={category}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => {
+            setShowEditModal(false);
+          }}
         />
       )}
       {showDeleteModal && (

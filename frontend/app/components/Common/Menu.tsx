@@ -9,7 +9,7 @@ type MenuProps = {
 
 export const Menu = ({ children, className }: MenuProps) => {
   return (
-    <div className={twMerge("dropdown", className)}>
+    <div className={twMerge("dropdown", className)} data-no-dnd>
       <div
         tabIndex={-1}
         role="button"

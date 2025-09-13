@@ -29,7 +29,7 @@ export const Modal = ({
   }, [onClose]);
 
   return (
-    <div className="modal modal-open">
+    <div className="modal modal-open" data-no-dnd>
       <div className="modal-box overflow-visible">
         <div className="flex flex-col gap-3">
           <div>

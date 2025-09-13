@@ -50,6 +50,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { twMerge } from "tailwind-merge";
+import { MouseSensor, TouchSensor } from "../Common/DnD";
 
 const TableHeaders = () => {
   const { selectedMonth } = useSelectedMonthContext();
@@ -197,7 +198,8 @@ export const MonthlyBudgetTable = ({
   } = useMonthlyBudgetData(monthlyBudget);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -220,7 +222,6 @@ export const MonthlyBudgetTable = ({
     if (isCategoryGroup(active)) {
       const categoryGroupContainers =
         droppableContainers.filter(isCategoryGroup);
-      console.log(categoryGroupContainers);
       return closestCenter({
         ...args,
         droppableContainers: categoryGroupContainers,
