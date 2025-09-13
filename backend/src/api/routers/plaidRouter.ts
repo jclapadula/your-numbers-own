@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import { plaidService } from "../../services/plaidService";
+import { plaidWebhookService } from "../../services/plaidWebhookService";
 import { getAuthenticatedUser } from "../utils";
 import type {
   PlaidAccountSubtype,
@@ -124,7 +125,7 @@ plaidRouter.post(
           .split("T")[0];
 
       // Process webhook to sync the transactions
-      await plaidService.handleTransactionsWebhook(
+      await plaidWebhookService.handleTransactionsWebhook(
         db,
         plaidAccount.plaid_item_id,
         "DEFAULT_UPDATE"

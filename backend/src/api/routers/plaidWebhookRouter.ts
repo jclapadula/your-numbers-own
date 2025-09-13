@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "../../db";
-import { plaidService } from "../../services/plaidService";
+import { plaidWebhookService } from "../../services/plaidWebhookService";
 import { json } from "express";
 
 export const plaidWebhookRouter = Router();
@@ -16,7 +16,7 @@ plaidWebhookRouter.post(
       const rawBody = JSON.stringify(req.body);
 
       // Verify webhook signature
-      const isValid = await plaidService.verifyWebhookSignature(
+      const isValid = await plaidWebhookService.verifyWebhookSignature(
         rawBody,
         signature
       );
@@ -33,10 +33,10 @@ plaidWebhookRouter.post(
       // Process the webhook based on type
       switch (webhook_type) {
         case "TRANSACTIONS":
-          await plaidService.handleTransactionsWebhook(db, item_id, webhook_code);
+          await plaidWebhookService.handleTransactionsWebhook(db, item_id, webhook_code);
           break;
         case "ITEM":
-          await plaidService.handleItemWebhook(db, item_id, webhook_code);
+          await plaidWebhookService.handleItemWebhook(db, item_id, webhook_code);
           break;
         default:
           console.log(`Unhandled webhook type: ${webhook_type}`);
