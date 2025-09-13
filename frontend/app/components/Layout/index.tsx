@@ -22,7 +22,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="drawer md:drawer-open">
+    <div className="drawer md:drawer-open" style={{ isolation: 'auto' }}>
       {showCreateAccountModal && (
         <CreateAccountModal onClose={() => setShowCreateAccountModal(false)} />
       )}
@@ -30,7 +30,7 @@ export default function Layout() {
       <div className="drawer-content flex flex-col items-center justify-center">
         <Outlet />
       </div>
-      <div className="drawer-side bg-base-200 !overflow-visible">
+      <div className="drawer-side bg-base-200 !overflow-visible" style={{ isolation: 'auto' }}>
         <div className="menu flex flex-col h-full justify-between">
           <ul className="w-64 p-4">
             <li>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 type ModalProps = {
   onClose: () => void;
@@ -17,14 +17,19 @@ export const Modal = ({
   disabled,
   onBack,
 }: ModalProps) => {
-  const modalRef = useRef<HTMLDialogElement>(null);
-
   useEffect(() => {
-    modalRef.current?.showModal();
-  }, []);
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
 
   return (
-    <dialog className="modal inset-0 absolute" ref={modalRef} onClose={onClose}>
+    <div className="modal modal-open">
       <div className="modal-box overflow-visible">
         <div className="flex flex-col gap-3">
           <div>
@@ -64,9 +69,7 @@ export const Modal = ({
           </div>
         </div>
       </div>
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={onClose}>close modal</button>
-      </form>
-    </dialog>
+      <div className="modal-backdrop" onClick={onClose}></div>
+    </div>
   );
 };

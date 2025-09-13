@@ -25,8 +25,12 @@ export namespace plaidService {
 
   const initializePlaidClient = () => {
     if (!plaidClient) {
+      const environment = process.env.PLAID_ENVIRONMENT === 'production'
+        ? PlaidEnvironments.production
+        : PlaidEnvironments.sandbox;
+
       const configuration = new Configuration({
-        basePath: PlaidEnvironments.sandbox, // Use sandbox for development, change to production when ready
+        basePath: environment,
         baseOptions: {
           headers: {
             "PLAID-CLIENT-ID": process.env.PLAID_CLIENT_ID!,

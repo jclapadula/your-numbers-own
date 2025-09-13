@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal } from "../Common/Modal";
 import { useCreateAccount } from "./AccountsQueries";
+import { PlaidLink } from "../Plaid/PlaidLink";
 
 type AccountType = "unlinked" | "linked";
 
@@ -15,11 +16,23 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
   const handleAccountTypeSelect = (type: AccountType) => {
     if (type === "unlinked") {
       setStep("create-unlinked");
-    } else {
-      // TODO: Start Plaid link process
-      console.log("Starting Plaid link process...");
-      onClose();
     }
+  };
+
+  const handlePlaidSuccess = async (publicToken: string, metadata: any) => {
+    try {
+      console.log("Plaid success!", { publicToken, metadata });
+      // TODO: Handle Plaid account linking
+      // For now, just close the modal
+      onClose();
+    } catch (error) {
+      console.error("Error with Plaid:", error);
+    }
+  };
+
+  const handlePlaidExit = () => {
+    // User cancelled or error occurred, show modal again
+    console.log("Plaid Link exited");
   };
 
   const handleSave = async (e?: React.FormEvent<HTMLFormElement>) => {
@@ -48,24 +61,24 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
           </p>
 
           <div className="grid grid-cols-1 gap-4">
-            <button
-              type="button"
-              onClick={() => handleAccountTypeSelect("linked")}
-              className="card bg-primary/5 border-2 border-primary hover:bg-primary/10 transition-colors p-6 text-left relative cursor-pointer"
-            >
-              <div className="absolute top-3 right-3">
-                <div className="badge badge-primary badge-sm">Recommended</div>
+            <PlaidLink onSuccess={handlePlaidSuccess} onExit={handlePlaidExit}>
+              <div className="card bg-primary/5 border-2 border-primary hover:bg-primary/10 transition-colors p-6 text-left relative cursor-pointer">
+                <div className="absolute top-3 right-3">
+                  <div className="badge badge-primary badge-sm">
+                    Recommended
+                  </div>
+                </div>
+                <div className="card-body p-0">
+                  <h3 className="card-title text-lg text-primary">
+                    Linked Bank Account
+                  </h3>
+                  <p className="text-sm text-base-content/70">
+                    Automatically sync transactions and balances from your bank.
+                    Secure connection via Plaid.
+                  </p>
+                </div>
               </div>
-              <div className="card-body p-0">
-                <h3 className="card-title text-lg text-primary">
-                  Linked Bank Account
-                </h3>
-                <p className="text-sm text-base-content/70">
-                  Automatically sync transactions and balances from your bank.
-                  Secure connection via Plaid.
-                </p>
-              </div>
-            </button>
+            </PlaidLink>
 
             <button
               type="button"
