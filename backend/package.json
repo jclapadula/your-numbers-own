@@ -32,6 +32,7 @@
   },
   "scripts": {
     "dev": "bun --inspect=6500/backend --watch index.ts",
+    "check": "tsc --noEmit",
     "db:create": "bun run src/db/scripts/create-migration.ts",
     "db:migrate": "bun run src/db/scripts/migrator.ts",
     "db:generate": "kysely-codegen --env-file=.env.development"

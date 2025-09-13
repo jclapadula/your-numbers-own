@@ -6,7 +6,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
@@ -36,7 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
-    "daisyui": "^5.0.9",
+    "daisyui": "^5.1.10",
     "react-router-devtools": "^1.1.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
