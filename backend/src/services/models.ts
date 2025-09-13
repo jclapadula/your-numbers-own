@@ -81,43 +81,64 @@ export type MonthlyBudget = {
 };
 
 export enum PlaidAccountType {
-  INVESTMENT = "investment",
-  CREDIT = "credit",
   DEPOSITORY = "depository",
+  CREDIT = "credit",
   LOAN = "loan",
-  BROKERAGE = "brokerage",
+  INVESTMENT = "investment",
+  PAYROLL = "payroll",
   OTHER = "other"
 }
 
-export enum PlaidAccountSubtype {
-  CHECKING = "checking",
-  SAVINGS = "savings",
-  HSA = "hsa",
+// Depository subtypes
+export enum PlaidDepositorySubtype {
+  CASH_MANAGEMENT = "cash management",
   CD = "cd",
+  CHECKING = "checking",
+  EBT = "ebt",
+  HSA = "hsa",
   MONEY_MARKET = "money market",
   PAYPAL = "paypal",
   PREPAID = "prepaid",
-  CASH_MANAGEMENT = "cash management",
-  EBT = "ebt",
+  SAVINGS = "savings"
+}
+
+// Credit subtypes
+export enum PlaidCreditSubtype {
   CREDIT_CARD = "credit card",
-  PAYPAL_CREDIT = "paypal credit",
+  PAYPAL = "paypal"
+}
+
+// Loan subtypes
+export enum PlaidLoanSubtype {
   AUTO = "auto",
   BUSINESS = "business",
   COMMERCIAL = "commercial",
   CONSTRUCTION = "construction",
   CONSUMER = "consumer",
   HOME_EQUITY = "home equity",
+  LINE_OF_CREDIT = "line of credit",
   LOAN = "loan",
   MORTGAGE = "mortgage",
+  OTHER = "other",
   OVERDRAFT = "overdraft",
-  LINE_OF_CREDIT = "line of credit",
-  STUDENT = "student",
+  STUDENT = "student"
+}
+
+// Investment subtypes
+export enum PlaidInvestmentSubtype {
+  PLAN_401A = "401a",
+  PLAN_401K = "401k",
+  PLAN_403B = "403b",
+  PLAN_457B = "457b",
+  PLAN_529 = "529",
+  BROKERAGE = "brokerage",
   CASH_ISA = "cash isa",
   CRYPTO_EXCHANGE = "crypto exchange",
   EDUCATION_SAVINGS_ACCOUNT = "education savings account",
   FIXED_ANNUITY = "fixed annuity",
   GIC = "gic",
   HEALTH_REIMBURSEMENT_ARRANGEMENT = "health reimbursement arrangement",
+  HSA = "hsa",
   IRA = "ira",
   ISA = "isa",
   KEOGH = "keogh",
@@ -129,11 +150,6 @@ export enum PlaidAccountSubtype {
   NON_TAXABLE_BROKERAGE_ACCOUNT = "non-taxable brokerage account",
   OTHER = "other",
   PENSION = "pension",
-  PLAN_401A = "401a",
-  PLAN_401K = "401k",
-  PLAN_403B = "403b",
-  PLAN_457B = "457b",
-  PLAN_529 = "529",
   PRIF = "prif",
   PROFIT_SHARING_PLAN = "profit sharing plan",
   RDSP = "rdsp",
@@ -156,6 +172,25 @@ export enum PlaidAccountSubtype {
   UTMA = "utma",
   VARIABLE_ANNUITY = "variable annuity"
 }
+
+// Payroll subtypes
+export enum PlaidPayrollSubtype {
+  PAYROLL = "payroll"
+}
+
+// Other subtypes
+export enum PlaidOtherSubtype {
+  OTHER = "other"
+}
+
+// Union type for all possible subtypes
+export type PlaidAccountSubtype =
+  | PlaidDepositorySubtype
+  | PlaidCreditSubtype
+  | PlaidLoanSubtype
+  | PlaidInvestmentSubtype
+  | PlaidPayrollSubtype
+  | PlaidOtherSubtype;
 
 export type PlaidLinkToken = {
   link_token: string;
