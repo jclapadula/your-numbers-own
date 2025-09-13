@@ -83,8 +83,6 @@ export interface PlaidAccounts {
   budget_id: string;
   created_at: Generated<Timestamp>;
   id: Generated<string>;
-  institution_id: string | null;
-  institution_name: string | null;
   plaid_account_id: string;
   plaid_item_id: string;
   updated_at: Generated<Timestamp>;

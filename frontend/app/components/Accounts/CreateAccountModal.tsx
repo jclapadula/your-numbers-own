@@ -4,6 +4,7 @@ import { AccountTypeSelectionModal } from "./AccountTypeSelectionModal";
 import { CreateUnlinkedAccountModal } from "./CreateUnlinkedAccountModal";
 import { SelectAccountModal } from "./SelectAccountModal";
 import { useToast } from "../Common/ToastContext";
+import type { PlaidLinkedAccount } from "~/api/models";
 
 type AccountType = "unlinked" | "linked";
 
@@ -15,6 +16,7 @@ enum Step {
 
 export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
   const [step, setStep] = useState<Step>(Step.SELECT_TYPE);
+  const [availableAccounts, setAvailableAccounts] = useState<PlaidLinkedAccount[]>([]);
 
   const handleAccountTypeSelect = (type: AccountType) => {
     if (type === "unlinked") {
@@ -26,10 +28,12 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
 
   const handlePlaidSuccess = async (publicToken: string, _metadata: any) => {
     try {
-      await exchangeToken({ publicToken: publicToken });
-      onClose();
+      const response = await exchangeToken({ publicToken: publicToken });
+      setAvailableAccounts(response.availableAccounts);
+      setStep(Step.SELECT_ACCOUNT);
     } catch (error) {
       console.error("Error with Plaid:", error);
+      setToast("Failed to connect to your bank account", "error");
     }
   };
 
@@ -41,6 +45,12 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
 
   const handleBack = () => {
     setStep(Step.SELECT_TYPE);
+  };
+
+  const handleLinkAccounts = (selectedAccounts: PlaidLinkedAccount[]) => {
+    // TODO: Implement account linking logic
+    console.log("Selected accounts to link:", selectedAccounts);
+    onClose();
   };
 
   if (step === Step.SELECT_TYPE) {
@@ -59,6 +69,13 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
   }
 
   if (step === Step.SELECT_ACCOUNT) {
-    return <SelectAccountModal onClose={onClose} />;
+    return (
+      <SelectAccountModal
+        onClose={onClose}
+        onBack={handleBack}
+        availableAccounts={availableAccounts}
+        onLinkAccounts={handleLinkAccounts}
+      />
+    );
   }
 };

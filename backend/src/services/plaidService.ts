@@ -85,6 +85,9 @@ export namespace plaidService {
           plaid_account_id: plaidAccount.account_id,
           plaid_item_id: itemId,
           access_token: accessToken,
+          account_name: plaidAccount.name,
+          account_type: plaidAccount.type,
+          account_subtype: plaidAccount.subtype,
         }))
       )
       .execute();
@@ -102,7 +105,6 @@ export namespace plaidService {
     const response = await client.accountsGet(request);
     return response.data.accounts;
   };
-
 
   export const getPlaidAccountByAccountId = async (
     db: Kysely<DB>,

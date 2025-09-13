@@ -9,7 +9,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error(err.stack);
+  console.error(err);
   res.status(500).send("Something went wrong!");
   next(err);
 };
@@ -17,6 +17,7 @@ export const errorHandler = (
 export const authenticate = auth({
   audience: "https://api.your-numbers.app",
   issuerBaseURL: `https://your-numbers.eu.auth0.com/`,
+  authRequired: true,
 });
 
 export const routerLogger = (

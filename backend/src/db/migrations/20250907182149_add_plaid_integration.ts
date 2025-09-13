@@ -1,4 +1,8 @@
 import { Kysely, sql } from "kysely";
+import {
+  createUpdateTimestampFunction,
+  dropUpdateTimestampFunction,
+} from "../scripts/utils";
 
 export async function up(db: Kysely<any>): Promise<void> {
   // Create table to store Plaid connected accounts
@@ -16,8 +20,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("plaid_account_id", "text", (col) => col.notNull())
     .addColumn("plaid_item_id", "text", (col) => col.notNull())
     .addColumn("access_token", "text", (col) => col.notNull())
-    .addColumn("institution_id", "text")
-    .addColumn("institution_name", "text")
     .addColumn("account_name", "text")
     .addColumn("account_type", "text")
     .addColumn("account_subtype", "text")
@@ -28,6 +30,8 @@ export async function up(db: Kysely<any>): Promise<void> {
       col.defaultTo(sql`now()`).notNull()
     )
     .execute();
+
+  await createUpdateTimestampFunction(db, "plaid_accounts");
 
   // Create unique index to prevent duplicate account connections
   await db.schema
@@ -61,6 +65,8 @@ export async function down(db: Kysely<any>): Promise<void> {
     .dropColumn("plaid_account_id")
     .dropColumn("merchant_name")
     .execute();
+
+  await dropUpdateTimestampFunction(db, "plaid_accounts");
 
   // Drop plaid accounts table
   await db.schema.dropTable("plaid_accounts").execute();
