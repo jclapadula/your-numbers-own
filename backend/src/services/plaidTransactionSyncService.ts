@@ -1,18 +1,12 @@
 import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
 import type {
-  TransactionsGetRequest,
   Transaction as PlaidTransaction,
-  WebhookVerificationKeyGetRequest,
   TransactionsSyncRequest,
   TransactionsSyncResponse,
   RemovedTransaction,
 } from "plaid";
 import type { Insertable, Kysely } from "kysely";
 import type { DB, Transactions } from "../db/models";
-import type { CreateTransaction } from "./models";
-import { transactionsService } from "./transactionsService";
-import crypto from "crypto";
-import { parseISO } from "date-fns";
 import { balanceUpdater } from "./balanceUpdater";
 import { accountBalanceService } from "./accountBalanceService";
 import { budgetsService } from "./budgetsService";
@@ -162,11 +156,14 @@ export namespace plaidTransactionSyncService {
       .selectAll()
       .executeTakeFirstOrThrow();
 
+    console.log({ account });
+
     const request: TransactionsSyncRequest = {
       access_token: account.access_token,
       options: {
         account_id: account.plaid_account_id,
       },
+      cursor: account.next_cursor || undefined,
     };
 
     const response = await client.transactionsSync(request);

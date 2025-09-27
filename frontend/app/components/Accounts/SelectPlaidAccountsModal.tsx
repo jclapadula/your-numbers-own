@@ -1,23 +1,25 @@
 import { useState } from "react";
 import { Modal } from "../Common/Modal";
 import type { PlaidLinkedAccount } from "~/api/models";
+import { useConnectPlaidAccounts } from "../Plaid/PlaidQueries";
 
 interface SelectAccountModalProps {
   onClose: () => void;
   onBack: () => void;
   availableAccounts: PlaidLinkedAccount[];
-  onLinkAccounts: (selectedAccounts: PlaidLinkedAccount[]) => void;
+  onSuccess?: () => void;
 }
 
 export const SelectPlaidAccountsModal = ({
   onClose,
   onBack,
   availableAccounts,
-  onLinkAccounts,
+  onSuccess,
 }: SelectAccountModalProps) => {
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(
     new Set()
   );
+  const connectAccountsMutation = useConnectPlaidAccounts();
 
   const handleToggleAccount = (accountId: string) => {
     const newSelected = new Set(selectedAccountIds);
@@ -39,11 +41,18 @@ export const SelectPlaidAccountsModal = ({
     }
   };
 
-  const handleLinkSelected = () => {
-    const selectedAccounts = availableAccounts.filter((acc) =>
-      selectedAccountIds.has(acc.plaid_account_id)
-    );
-    onLinkAccounts(selectedAccounts);
+  const handleLinkSelected = async () => {
+    const plaidAccountIds = Array.from(selectedAccountIds);
+
+    try {
+      await connectAccountsMutation.mutateAsync({
+        plaidAccountIds,
+      });
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Failed to connect accounts:", error);
+    }
   };
 
   const getAccountTypeDisplay = (account: PlaidLinkedAccount) => {
@@ -62,7 +71,8 @@ export const SelectPlaidAccountsModal = ({
       onBack={onBack}
       title="Select Accounts to Link"
       onSave={handleLinkSelected}
-      onSaveDisabled={selectedAccountIds.size === 0}
+      onSaveDisabled={selectedAccountIds.size === 0 || connectAccountsMutation.isPending}
+      saveText={connectAccountsMutation.isPending ? "Connecting..." : "Connect"}
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">

@@ -10,7 +10,10 @@ import type {
   PlaidAccountType,
   PlaidExchangeTokenRequest,
   PlaidExchangeTokenResponse,
+  PlaidConnectAccountsRequest,
+  PlaidConnectAccountsResponse,
 } from "../../services/models";
+import { plaidTransactionSyncService } from "../../services/plaidTransactionSyncService";
 
 export const plaidRouter = Router();
 
@@ -77,20 +80,35 @@ plaidRouter.post(
   }
 );
 
-// Get linked Plaid accounts for a budget
-plaidRouter.get(
-  "/budgets/:budgetId/plaid/accounts",
-  async (req: Request<{ budgetId: string }>, res: Response) => {
+// Connect selected Plaid accounts to create budget accounts
+plaidRouter.post(
+  "/budgets/:budgetId/plaid/connect-accounts",
+  async (
+    req: Request<{ budgetId: string }, {}, PlaidConnectAccountsRequest>,
+    res: Response
+  ) => {
     try {
+      const { plaidAccountIds } = req.body;
       const { budgetId } = req.params;
-      const plaidAccounts = await plaidService.getAllPlaidAccounts(
+
+      if (!plaidAccountIds || plaidAccountIds.length === 0) {
+        res.status(400).json({ error: "No plaidAccountIds provided" });
+        return;
+      }
+
+      const createdAccountIds = await plaidService.connectPlaidAccounts(
         db,
-        budgetId
+        budgetId,
+        plaidAccountIds
       );
-      res.json({ accounts: plaidAccounts });
+
+      res.json({
+        success: true,
+        createdAccountIds,
+      } satisfies PlaidConnectAccountsResponse);
     } catch (error) {
-      console.error("Error fetching Plaid accounts:", error);
-      res.status(500).json({ error: "Failed to fetch Plaid accounts" });
+      console.error("Error connecting Plaid accounts:", error);
+      res.status(500).json({ error: "Failed to connect Plaid accounts" });
     }
   }
 );
@@ -103,7 +121,7 @@ plaidRouter.post(
     res: Response
   ) => {
     try {
-      const { accountId } = req.params;
+      const { accountId, budgetId } = req.params;
       const { start_date, end_date } = req.body;
 
       // Get Plaid account info
@@ -125,10 +143,16 @@ plaidRouter.post(
           .split("T")[0];
 
       // Process webhook to sync the transactions
-      await plaidWebhookService.handleTransactionsWebhook(
+      // await plaidWebhookService.handleTransactionsWebhook(
+      //   db,
+      //   plaidAccount.plaid_item_id,
+      //   "DEFAULT_UPDATE"
+      // );
+
+      await plaidTransactionSyncService.syncTransactions(
         db,
-        plaidAccount.plaid_item_id,
-        "DEFAULT_UPDATE"
+        budgetId,
+        accountId
       );
 
       res.json({

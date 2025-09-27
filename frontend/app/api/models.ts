@@ -240,3 +240,12 @@ export type PlaidSyncResponse = {
     end_date: string;
   };
 };
+
+export type PlaidConnectAccountsRequest = {
+  plaidAccountIds: string[];
+};
+
+export type PlaidConnectAccountsResponse = {
+  success: boolean;
+  createdAccountIds: string[];
+};

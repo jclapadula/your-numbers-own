@@ -7,6 +7,8 @@ import type {
   PlaidAccountsResponse,
   PlaidSyncRequest,
   PlaidSyncResponse,
+  PlaidConnectAccountsRequest,
+  PlaidConnectAccountsResponse,
 } from "./models";
 
 export const usePlaidApi = () => {
@@ -31,6 +33,12 @@ export const usePlaidApi = () => {
     syncPlaidAccount: (accountId: string, data: PlaidSyncRequest = {}) =>
       httpClient.post<PlaidSyncResponse>(
         `/budgets/${budgetId}/accounts/${accountId}/plaid/sync`,
+        data
+      ),
+
+    connectPlaidAccounts: (data: PlaidConnectAccountsRequest) =>
+      httpClient.post<PlaidConnectAccountsResponse>(
+        `/budgets/${budgetId}/plaid/connect-accounts`,
         data
       ),
   };

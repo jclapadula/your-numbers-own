@@ -24,10 +24,10 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("account_name", "text", (col) => col.notNull())
     .addColumn("account_type", "text", (col) => col.notNull())
     .addColumn("account_subtype", "text")
-    .addColumn("created_at", "timestamptz", (col) =>
+    .addColumn("createdAt", "timestamptz", (col) =>
       col.defaultTo(sql`now()`).notNull()
     )
-    .addColumn("updated_at", "timestamptz", (col) =>
+    .addColumn("updatedAt", "timestamptz", (col) =>
       col.defaultTo(sql`now()`).notNull()
     )
     .execute();

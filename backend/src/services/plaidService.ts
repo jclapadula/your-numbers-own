@@ -14,6 +14,7 @@ import type {
 } from "plaid";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
+import { plaidTransactionSyncService } from "./plaidTransactionSyncService";
 
 export namespace plaidService {
   let plaidClient: PlaidApi;
@@ -135,6 +136,12 @@ export namespace plaidService {
         createdAccounts.push(createdAccountId);
       });
     }
+
+    createdAccounts.forEach((accountId) => {
+      plaidTransactionSyncService.syncTransactions(db, budgetId, accountId);
+    });
+
+    return createdAccounts;
   };
 
   export const getAccounts = async (
@@ -159,16 +166,5 @@ export namespace plaidService {
       .selectAll()
       .where("account_id", "=", accountId)
       .executeTakeFirst();
-  };
-
-  export const getAllPlaidAccounts = async (
-    db: Kysely<DB>,
-    budgetId: string
-  ) => {
-    return await db
-      .selectFrom("plaid_accounts")
-      .selectAll()
-      .where("budget_id", "=", budgetId)
-      .execute();
   };
 }

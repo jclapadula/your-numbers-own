@@ -4,10 +4,11 @@ import { useAccounts } from "../Accounts/AccountsQueries";
 import type { BudgetAccount, Transaction } from "~/api/models";
 import Amount from "../Amount";
 import { useState } from "react";
-import { PencilIcon } from "@heroicons/react/16/solid";
+import { PencilIcon, ArrowPathIcon } from "@heroicons/react/16/solid";
 import { EditAccountModal } from "../Accounts/EditAccountModal";
 import { AccountTransactionsList } from "./TransactionsList/TransactionsList";
 import { AccountTransactionsContextProvider } from "./AccountTransactionsContext";
+import { useSyncPlaidAccount } from "../Plaid/PlaidQueries";
 
 const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
   const [editingAccount, setEditingAccount] = useState<BudgetAccount | null>(
@@ -15,8 +16,13 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
   );
 
   const { data: accounts } = useAccounts();
+  const syncPlaidAccount = useSyncPlaidAccount();
 
   const account = accounts?.find((account) => account.id === accountId);
+
+  const handleSync = () => {
+    syncPlaidAccount.mutate({ accountId });
+  };
 
   if (!account) return null;
 
@@ -29,6 +35,13 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
           onClick={() => setEditingAccount(account)}
         >
           <PencilIcon className="text-secondary size-4" />
+        </button>
+        <button
+          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleSync}
+          disabled={syncPlaidAccount.isPending}
+        >
+          <ArrowPathIcon className={`text-secondary size-4 ${syncPlaidAccount.isPending ? 'animate-spin' : ''}`} />
         </button>
       </div>
       <h2>

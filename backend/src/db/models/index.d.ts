@@ -81,12 +81,12 @@ export interface PlaidAccounts {
   account_subtype: string | null;
   account_type: string;
   budget_id: string;
-  created_at: Generated<Timestamp>;
+  createdAt: Generated<Timestamp>;
   id: Generated<string>;
   next_cursor: string | null;
   plaid_account_id: string;
   plaid_item_id: string;
-  updated_at: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
 }
 
 export interface Transactions {
