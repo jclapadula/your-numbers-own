@@ -6,6 +6,11 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  // Auth routes (no layout)
+  route("/login", "./routes/login.tsx"),
+  route("/register", "./routes/register.tsx"),
+
+  // Protected routes (with layout)
   layout("./components/layout.tsx", [
     index("routes/budget.tsx"),
     route(

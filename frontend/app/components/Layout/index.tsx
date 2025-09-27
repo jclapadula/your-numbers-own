@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuth } from "../Auth/AuthContext";
 import { AccountsList } from "./AccountsList";
 import { CreateAccountModal } from "../Accounts/CreateAccountModal";
 import { useLogin } from "./useLogin";
@@ -8,7 +8,7 @@ import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 export default function Layout() {
   const { isLoading, isAuthenticated } = useLogin();
-  const { logout } = useAuth0();
+  const { logout } = useAuth();
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
   const { budgetId } = useCurrentBudgetContext();
   const { pathname } = useLocation();
@@ -65,9 +65,7 @@ export default function Layout() {
             <li>
               <button
                 className="btn btn-sm btn-secondary btn-soft"
-                onClick={() =>
-                  logout({ logoutParams: { returnTo: window.location.origin } })
-                }
+                onClick={() => logout()}
               >
                 Log out
               </button>

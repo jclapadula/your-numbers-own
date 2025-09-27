@@ -1,7 +1,6 @@
-import { Auth0Provider } from "@auth0/auth0-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { config } from "~/config";
+import { useState } from "react";
+import { AuthProvider } from "./Auth/AuthContext";
 import { CurrentBudgetProvider } from "./Contexts/CurrentBudgetContext";
 import { ToastProvider } from "./Common/ToastContext";
 import { SelectedMonthProvider } from "./Budget/SelectedMonthContext";
@@ -23,22 +22,8 @@ export const ContextProviders = ({
       })
   );
 
-  const [redirectUri, setRedirectUri] = useState("");
-
-  useEffect(() => {
-    setRedirectUri(window?.location?.origin);
-  }, []);
-
   return (
-    <Auth0Provider
-      domain={config.auth0.domain}
-      clientId={config.auth0.clientId}
-      authorizationParams={{
-        redirect_uri: redirectUri,
-        audience: config.auth0.audience,
-      }}
-      useRefreshTokens
-    >
+    <AuthProvider>
       <ToastProvider>
         <QueryClientProvider client={queryClient}>
           <CurrentBudgetProvider>
@@ -49,6 +34,6 @@ export const ContextProviders = ({
           </CurrentBudgetProvider>
         </QueryClientProvider>
       </ToastProvider>
-    </Auth0Provider>
+    </AuthProvider>
   );
 };
