@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from "express";
-import { auth } from "express-oauth2-jwt-bearer";
 import { getAuthenticatedUser } from "./utils";
 import { db } from "../db";
 
@@ -14,11 +13,17 @@ export const errorHandler = (
   next(err);
 };
 
-export const authenticate = auth({
-  audience: "https://api.your-numbers.app",
-  issuerBaseURL: `https://your-numbers.eu.auth0.com/`,
-  authRequired: true,
-});
+export const authenticate = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  next();
+};
 
 export const routerLogger = (
   req: Request,

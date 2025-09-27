@@ -8,10 +8,12 @@ import { monthlyBudgetsRouter } from "./routers/monthlyBudgetRouter";
 import { categoriesRouter } from "./routers/categoriesRouter";
 import { plaidRouter } from "./routers/plaidRouter";
 import { plaidWebhookRouter } from "./routers/plaidWebhookRouter";
+import authRouter from "./routers/authRouter";
 export const mainRouter = Router();
 
 mainRouter.use(bodyParser.json());
 
+mainRouter.use("/auth", authRouter);
 mainRouter.use(usersRouter);
 mainRouter.use(accountsRouter);
 mainRouter.use(transactionsRouter);

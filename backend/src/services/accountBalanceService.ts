@@ -5,7 +5,7 @@ import { db } from "../db";
 import { getMonthOfYear } from "./utils";
 import { budgetsService } from "./budgetsService";
 import type { ZonedDate } from "./ZonedDate";
-import { TZDate } from "@date-fns/tz";
+import { toZonedTime } from "date-fns-tz";
 
 export namespace accountBalanceService {
   const getEarliestAffectedMonth = (
@@ -88,7 +88,7 @@ export namespace accountBalanceService {
     const { year: endYear, month: endMonth } = end;
 
     while (year < endYear || (year === endYear && month <= endMonth)) {
-      const monthStart = new TZDate(year, month - 1, 1, timezone);
+      const monthStart = toZonedTime(new Date(year, month - 1, 1), timezone);
       const monthEnd = endOfMonth(monthStart);
 
       // Sum only the transactions for this month

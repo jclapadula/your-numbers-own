@@ -104,10 +104,12 @@ export interface Transactions {
 }
 
 export interface Users {
+  createdAt: Generated<Timestamp>;
   email: string;
-  externalId: string;
   id: Generated<string>;
+  passwordHash: string;
   timeZone: Generated<string>;
+  updatedAt: Generated<Timestamp>;
 }
 
 export interface DB {

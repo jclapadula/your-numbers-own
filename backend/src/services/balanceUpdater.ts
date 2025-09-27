@@ -5,9 +5,9 @@ import { getMonthOfYear, getNextMonthOfYear, isBefore } from "./utils";
 import { endOfMonth } from "date-fns";
 import { categoryIdOrNull, monthOfYearIs } from "../db/utils";
 import type { ZonedDate } from "./ZonedDate";
-import { TZDate } from "@date-fns/tz";
 import { budgetsService } from "./budgetsService";
 import { categoriesService } from "./categoriesService";
+import { toZonedTime } from "date-fns-tz";
 
 export namespace balanceUpdater {
   const getEarliestAffectedMonthByCategory = (
@@ -103,7 +103,7 @@ export namespace balanceUpdater {
 
     let { year, month } = start;
     while (year < endYear || (year === endYear && month <= endMonth)) {
-      const monthStart = new TZDate(year, month - 1, 1, timezone);
+      const monthStart = toZonedTime(new Date(year, month - 1, 1), timezone);
       const monthEnd = endOfMonth(monthStart);
 
       const spentOnMonthResult = await db

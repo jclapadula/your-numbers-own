@@ -1,26 +1,11 @@
 import type { NextFunction, Request } from "express";
-import { db } from "../db";
+import type { UserRow } from "../services/authService";
 
-const getExternalUserId = (req: Request) => {
-  return req.auth?.payload.sub;
-};
-
-export const getAuthenticatedUser = async (req: Request) => {
-  const externalUserId = getExternalUserId(req);
-
-  if (!externalUserId) {
+export const getAuthenticatedUser = async (req: Request): Promise<UserRow> => {
+  if (!req.user) {
     throw new Error("User not authenticated");
   }
 
-  const user = await db
-    .selectFrom("users")
-    .where("externalId", "=", externalUserId)
-    .selectAll()
-    .executeTakeFirst();
-
-  if (!user) {
-    throw new Error("User not found");
-  }
-
+  const user = req.user as UserRow;
   return user;
 };
