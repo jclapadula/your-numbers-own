@@ -7,6 +7,7 @@ import cors from "cors";
 import { config } from "./src/config";
 import dotenv from "dotenv";
 import passport from "./src/config/passport";
+import { PostgresSessionStore } from "./src/config/sessionStore";
 
 // Load environment variables
 const envFile =
@@ -27,6 +28,7 @@ app.use(express.json());
 
 app.use(
   session({
+    store: new PostgresSessionStore(),
     secret: process.env.SESSION_SECRET || "your-fallback-secret-change-in-production",
     resave: false,
     saveUninitialized: false,

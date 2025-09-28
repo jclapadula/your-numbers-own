@@ -11,6 +11,18 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
 
 export type Int8 = ColumnType<number, number | string, number | string>;
 
+export type Json = JsonValue;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [x: string]: JsonValue | undefined;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface AccountPartialBalances {
@@ -89,6 +101,12 @@ export interface PlaidAccounts {
   updatedAt: Generated<Timestamp>;
 }
 
+export interface Sessions {
+  expire: Timestamp;
+  sess: Json;
+  sid: string;
+}
+
 export interface Transactions {
   accountId: string;
   amount: Generated<Int8>;
@@ -122,6 +140,7 @@ export interface DB {
   monthly_category_budgets: MonthlyCategoryBudgets;
   payees: Payees;
   plaid_accounts: PlaidAccounts;
+  sessions: Sessions;
   transactions: Transactions;
   users: Users;
 }
