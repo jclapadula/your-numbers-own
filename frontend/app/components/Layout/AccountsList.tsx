@@ -20,9 +20,9 @@ export const AccountsList = () => {
               accountId === account.id && "text-primary font-semibold"
             )}
           >
-            <div className="flex justify-between items-baseline">
+            <div className="flex justify-between items-center">
               <span>{account.name}</span>
-              <Amount amount={account.balance} />
+              <Amount amount={account.balance} className="text-nowrap" />
             </div>
           </Link>
         </li>

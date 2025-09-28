@@ -1,11 +1,12 @@
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTransactions } from "./TransactionsQueries";
 import { useAccounts } from "../Accounts/AccountsQueries";
 import type { BudgetAccount, Transaction } from "~/api/models";
 import Amount from "../Amount";
 import { useState } from "react";
-import { PencilIcon, ArrowPathIcon } from "@heroicons/react/16/solid";
+import { PencilIcon, ArrowPathIcon, TrashIcon } from "@heroicons/react/16/solid";
 import { EditAccountModal } from "../Accounts/EditAccountModal";
+import { DeleteAccountModal } from "../Accounts/DeleteAccountModal";
 import { AccountTransactionsList } from "./TransactionsList/TransactionsList";
 import { AccountTransactionsContextProvider } from "./AccountTransactionsContext";
 import { useSyncPlaidAccount } from "../Plaid/PlaidQueries";
@@ -14,14 +15,24 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
   const [editingAccount, setEditingAccount] = useState<BudgetAccount | null>(
     null
   );
+  const [deletingAccount, setDeletingAccount] = useState<BudgetAccount | null>(
+    null
+  );
 
   const { data: accounts } = useAccounts();
   const syncPlaidAccount = useSyncPlaidAccount();
+  const navigate = useNavigate();
 
   const account = accounts?.find((account) => account.id === accountId);
 
   const handleSync = () => {
     syncPlaidAccount.mutate({ accountId });
+  };
+
+  const handleAccountDeleted = () => {
+    setDeletingAccount(null);
+    // Navigate back to a safe location since the account no longer exists
+    navigate("/");
   };
 
   if (!account) return null;
@@ -43,6 +54,12 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
         >
           <ArrowPathIcon className={`text-secondary size-4 ${syncPlaidAccount.isPending ? 'animate-spin' : ''}`} />
         </button>
+        <button
+          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => setDeletingAccount(account)}
+        >
+          <TrashIcon className="text-error size-4" />
+        </button>
       </div>
       <h2>
         {<Amount className="text-lg font-bold" amount={account.balance} />}
@@ -52,6 +69,14 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
         <EditAccountModal
           onClose={() => setEditingAccount(null)}
           account={editingAccount}
+        />
+      )}
+
+      {deletingAccount && (
+        <DeleteAccountModal
+          onClose={() => setDeletingAccount(null)}
+          account={deletingAccount}
+          onDeleted={handleAccountDeleted}
         />
       )}
     </div>

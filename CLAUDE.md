@@ -98,6 +98,11 @@ The application uses a PostgreSQL database with the following core entities:
 - **Balance calculations**: Account and budget balances are computed and stored in separate tables
 - **Session persistence**: Sessions are stored in PostgreSQL `sessions` table with automatic cleanup
 - **Password security**: User passwords are hashed with bcryptjs before storage
+- **Soft deletion**: Accounts use soft deletion with `deletedAt` timestamp column
+  - Always filter accounts with `WHERE deletedAt IS NULL` to exclude soft-deleted accounts
+  - When joining transactions with accounts, include the soft deletion filter
+  - Balance calculations automatically exclude soft-deleted accounts through proper joins
+  - Category operations clean up transactions from soft-deleted accounts (set categoryId to null)
 
 ### Type Safety
 

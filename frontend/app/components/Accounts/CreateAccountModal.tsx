@@ -49,12 +49,6 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
     setStep(Step.SELECT_TYPE);
   };
 
-  const handleLinkAccounts = (selectedAccounts: PlaidLinkedAccount[]) => {
-    // TODO: Implement account linking logic
-    console.log("Selected accounts to link:", selectedAccounts);
-    onClose();
-  };
-
   if (step === Step.SELECT_TYPE) {
     return (
       <AccountTypeSelectionModal
@@ -76,7 +70,6 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
         onClose={onClose}
         onBack={handleBack}
         availableAccounts={availableAccounts}
-        onLinkAccounts={handleLinkAccounts}
       />
     );
   }

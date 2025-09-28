@@ -8,6 +8,8 @@ type ModalProps = {
   onSaveDisabled?: boolean;
   disabled?: boolean;
   onBack?: () => void;
+  saveButtonText?: string;
+  saveButtonClass?: string;
 };
 
 export const Modal = ({
@@ -18,6 +20,8 @@ export const Modal = ({
   onSaveDisabled,
   disabled,
   onBack,
+  saveButtonText = "Save",
+  saveButtonClass = "btn-primary",
 }: ModalProps) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -61,10 +65,10 @@ export const Modal = ({
               {onSave && (
                 <button
                   onClick={onSave}
-                  className="btn btn-primary"
+                  className={`btn ${saveButtonClass}`}
                   disabled={disabled || onSaveDisabled}
                 >
-                  Save
+                  {saveButtonText}
                 </button>
               )}
             </div>

@@ -71,8 +71,12 @@ export const SelectPlaidAccountsModal = ({
       onBack={onBack}
       title="Select Accounts to Link"
       onSave={handleLinkSelected}
-      onSaveDisabled={selectedAccountIds.size === 0 || connectAccountsMutation.isPending}
-      saveText={connectAccountsMutation.isPending ? "Connecting..." : "Connect"}
+      onSaveDisabled={
+        selectedAccountIds.size === 0 || connectAccountsMutation.isPending
+      }
+      saveButtonText={
+        connectAccountsMutation.isPending ? "Connecting..." : "Connect"
+      }
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">

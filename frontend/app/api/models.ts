@@ -6,6 +6,7 @@ export type BudgetAccount = {
   id: string;
   name: string;
   balance: number;
+  deletedAt?: string | null;
 };
 
 export type Transaction = {
