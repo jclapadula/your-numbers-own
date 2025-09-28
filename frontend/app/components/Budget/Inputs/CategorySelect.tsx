@@ -1,8 +1,16 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useCategories } from "../Categories/CategoriesQueries";
 import { useCategoryGroups } from "../CategoryGroups/CategoryGroupsQueries";
 import { twMerge } from "tailwind-merge";
 import type { Category } from "~/api/models";
+import { useDropdownArrowNavigation } from "../../Common/useDropdownArrowNavigation";
 
 type CategoryInputProps = {
   value: string | null;
@@ -17,6 +25,27 @@ type CategoryInputProps = {
   categoryFilter?: (category: Category) => boolean;
 };
 
+const noFilter = () => true;
+
+const sortCategoriesByGroupOrder = (
+  categoryGroups: { id: string; position: number }[]
+) => {
+  return (a: Category, b: Category) => {
+    const groupA = categoryGroups.find((g) => g.id === a.groupId);
+    const groupB = categoryGroups.find((g) => g.id === b.groupId);
+
+    if (!groupA || !groupB) return 0;
+
+    // First sort by group position
+    if (groupA.position !== groupB.position) {
+      return groupA.position - groupB.position;
+    }
+
+    // Then sort by category position within group
+    return a.position - b.position;
+  };
+};
+
 export const CategorySelect = ({
   value,
   onCategorySelected,
@@ -24,22 +53,47 @@ export const CategorySelect = ({
   variant = "compact",
   autoFocus = false,
   containerRef,
-  categoryFilter = () => true,
+  categoryFilter = noFilter,
 }: CategoryInputProps) => {
   const { data: categories = [] } = useCategories();
   const { data: categoryGroups = [] } = useCategoryGroups();
   const [searchTerm, setSearchTerm] = useState(value || "");
 
-  const filteredCategories = categories
-    .filter((category) =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter(categoryFilter);
+  const filteredCategories = useMemo(() => {
+    return categories
+      .filter((category) =>
+        category.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .filter(categoryFilter)
+      .sort(sortCategoriesByGroupOrder(categoryGroups));
+  }, [categories, searchTerm, categoryFilter, categoryGroups]);
+
+  const divRef = useRef<HTMLDivElement>(null);
+
+  const {
+    setFocusedItemIndex,
+    focusOnNextElement,
+    focusOnPreviousElement,
+    resetArrowsFocus,
+  } = useDropdownArrowNavigation({
+    items: filteredCategories,
+    dataAttribute: "data-categoryId",
+    containerRef: divRef,
+  });
+
+  const handleBlur = useCallback(() => {
+    onBlur?.();
+    resetArrowsFocus();
+  }, [onBlur, resetArrowsFocus]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef?.current?.contains(event.target as Node)) {
-        onBlur?.();
+      if (
+        divRef.current !== event.target &&
+        !divRef.current?.contains(event.target as Node) &&
+        !containerRef?.current?.contains(event.target as Node)
+      ) {
+        handleBlur();
       }
     };
 
@@ -48,7 +102,7 @@ export const CategorySelect = ({
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [handleBlur, containerRef]);
 
   useEffect(() => {
     setSearchTerm(value || "");
@@ -63,7 +117,26 @@ export const CategorySelect = ({
           className="opacity-0 h-0 w-0"
         />
       )}
-      <div className="dropdown">
+      <div
+        className="dropdown"
+        ref={divRef}
+        onKeyDown={(e) => {
+          if (e.key === "Tab") {
+            handleBlur();
+          }
+          if (e.key === "ArrowDown") {
+            focusOnNextElement();
+            e.preventDefault();
+          }
+          if (e.key === "ArrowUp") {
+            focusOnPreviousElement();
+            e.preventDefault();
+          }
+          if (e.key === "Escape") {
+            handleBlur();
+          }
+        }}
+      >
         <input
           name="category"
           type="text"
@@ -101,20 +174,27 @@ export const CategorySelect = ({
                 >
                   <span className="text-[13px]">{group.name}</span>
                 </li>
-                {groupCategories.map((category) => (
-                  <li key={category.id}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCategorySelected(category.id);
-                        (document.activeElement as HTMLElement)?.blur();
-                      }}
-                      className="text-[13px]"
-                    >
-                      {category.name}
-                    </button>
-                  </li>
-                ))}
+                {groupCategories.map((category) => {
+                  const categoryIndex = filteredCategories.findIndex(
+                    (c) => c.id === category.id
+                  );
+                  return (
+                    <li key={category.id}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCategorySelected(category.id);
+                          (document.activeElement as HTMLElement)?.blur();
+                        }}
+                        onFocus={() => setFocusedItemIndex(categoryIndex)}
+                        data-categoryId={category.id}
+                        className="text-[13px]"
+                      >
+                        {category.name}
+                      </button>
+                    </li>
+                  );
+                })}
               </Fragment>
             );
           })}

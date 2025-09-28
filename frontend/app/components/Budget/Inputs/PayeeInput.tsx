@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useCreatePayee, usePayees } from "../budgetQueries";
+import { useDropdownArrowNavigation } from "../../Common/useDropdownArrowNavigation";
 
 type PayeeInputProps = {
   value: string | null;
@@ -19,9 +20,26 @@ export const PayeeInput = ({
   const { mutateAsync: createPayee } = useCreatePayee();
   const [searchTerm, setSearchTerm] = useState(value || "");
 
-  const filteredPayees = payees.filter((payee) =>
-    payee.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPayees = useMemo(
+    () =>
+      payees.filter((payee) =>
+        payee.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [payees, searchTerm]
   );
+
+  const divRef = useRef<HTMLDivElement>(null);
+
+  const {
+    setFocusedItemIndex,
+    focusOnNextElement,
+    focusOnPreviousElement,
+    resetArrowsFocus,
+  } = useDropdownArrowNavigation({
+    items: filteredPayees,
+    dataAttribute: "data-payeeId",
+    containerRef: divRef,
+  });
 
   const handleCreatePayee = async () => {
     if (!searchTerm.trim()) {
@@ -40,14 +58,18 @@ export const PayeeInput = ({
     onPayeeSelected(newPayee.id);
   };
 
-  const divRef = useRef<HTMLDivElement>(null);
+  const handleBlur = useCallback(() => {
+    onBlur();
+    resetArrowsFocus();
+  }, [onBlur, resetArrowsFocus]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         divRef.current !== event.target &&
         !divRef.current?.contains(event.target as Node)
       ) {
-        onBlur();
+        handleBlur();
       }
     };
 
@@ -56,14 +78,32 @@ export const PayeeInput = ({
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [handleBlur]);
 
   useEffect(() => {
     setSearchTerm(value || "");
   }, [value]);
 
   return (
-    <div className={twMerge("dropdown", className)} ref={divRef}>
+    <div
+      className={twMerge("dropdown", className)}
+      ref={divRef}
+      onKeyDown={(e) => {
+        if (e.key === "Tab") {
+          // So we jump to the next input
+          handleBlur();
+        }
+        if (e.key === "ArrowDown") {
+          focusOnNextElement();
+        }
+        if (e.key === "ArrowUp") {
+          focusOnPreviousElement();
+        }
+        if (e.key === "Escape") {
+          handleBlur();
+        }
+      }}
+    >
       <input
         type="text"
         value={searchTerm}
@@ -76,9 +116,6 @@ export const PayeeInput = ({
           if (e.key === "Enter") {
             handleCreatePayee();
           }
-          if (e.key === "Escape") {
-            onBlur();
-          }
         }}
         autoFocus
       />
@@ -87,13 +124,15 @@ export const PayeeInput = ({
           "dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs min-w-full"
         )}
       >
-        {filteredPayees.map((payee) => (
+        {filteredPayees.map((payee, index) => (
           <li key={payee.id}>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onPayeeSelected(payee.id);
               }}
+              onFocus={() => setFocusedItemIndex(index)}
+              data-payeeId={payee.id}
             >
               {payee.name}
             </button>
