@@ -31,7 +31,6 @@ import {
 import {
   DndContext,
   KeyboardSensor,
-  PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -44,7 +43,6 @@ import {
   type Over,
 } from "@dnd-kit/core";
 import {
-  rectSwappingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -197,13 +195,7 @@ export const MonthlyBudgetTable = ({
     categories,
   } = useMonthlyBudgetData(monthlyBudget);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
   const { mutateAsync: moveCategoryGroup, isPending: isMovingCategoryGroup } =
     useMoveCategoryGroup();

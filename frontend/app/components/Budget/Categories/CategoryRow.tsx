@@ -6,7 +6,10 @@ import type { Category } from "~/api/models";
 import { Menu, MenuItem } from "~/components/Common/Menu";
 import { RenameCategoryModal } from "./RenameCategoryModal";
 import { DeleteCategoryModal } from "./DeleteCategoryModal";
-import { CategoryAssignedBudgetInput } from "./CategoryAssignedBudgetInput";
+import {
+  CategoryAssignedBudgetInput,
+  CategoryAssignedBudgetInputDataType,
+} from "./CategoryAssignedBudgetInput";
 import { useUpdateMonthlyBudget } from "../MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "../SelectedMonthContext";
 import { twMerge } from "tailwind-merge";
@@ -20,26 +23,31 @@ type CategoryRowProps = {
   balance: number;
 };
 
-const focusNextElement = (currentElement: HTMLElement) => {
-  var divsWithTabIndex = "div[tabindex]:not([tabindex='-1'])";
-  if (currentElement) {
-    var focusable = Array.prototype.filter.call(
-      document.querySelectorAll(divsWithTabIndex),
-      function (element) {
-        //check for visibility while always include the current activeElement
-        return (
-          element.offsetWidth > 0 ||
-          element.offsetHeight > 0 ||
-          element === currentElement
-        );
-      }
-    );
-    var index = focusable.indexOf(currentElement);
-    if (index > -1) {
-      var nextElement = focusable[index + 1] || focusable[0];
-      nextElement.focus();
-    }
+const focusNextElement = (currentElement: HTMLElement, dir: "up" | "down") => {
+  if (!currentElement) {
+    return;
   }
+
+  var divsWithTabIndex = `div[data-type="${CategoryAssignedBudgetInputDataType}"]`;
+
+  var focusableDivs = (
+    [...document.querySelectorAll(divsWithTabIndex)] as HTMLElement[]
+  ).filter((element) => {
+    return (
+      element.offsetWidth > 0 ||
+      element.offsetHeight > 0 ||
+      element === currentElement
+    );
+  });
+
+  var index = focusableDivs.indexOf(currentElement);
+  if (index < 0) {
+    return;
+  }
+
+  const nextIndex = dir === "up" ? index - 1 : index + 1;
+  var nextElement = focusableDivs.at(nextIndex);
+  nextElement && nextElement?.focus();
 };
 
 export const CategoryRow = ({
@@ -102,7 +110,7 @@ export const CategoryRow = ({
                 monthOfYear: selectedMonth,
               });
             }}
-            onNext={focusNextElement}
+            onJumpFocus={focusNextElement}
           />
         </BudgetedCell>
         <SpentCell>

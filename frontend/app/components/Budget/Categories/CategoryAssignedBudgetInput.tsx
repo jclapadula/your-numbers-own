@@ -5,14 +5,16 @@ type CategoryAssignedBudgetInputProps = {
   rawValue: number | null;
   onChange: (value: number) => void;
   focusable?: boolean;
-  onNext?: (currentElement: HTMLElement) => void;
+  onJumpFocus: (currentElement: HTMLElement, dir: "up" | "down") => void;
 };
+
+export const CategoryAssignedBudgetInputDataType = "category-budget-amount";
 
 export const CategoryAssignedBudgetInput = ({
   rawValue,
   onChange,
   focusable = false,
-  onNext,
+  onJumpFocus,
 }: CategoryAssignedBudgetInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -40,6 +42,7 @@ export const CategoryAssignedBudgetInput = ({
       tabIndex={focusable ? 0 : undefined}
       ref={divRef}
       data-no-dnd
+      data-type={CategoryAssignedBudgetInputDataType}
     >
       {isFocused ? (
         <input
@@ -66,8 +69,11 @@ export const CategoryAssignedBudgetInput = ({
             if (e.key === "Enter") {
               (e.target as any).blur();
             }
-            if (e.key === "Enter" && onNext) {
-              divRef.current && onNext(divRef.current);
+            if (e.key === "Enter") {
+              divRef.current && onJumpFocus(divRef.current, "down");
+            }
+            if (e.shiftKey && e.key === "Tab") {
+              divRef.current && onJumpFocus(divRef.current, "up");
             }
           }}
           accept="[0-9]*[.,]?[0-9]*"
