@@ -5,7 +5,9 @@ import { db } from "../db";
 import { getMonthOfYear } from "./utils";
 import { budgetsService } from "./budgetsService";
 import type { ZonedDate } from "./ZonedDate";
+import { toZonedDate } from "./ZonedDate";
 import { toZonedTime } from "date-fns-tz";
+import { balanceUpdater } from "./balanceUpdater";
 
 export namespace accountBalanceService {
   const getEarliestAffectedMonth = (
@@ -214,5 +216,43 @@ export namespace accountBalanceService {
         "account_partial_balances.balance",
       ])
       .execute();
+  };
+
+  export const recalculateAllBudgetBalancesAfterDelete = async (
+    db: Kysely<DB>,
+    budgetId: string
+  ) => {
+    // Find the earliest transaction date per category across all remaining (non-deleted) accounts
+    const earliestTransactionsByCategory = await db
+      .selectFrom("transactions")
+      .innerJoin("accounts", "transactions.accountId", "accounts.id")
+      .where("accounts.budgetId", "=", budgetId)
+      .where("accounts.deletedAt", "is", null)
+      .select(["transactions.categoryId"])
+      .select((eb) => eb.fn.min("transactions.date").as("earliestDate"))
+      .groupBy("transactions.categoryId")
+      .execute();
+
+    if (earliestTransactionsByCategory.length === 0) {
+      return;
+    }
+
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
+    // Convert to the format expected by balanceUpdater.updateMonthlyBalances
+    const modifiedTransactions = earliestTransactionsByCategory.map(
+      ({ categoryId, earliestDate }) => ({
+        date: toZonedDate(new Date(earliestDate), timezone),
+        categories: [categoryId],
+      })
+    );
+
+    // Use the existing balance updater to recalculate monthly balances
+    // It will automatically propagate from these earliest dates forward
+    await balanceUpdater.updateMonthlyBalances(
+      db,
+      budgetId,
+      modifiedTransactions
+    );
   };
 }

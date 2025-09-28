@@ -100,32 +100,37 @@ export namespace plaidTransactionSyncService {
         .execute();
 
       const addedAndModified = [...response.added, ...response.modified];
-      await db
-        .insertInto("transactions")
-        .values(
-          addedAndModified.map(
-            (tx) =>
-              ({
-                accountId,
-                plaid_account_id: accountId,
-                plaid_transaction_id: tx.transaction_id,
-                merchant_name: tx.merchant_name || null,
-                date: tx.date,
-                amount: -tx.amount,
-                isReconciled: !tx.pending,
-                notes: tx.merchant_name || tx.original_description,
-              } satisfies Insertable<Transactions>)
+      console.log({ addedAndModified });
+      if (addedAndModified.length) {
+        await db
+          .insertInto("transactions")
+          .values(
+            addedAndModified.map(
+              (tx) =>
+                ({
+                  accountId,
+                  plaid_account_id: accountId,
+                  plaid_transaction_id: tx.transaction_id,
+                  merchant_name: tx.merchant_name || null,
+                  date: tx.datetime || tx.date,
+                  amount: -tx.amount * 100,
+                  isReconciled: !tx.pending,
+                  notes: tx.merchant_name || tx.original_description,
+                } satisfies Insertable<Transactions>)
+            )
           )
-        )
-        .onConflict((oc) =>
-          oc.columns(["plaid_transaction_id", "plaid_account_id"]).doUpdateSet({
-            merchant_name: (eb) => eb.ref("excluded.merchant_name"),
-            date: (eb) => eb.ref("excluded.date"),
-            amount: (eb) => eb.ref("excluded.amount"),
-            isReconciled: (eb) => eb.ref("excluded.isReconciled"),
-          })
-        )
-        .execute();
+          .onConflict((oc) =>
+            oc
+              .columns(["plaid_account_id", "plaid_transaction_id"])
+              .doUpdateSet({
+                merchant_name: (eb) => eb.ref("excluded.merchant_name"),
+                date: (eb) => eb.ref("excluded.date"),
+                amount: (eb) => eb.ref("excluded.amount"),
+                isReconciled: (eb) => eb.ref("excluded.isReconciled"),
+              })
+          )
+          .execute();
+      }
 
       await db
         .updateTable("plaid_accounts")
@@ -155,8 +160,6 @@ export namespace plaidTransactionSyncService {
       .where("account_id", "=", accountId)
       .selectAll()
       .executeTakeFirstOrThrow();
-
-    console.log({ account });
 
     const request: TransactionsSyncRequest = {
       access_token: account.access_token,

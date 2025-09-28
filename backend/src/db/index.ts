@@ -1,6 +1,10 @@
-// import { Database } from './types.ts' // this is the Database interface we defined earlier
 import { Pool, types } from "pg";
-import { Kysely, PostgresDialect } from "kysely";
+import {
+  Kysely,
+  PostgresDialect,
+  HandleEmptyInListsPlugin,
+  replaceWithNoncontingentExpression,
+} from "kysely";
 import type { DB } from "./models";
 import { env } from "bun";
 
@@ -18,4 +22,9 @@ const dialect = new PostgresDialect({
 
 export const db = new Kysely<DB>({
   dialect,
+  plugins: [
+    new HandleEmptyInListsPlugin({
+      strategy: replaceWithNoncontingentExpression,
+    }),
+  ],
 });

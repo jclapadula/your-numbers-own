@@ -19,7 +19,10 @@ const port = 8080;
 
 app.use(
   cors({
-    origin: config.env === "development" ? "http://localhost:5173" : "https://app.your-numbers.app",
+    origin:
+      config.env === "development"
+        ? "http://localhost:5173"
+        : "https://app.your-numbers.app",
     credentials: true,
   })
 );
@@ -29,7 +32,8 @@ app.use(express.json());
 app.use(
   session({
     store: new PostgresSessionStore(),
-    secret: process.env.SESSION_SECRET || "your-fallback-secret-change-in-production",
+    secret:
+      process.env.SESSION_SECRET || "your-fallback-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
     cookie: {

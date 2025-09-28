@@ -17,6 +17,7 @@ accountsRouter.get(
     const accounts = await db
       .selectFrom("accounts")
       .where("budgetId", "=", req.params.budgetId)
+      .where("deletedAt", "is", null)
       .selectAll()
       .execute();
 
@@ -79,14 +80,23 @@ accountsRouter.delete(
     req: Request<{ budgetId: string; accountId: string }>,
     res: Response
   ) => {
-    const user = await getAuthenticatedUser(req);
     const { accountId = "" } = req.params;
 
-    await db
-      .deleteFrom("accounts")
-      .where("id", "=", accountId)
-      .where("budgetId", "=", req.params.budgetId)
-      .execute();
+    await db.transaction().execute(async (db) => {
+      await db
+        .updateTable("accounts")
+        .set({ deletedAt: new Date() })
+        .where("id", "=", accountId)
+        .where("budgetId", "=", req.params.budgetId)
+        .where("deletedAt", "is", null)
+        .execute();
+
+      // Recalculate all budget balances after account deletion
+      await accountBalanceService.recalculateAllBudgetBalancesAfterDelete(
+        db,
+        req.params.budgetId
+      );
+    });
 
     res.status(200).send({});
   }

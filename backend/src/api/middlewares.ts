@@ -69,6 +69,7 @@ export const authorizeRequest = async (
       .select(db.fn.countAll().as("count"))
       .where("id", "=", params.accountId)
       .where("budgetId", "=", params.budgetId || "")
+      .where("deletedAt", "is", null)
       .executeTakeFirstOrThrow();
 
     if (count === 0) {

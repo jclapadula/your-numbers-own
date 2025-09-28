@@ -110,6 +110,7 @@ export namespace balanceUpdater {
         .selectFrom("transactions")
         .innerJoin("accounts", "transactions.accountId", "accounts.id")
         .where("accounts.budgetId", "=", budgetId)
+        .where("accounts.deletedAt", "is", null)
         .where(categoryIdOrNull(categoryId))
         .where("date", ">=", monthStart)
         .where("date", "<=", monthEnd)

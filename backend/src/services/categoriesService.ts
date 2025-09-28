@@ -130,12 +130,39 @@ export namespace categoriesService {
     }
   };
 
+  const unassignCategoryFromDeletedAccountsTransactions = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    categoryId: string
+  ) => {
+    await db
+      .updateTable("transactions")
+      .set({ categoryId: null })
+      .where("categoryId", "=", categoryId)
+      .where(
+        "accountId",
+        "in",
+        db
+          .selectFrom("accounts")
+          .select("id")
+          .where("budgetId", "=", budgetId)
+          .where("deletedAt", "is not", null)
+      )
+      .execute();
+  };
+
   const moveTransactionsToOtherCategory = async (
     db: Kysely<DB>,
     budgetId: string,
     categoryId: string,
     moveToCategoryId: string
   ) => {
+    await unassignCategoryFromDeletedAccountsTransactions(
+      db,
+      budgetId,
+      categoryId
+    );
+
     const { earliestTransactionDate } =
       (await db
         .selectFrom("transactions")
