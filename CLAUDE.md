@@ -62,7 +62,8 @@ bun start
 
 The application uses a PostgreSQL database with the following core entities:
 
-- **Users**: Auth0 authenticated users with timezone settings
+- **Users**: Email/password authenticated users with timezone settings
+- **Sessions**: PostgreSQL-stored user sessions for login persistence across deployments
 - **Budgets**: User-owned budget containers with timezone support
 - **Accounts**: Bank accounts within budgets
 - **CategoryGroups** & **Categories**: Hierarchical expense/income categorization
@@ -74,14 +75,16 @@ The application uses a PostgreSQL database with the following core entities:
 
 - `/src/api/`: Express.js routes and middleware
 - `/src/services/`: Business logic and data access layer
+- `/src/config/`: Passport configuration and custom session store
 - `/src/db/`: Database configuration, migrations, and generated types
 - Database types are auto-generated using `kysely-codegen`
 
 ### Frontend Structure
 
-- `/app/api/`: HTTP client and API layer
+- `/app/api/`: HTTP client and API layer (session-based authentication)
 - `/app/components/`: React components organized by feature
-- `/app/routes/`: React Router pages
+- `/app/components/Auth/`: Authentication forms and context
+- `/app/routes/`: React Router pages including `/login` and `/register`
 - Uses React Query for server state management
 - TailwindCSS + DaisyUI for styling
 - HeroIcons for icons
@@ -93,6 +96,8 @@ The application uses a PostgreSQL database with the following core entities:
 - **CategoryId nullability**: The `categoryId` column can be null - use appropriate null-safe comparisons in queries (not just `=`)
 - **Timezone handling**: Budgets have timezone settings for proper date calculations
 - **Balance calculations**: Account and budget balances are computed and stored in separate tables
+- **Session persistence**: Sessions are stored in PostgreSQL `sessions` table with automatic cleanup
+- **Password security**: User passwords are hashed with bcryptjs before storage
 
 ### Type Safety
 
@@ -102,8 +107,11 @@ The application uses a PostgreSQL database with the following core entities:
 
 ### Authentication
 
-- Uses Auth0 for authentication with `express-oauth2-jwt-bearer` middleware
-- Users are identified by external Auth0 IDs
+- Uses Passport.js with local strategy for email/password authentication
+- Session-based authentication with PostgreSQL session store
+- Passwords hashed with bcryptjs (12 salt rounds)
+- Sessions persist across server restarts and deployments
+- Users are identified by internal database IDs
 
 ## Common Development Tasks
 
@@ -121,10 +129,27 @@ The application uses a PostgreSQL database with the following core entities:
 2. Add corresponding client function in `/frontend/app/api/`
 3. Create React Query hooks in appropriate `/frontend/app/components/*/Queries.ts`
 
+### Authentication Endpoints
+
+- `POST /auth/register` - User registration with email and password
+- `POST /auth/login` - User login with email and password
+- `POST /auth/logout` - User logout and session cleanup
+- `GET /auth/me` - Get current authenticated user info
+- `POST /users/me` - Ensure user budget exists (called after login)
+
 ## Important Notes
 
 - Uses Bun as the JavaScript runtime instead of Node.js
 - Database operations use Kysely for type-safe queries
 - Frontend uses React Router v7 with file-based routing
 - Drag-and-drop functionality for category management using `@dnd-kit`
-- the `authorizeRequest` middleware checks if the different entities in the route (budgetId, accountId, etc), belong to the same user, checking that they have access
+- The `authorizeRequest` middleware checks if the different entities in the route (budgetId, accountId, etc), belong to the same user, checking that they have access
+
+## Environment Variables
+
+### Required Backend Environment Variables
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `SESSION_SECRET` - Secret key for session encryption (change in production)
+- `NODE_ENV` - Environment (development/production)
+- `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENVIRONMENT` - Plaid integration settings
