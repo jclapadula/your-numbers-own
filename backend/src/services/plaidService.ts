@@ -10,7 +10,7 @@ import type {
   ItemPublicTokenExchangeRequest,
   AccountsGetRequest,
   AccountBase as PlaidAccount,
-  TransactionsSyncRequest,
+  ItemRemoveRequest,
 } from "plaid";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
@@ -92,6 +92,15 @@ export namespace plaidService {
           account_subtype: plaidAccount.subtype,
         }))
       )
+      .onConflict((oc) =>
+        oc.columns(["plaid_account_id", "budget_id"]).doUpdateSet({
+          plaid_item_id: (eb) => eb.ref("excluded.plaid_item_id"),
+          access_token: (eb) => eb.ref("excluded.access_token"),
+          account_name: (eb) => eb.ref("excluded.account_name"),
+          account_type: (eb) => eb.ref("excluded.account_type"),
+          account_subtype: (eb) => eb.ref("excluded.account_subtype"),
+        })
+      )
       .execute();
   };
 
@@ -166,5 +175,15 @@ export namespace plaidService {
       .selectAll()
       .where("account_id", "=", accountId)
       .executeTakeFirst();
+  };
+
+  export const removeItem = async (accessToken: string) => {
+    const client = initializePlaidClient();
+
+    const request: ItemRemoveRequest = {
+      access_token: accessToken,
+    };
+
+    await client.itemRemove(request);
   };
 }

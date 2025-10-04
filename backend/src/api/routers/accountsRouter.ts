@@ -2,9 +2,9 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
-import { getAuthenticatedUser } from "../utils";
 import type { CreateAccount, BudgetAccount } from "../../services/models";
 import { accountBalanceService } from "../../services/accountBalanceService";
+import { accountsService } from "../../services/accountsService";
 
 export const accountsRouter = Router();
 
@@ -40,8 +40,6 @@ accountsRouter.get(
 accountsRouter.post(
   "/budgets/:budgetId/accounts",
   async (req: Request<{ budgetId: string }>, res: Response) => {
-    const user = await getAuthenticatedUser(req);
-
     const { name } = req.body as CreateAccount;
 
     await db
@@ -59,7 +57,6 @@ accountsRouter.put(
     req: Request<{ budgetId: string; accountId: string }>,
     res: Response
   ) => {
-    const user = await getAuthenticatedUser(req);
     const { accountId = "" } = req.params;
     const { name } = req.body as CreateAccount;
 
@@ -80,23 +77,9 @@ accountsRouter.delete(
     req: Request<{ budgetId: string; accountId: string }>,
     res: Response
   ) => {
-    const { accountId = "" } = req.params;
+    const { accountId = "", budgetId } = req.params;
 
-    await db.transaction().execute(async (db) => {
-      await db
-        .updateTable("accounts")
-        .set({ deletedAt: new Date() })
-        .where("id", "=", accountId)
-        .where("budgetId", "=", req.params.budgetId)
-        .where("deletedAt", "is", null)
-        .execute();
-
-      // Recalculate all budget balances after account deletion
-      await accountBalanceService.recalculateAllBudgetBalancesAfterDelete(
-        db,
-        req.params.budgetId
-      );
-    });
+    await accountsService.deleteAccount(db, budgetId, accountId);
 
     res.status(200).send({});
   }
