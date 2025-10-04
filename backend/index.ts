@@ -27,7 +27,20 @@ app.use(
   })
 );
 
-app.use(express.json());
+declare module "http" {
+  // eslint-disable-next-line no-unused-vars
+  interface IncomingMessage {
+    rawBody: string;
+  }
+}
+
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  })
+);
 
 app.use(
   session({

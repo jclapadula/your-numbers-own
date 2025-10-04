@@ -1,8 +1,4 @@
-import {
-  PlaidApi,
-  Configuration,
-  PlaidEnvironments,
-} from "plaid";
+import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
 import type {
   TransactionsGetRequest,
   Transaction as PlaidTransaction,
@@ -12,7 +8,12 @@ import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
 import type { CreateTransaction } from "./models";
 import { transactionsService } from "./transactionsService";
-import crypto from "crypto";
+// @ts-ignore
+import compare from "secure-compare";
+import { jwtDecode } from "jwt-decode";
+import * as JWT from "jose";
+import { sha256 } from "js-sha256";
+import type { IncomingHttpHeaders } from "http";
 
 export namespace plaidWebhookService {
   let plaidClient: PlaidApi;
@@ -198,34 +199,40 @@ export namespace plaidWebhookService {
     }
   };
 
+  // Single cached key instead of a Map
+  let cachedKey: any = null;
+
   export const verifyWebhookSignature = async (
-    requestBody: string,
-    plaidSignature: string
+    body: string,
+    headers: IncomingHttpHeaders
   ): Promise<boolean> => {
     try {
-      const client = initializePlaidClient();
-      const signatureParts = plaidSignature.split(".");
-      if (signatureParts.length !== 2) {
-        return false;
+      const signedJwt = headers["plaid-verification"] as string;
+      const decodedToken = jwtDecode(signedJwt);
+      const decodedTokenHeader = jwtDecode(signedJwt, { header: true });
+      const currentKeyID = decodedTokenHeader.kid;
+
+      if (!cachedKey) {
+        const client = initializePlaidClient();
+        const request: WebhookVerificationKeyGetRequest = {
+          key_id: currentKeyID || "",
+        };
+        const response = await client.webhookVerificationKeyGet(request);
+        cachedKey = response.data.key;
       }
 
-      const request: WebhookVerificationKeyGetRequest = {
-        key_id: signatureParts[0]!,
-      };
+      const keyLike = await JWT.importJWK(cachedKey);
+      await JWT.jwtVerify(signedJwt, keyLike, {
+        maxTokenAge: "5 min",
+      });
 
-      const response = await client.webhookVerificationKeyGet(request);
-      const jwk = response.data.key;
-
-      // For webhook verification, you'll need to properly verify the JWT
-      // This is a simplified version - in production you should use a proper JWT library
-      const verify = crypto.createVerify("SHA256");
-      verify.update(requestBody);
-      verify.end();
-
-      // Note: This is a placeholder - you'll need proper JWT verification
-      return true; // Simplified for now
+      // Compare hashes
+      const bodyHash = sha256(body);
+      const claimedBodyHash = (decodedToken as any).request_body_sha256;
+      console.log({ body, bodyHash, claimedBodyHash });
+      return compare(bodyHash, claimedBodyHash);
     } catch (error) {
-      console.error("Webhook signature verification failed:", error);
+      console.error(`Webhook signature verification failed:${error}`);
       return false;
     }
   };

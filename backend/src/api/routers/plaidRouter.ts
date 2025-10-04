@@ -3,7 +3,6 @@ import type { Request, Response } from "express";
 import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import { plaidService } from "../../services/plaidService";
-import { plaidWebhookService } from "../../services/plaidWebhookService";
 import { getAuthenticatedUser } from "../utils";
 import type {
   PlaidConnectAccountsRequest,
@@ -60,7 +59,9 @@ plaidRouter.post(
       });
 
       // Auto-connect all available accounts
-      const plaidAccountIds = plaidAccounts.map((account) => account.account_id);
+      const plaidAccountIds = plaidAccounts.map(
+        (account) => account.account_id
+      );
       const createdAccountIds = await plaidService.connectPlaidAccounts(
         db,
         budgetId,
@@ -77,7 +78,6 @@ plaidRouter.post(
     }
   }
 );
-
 
 // Manual sync endpoint (for testing or manual refresh)
 plaidRouter.post(

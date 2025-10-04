@@ -32,16 +32,20 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "jose": "^6.1.0",
+    "js-sha256": "^0.11.1",
+    "jwt-decode": "^4.0.0",
     "kysely": "^0.28.7",
     "kysely-codegen": "^0.19.0",
     "lodash": "^4.17.21",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pg": "^8.14.1",
-    "plaid": "^38.1.0"
+    "plaid": "^38.1.0",
+    "secure-compare": "^3.0.1"
   },
   "scripts": {
-    "dev": "bun --watch index.ts",
+    "dev": "bun --watch run index.ts",
     "check": "tsc --noEmit",
     "db:create": "bun run src/db/scripts/create-migration.ts",
     "db:migrate": "bun run src/db/scripts/migrator.ts",

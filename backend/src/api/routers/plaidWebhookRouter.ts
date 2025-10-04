@@ -8,17 +8,14 @@ export const plaidWebhookRouter = Router();
 
 // Webhook endpoint (no authentication required for webhooks)
 plaidWebhookRouter.post(
-  "/plaid/webhook",
+  "/api/plaid/webhook",
   json({ type: "text" }), // Get raw body for signature verification
   async (req: Request, res: Response) => {
     try {
-      const signature = req.get("plaid-verification") || "";
-      const rawBody = JSON.stringify(req.body);
-
-      // Verify webhook signature
+      console.log(req.rawBody);
       const isValid = await plaidWebhookService.verifyWebhookSignature(
-        rawBody,
-        signature
+        req.rawBody,
+        req.headers
       );
       if (!isValid) {
         console.log("Invalid webhook signature");
@@ -33,10 +30,18 @@ plaidWebhookRouter.post(
       // Process the webhook based on type
       switch (webhook_type) {
         case "TRANSACTIONS":
-          await plaidWebhookService.handleTransactionsWebhook(db, item_id, webhook_code);
+          await plaidWebhookService.handleTransactionsWebhook(
+            db,
+            item_id,
+            webhook_code
+          );
           break;
         case "ITEM":
-          await plaidWebhookService.handleItemWebhook(db, item_id, webhook_code);
+          await plaidWebhookService.handleItemWebhook(
+            db,
+            item_id,
+            webhook_code
+          );
           break;
         default:
           console.log(`Unhandled webhook type: ${webhook_type}`);

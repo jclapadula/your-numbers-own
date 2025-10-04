@@ -1,4 +1,4 @@
-import type { NextFunction, Request } from "express";
+import type { Request } from "express";
 import type { UserRow } from "../services/authService";
 
 export const getAuthenticatedUser = async (req: Request): Promise<UserRow> => {
