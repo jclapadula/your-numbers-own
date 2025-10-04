@@ -6,10 +6,6 @@ import { plaidService } from "../../services/plaidService";
 import { plaidWebhookService } from "../../services/plaidWebhookService";
 import { getAuthenticatedUser } from "../utils";
 import type {
-  PlaidAccountSubtype,
-  PlaidAccountType,
-  PlaidExchangeTokenRequest,
-  PlaidExchangeTokenResponse,
   PlaidConnectAccountsRequest,
   PlaidConnectAccountsResponse,
 } from "../../services/models";
@@ -33,9 +29,9 @@ plaidRouter.post("/plaid/link-token", async (req: Request, res: Response) => {
 });
 
 plaidRouter.post(
-  "/budgets/:budgetId/plaid/exchange-token",
+  "/budgets/:budgetId/plaid/connect-accounts",
   async (
-    req: Request<{ budgetId: string }, {}, PlaidExchangeTokenRequest>,
+    req: Request<{ budgetId: string }, {}, PlaidConnectAccountsRequest>,
     res: Response
   ) => {
     try {
@@ -63,39 +59,8 @@ plaidRouter.post(
         itemId,
       });
 
-      const availableAccounts = plaidAccounts.map((plaidAccount) => ({
-        plaid_account_id: plaidAccount.account_id,
-        account_name: plaidAccount.name,
-        account_type: plaidAccount.type as unknown as PlaidAccountType,
-        account_subtype: plaidAccount.subtype as PlaidAccountSubtype | null,
-      }));
-
-      res.json({
-        availableAccounts,
-      } satisfies PlaidExchangeTokenResponse);
-    } catch (error) {
-      console.error("Error linking account:", error);
-      res.status(500).json({ error: "Failed to link account" });
-    }
-  }
-);
-
-// Connect selected Plaid accounts to create budget accounts
-plaidRouter.post(
-  "/budgets/:budgetId/plaid/connect-accounts",
-  async (
-    req: Request<{ budgetId: string }, {}, PlaidConnectAccountsRequest>,
-    res: Response
-  ) => {
-    try {
-      const { plaidAccountIds } = req.body;
-      const { budgetId } = req.params;
-
-      if (!plaidAccountIds || plaidAccountIds.length === 0) {
-        res.status(400).json({ error: "No plaidAccountIds provided" });
-        return;
-      }
-
+      // Auto-connect all available accounts
+      const plaidAccountIds = plaidAccounts.map((account) => account.account_id);
       const createdAccountIds = await plaidService.connectPlaidAccounts(
         db,
         budgetId,
@@ -107,11 +72,12 @@ plaidRouter.post(
         createdAccountIds,
       } satisfies PlaidConnectAccountsResponse);
     } catch (error) {
-      console.error("Error connecting Plaid accounts:", error);
-      res.status(500).json({ error: "Failed to connect Plaid accounts" });
+      console.error("Error linking account:", error);
+      res.status(500).json({ error: "Failed to link account" });
     }
   }
 );
+
 
 // Manual sync endpoint (for testing or manual refresh)
 plaidRouter.post(

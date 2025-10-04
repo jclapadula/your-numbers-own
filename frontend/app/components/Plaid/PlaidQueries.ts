@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlaidApi } from "~/api/plaidApi";
-import type { PlaidExchangeTokenRequest, PlaidSyncRequest, PlaidConnectAccountsRequest } from "~/api/models";
+import type { PlaidConnectAccountsRequest, PlaidSyncRequest } from "~/api/models";
 
 export const plaidQueryKeys = {
   linkToken: ["plaid", "link-token"],
@@ -15,11 +15,15 @@ export const useCreateLinkToken = () => {
   });
 };
 
-export const useExchangeToken = () => {
-  const { exchangeToken } = usePlaidApi();
+export const useConnectAccounts = () => {
+  const { connectAccounts } = usePlaidApi();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: PlaidExchangeTokenRequest) => exchangeToken(data),
+    mutationFn: (data: PlaidConnectAccountsRequest) => connectAccounts(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
   });
 };
 
@@ -46,16 +50,3 @@ export const useSyncPlaidAccount = () => {
   });
 };
 
-export const useConnectPlaidAccounts = () => {
-  const { connectPlaidAccounts } = usePlaidApi();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: PlaidConnectAccountsRequest) => connectPlaidAccounts(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["accounts"],
-      });
-    },
-  });
-};

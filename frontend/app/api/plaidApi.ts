@@ -2,13 +2,11 @@ import { useCurrentBudgetContext } from "~/components/Contexts/CurrentBudgetCont
 import { useHttpClient } from "./httpClient";
 import type {
   PlaidLinkToken,
-  PlaidExchangeTokenRequest,
-  PlaidExchangeTokenResponse,
+  PlaidConnectAccountsRequest,
+  PlaidConnectAccountsResponse,
   PlaidAccountsResponse,
   PlaidSyncRequest,
   PlaidSyncResponse,
-  PlaidConnectAccountsRequest,
-  PlaidConnectAccountsResponse,
 } from "./models";
 
 export const usePlaidApi = () => {
@@ -19,9 +17,9 @@ export const usePlaidApi = () => {
     createLinkToken: () =>
       httpClient.post<PlaidLinkToken>("/plaid/link-token", {}),
 
-    exchangeToken: (data: PlaidExchangeTokenRequest) =>
-      httpClient.post<PlaidExchangeTokenResponse>(
-        `/budgets/${budgetId}/plaid/exchange-token`,
+    connectAccounts: (data: PlaidConnectAccountsRequest) =>
+      httpClient.post<PlaidConnectAccountsResponse>(
+        `/budgets/${budgetId}/plaid/connect-accounts`,
         data
       ),
 
@@ -33,12 +31,6 @@ export const usePlaidApi = () => {
     syncPlaidAccount: (accountId: string, data: PlaidSyncRequest = {}) =>
       httpClient.post<PlaidSyncResponse>(
         `/budgets/${budgetId}/accounts/${accountId}/plaid/sync`,
-        data
-      ),
-
-    connectPlaidAccounts: (data: PlaidConnectAccountsRequest) =>
-      httpClient.post<PlaidConnectAccountsResponse>(
-        `/budgets/${budgetId}/plaid/connect-accounts`,
         data
       ),
   };

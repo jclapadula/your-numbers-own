@@ -1,24 +1,18 @@
 import { useState } from "react";
-import { useExchangeToken } from "../Plaid/PlaidQueries";
+import { useConnectAccounts } from "../Plaid/PlaidQueries";
 import { AccountTypeSelectionModal } from "./AccountTypeSelectionModal";
 import { CreateUnlinkedAccountModal } from "./CreateUnlinkedAccountModal";
-import { SelectPlaidAccountsModal } from "./SelectPlaidAccountsModal";
 import { useToast } from "../Common/ToastContext";
-import type { PlaidLinkedAccount } from "~/api/models";
 
 type AccountType = "unlinked" | "linked";
 
 enum Step {
   SELECT_TYPE = "select-type",
   CREATE_UNLINKED = "create-unlinked",
-  SELECT_ACCOUNT = "select-account",
 }
 
 export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
   const [step, setStep] = useState<Step>(Step.SELECT_TYPE);
-  const [availableAccounts, setAvailableAccounts] = useState<
-    PlaidLinkedAccount[]
-  >([]);
 
   const handleAccountTypeSelect = (type: AccountType) => {
     if (type === "unlinked") {
@@ -26,20 +20,19 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const { mutateAsync: exchangeToken } = useExchangeToken();
+  const { mutateAsync: connectAccounts } = useConnectAccounts();
+  const { setToast } = useToast();
 
   const handlePlaidSuccess = async (publicToken: string, _metadata: any) => {
     try {
-      const response = await exchangeToken({ publicToken: publicToken });
-      setAvailableAccounts(response.availableAccounts);
-      setStep(Step.SELECT_ACCOUNT);
+      await connectAccounts({ publicToken: publicToken });
+      setToast("Bank accounts connected successfully!", "success");
+      onClose();
     } catch (error) {
       console.error("Error with Plaid:", error);
       setToast("Failed to connect to your bank account", "error");
     }
   };
-
-  const { setToast } = useToast();
 
   const handlePlaidExit = () => {
     setToast("There was an error linking your account", "error");
@@ -62,15 +55,5 @@ export const CreateAccountModal = ({ onClose }: { onClose: () => void }) => {
 
   if (step === Step.CREATE_UNLINKED) {
     return <CreateUnlinkedAccountModal onClose={onClose} onBack={handleBack} />;
-  }
-
-  if (step === Step.SELECT_ACCOUNT) {
-    return (
-      <SelectPlaidAccountsModal
-        onClose={onClose}
-        onBack={handleBack}
-        availableAccounts={availableAccounts}
-      />
-    );
   }
 };

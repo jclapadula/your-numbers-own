@@ -196,7 +196,7 @@ export type PlaidLinkToken = {
   link_token: string;
 };
 
-export type PlaidExchangeTokenRequest = {
+export type PlaidConnectAccountsRequest = {
   publicToken: string;
 };
 
@@ -207,8 +207,9 @@ export type PlaidLinkedAccount = {
   account_subtype: PlaidAccountSubtype | null;
 };
 
-export type PlaidExchangeTokenResponse = {
-  availableAccounts: PlaidLinkedAccount[];
+export type PlaidConnectAccountsResponse = {
+  success: boolean;
+  createdAccountIds: string[];
 };
 
 export type PlaidAccountLinkResponse = {
@@ -245,11 +246,3 @@ export type PlaidSyncResponse = {
   };
 };
 
-export type PlaidConnectAccountsRequest = {
-  plaidAccountIds: string[];
-};
-
-export type PlaidConnectAccountsResponse = {
-  success: boolean;
-  createdAccountIds: string[];
-};
