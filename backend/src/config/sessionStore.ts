@@ -14,6 +14,8 @@ interface SessionData {
   [key: string]: any;
 }
 
+const ONE_HOUR = 60 * 60 * 1000;
+
 export class PostgresSessionStore extends Store {
   constructor() {
     super();
@@ -21,10 +23,13 @@ export class PostgresSessionStore extends Store {
     // Set up cleanup interval for expired sessions (every hour)
     setInterval(() => {
       this.cleanup();
-    }, 60 * 60 * 1000);
+    }, ONE_HOUR);
   }
 
-  async get(sid: string, callback: (err?: any, session?: SessionData | null) => void) {
+  async get(
+    sid: string,
+    callback: (err?: any, session?: SessionData | null) => void
+  ) {
     try {
       const result = await db
         .selectFrom("sessions")
@@ -37,9 +42,8 @@ export class PostgresSessionStore extends Store {
         return callback(null, null);
       }
 
-      const session = typeof result.sess === "string"
-        ? JSON.parse(result.sess)
-        : result.sess;
+      const session =
+        typeof result.sess === "string" ? JSON.parse(result.sess) : result.sess;
 
       callback(null, session);
     } catch (error) {
@@ -49,7 +53,8 @@ export class PostgresSessionStore extends Store {
 
   async set(sid: string, session: SessionData, callback?: (err?: any) => void) {
     try {
-      const expire = session.cookie?.expires || new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const expire =
+        session.cookie?.expires || new Date(Date.now() + 24 * 60 * 60 * 1000);
       const sessJson = JSON.stringify(session);
 
       await db
@@ -75,10 +80,7 @@ export class PostgresSessionStore extends Store {
 
   async destroy(sid: string, callback?: (err?: any) => void) {
     try {
-      await db
-        .deleteFrom("sessions")
-        .where("sid", "=", sid)
-        .execute();
+      await db.deleteFrom("sessions").where("sid", "=", sid).execute();
 
       callback?.();
     } catch (error) {
@@ -86,9 +88,14 @@ export class PostgresSessionStore extends Store {
     }
   }
 
-  async touch(sid: string, session: SessionData, callback?: (err?: any) => void) {
+  async touch(
+    sid: string,
+    session: SessionData,
+    callback?: (err?: any) => void
+  ) {
     try {
-      const expire = session.cookie?.expires || new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const expire =
+        session.cookie?.expires || new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       await db
         .updateTable("sessions")

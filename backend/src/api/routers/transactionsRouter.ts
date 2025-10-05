@@ -27,6 +27,7 @@ transactionsRouter.get(
       .selectFrom("transactions")
       .where("accountId", "=", req.params.accountId)
       .orderBy("date", "desc")
+      .orderBy("id")
       .selectAll()
       .execute();
 

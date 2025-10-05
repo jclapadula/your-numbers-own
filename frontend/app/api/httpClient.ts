@@ -25,7 +25,7 @@ async function apiRequest<T>(
     if (response.status === 401 && requiresAuth) {
       // Only redirect to login if this was an authenticated request
       // Don't redirect for auth status checks
-      if (endpoint !== "/auth/me") {
+      if (endpoint !== "/auth/me" && endpoint !== "/auth/login") {
         window.location.href = "/login";
       }
       throw new Error("Unauthorized");
