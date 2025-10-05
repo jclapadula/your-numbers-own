@@ -23,7 +23,7 @@ export const RowCell = forwardRef(
     return (
       <div
         className={twMerge(
-          "px-2 py-1",
+          "px-2 py-1 text-ellipsis overflow-clip",
           grows && "flex-auto basis-0",
           className
         )}

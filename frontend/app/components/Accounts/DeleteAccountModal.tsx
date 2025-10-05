@@ -33,7 +33,7 @@ export const DeleteAccountModal = ({
       onClose={onClose}
       title="Delete Account"
       onSave={handleDelete}
-      disabled={isPending || !isConfirmed}
+      onSaveDisabled={isPending || !isConfirmed}
       saveButtonText="Delete Account"
       saveButtonClass="btn-error"
     >
@@ -46,8 +46,9 @@ export const DeleteAccountModal = ({
                 This action cannot be undone
               </div>
               <div>
-                Deleting this account will hide it from your budget. If this account has
-                transactions, it may affect your balance calculations.
+                Deleting this account will hide it from your budget. If this
+                account has transactions, it may affect your balance
+                calculations.
               </div>
             </div>
           </div>

@@ -1,6 +1,9 @@
 export const TransactionTableWidths = {
-  selection: { width: "30px" },
+  selection: { width: "30px", minWidth: "30px" },
   date: { width: "130px" },
+  payee: { minWidth: "100px" },
+  category: { minWidth: "90px" },
+  notes: { minWidth: "90px" },
   paymentDeposit: { width: "100px", textAlign: "right" as const },
   reconciled: { width: "30px" },
 };
@@ -27,9 +30,18 @@ export const TransactionListHeader = ({
         />
       </div>
       <div style={TransactionTableWidths.date}>Date</div>
-      <div className="flex-auto basis-0">Payee</div>
-      <div className="flex-auto basis-0">Category</div>
-      <div className="flex-auto basis-0">Notes</div>
+      <div className="flex-auto basis-0" style={TransactionTableWidths.payee}>
+        Payee
+      </div>
+      <div
+        className="flex-auto basis-0"
+        style={TransactionTableWidths.category}
+      >
+        Category
+      </div>
+      <div className="flex-auto basis-0" style={TransactionTableWidths.notes}>
+        Notes
+      </div>
       <div style={TransactionTableWidths.paymentDeposit}>Payment</div>
       <div style={TransactionTableWidths.paymentDeposit}>Deposit</div>
       <div

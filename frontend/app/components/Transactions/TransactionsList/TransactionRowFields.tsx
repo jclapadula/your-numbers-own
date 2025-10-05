@@ -79,6 +79,7 @@ export const TransactionPayeeCell = ({
         setIsFocused(true);
       }}
       onFocus={() => setIsFocused(true)}
+      style={TransactionTableWidths.payee}
     >
       {isFocused ? (
         <PayeeInput
@@ -124,6 +125,7 @@ export const TransactionCategoryCell = ({
       }}
       onFocus={() => setIsFocused(true)}
       ref={cellRef}
+      style={TransactionTableWidths.category}
     >
       {isFocused ? (
         <CategorySelect
@@ -172,6 +174,7 @@ export const TransactionNotesCell = ({
       grows
       onClick={() => setIsFocused(true)}
       onFocus={() => setIsFocused(true)}
+      style={TransactionTableWidths.notes}
     >
       {isFocused ? (
         <input
