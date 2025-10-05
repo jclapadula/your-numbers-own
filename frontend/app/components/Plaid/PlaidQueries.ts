@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlaidApi } from "~/api/plaidApi";
-import type { PlaidConnectAccountsRequest, PlaidSyncRequest } from "~/api/models";
+import type {
+  PlaidConnectAccountsRequest,
+  PlaidSyncRequest,
+} from "~/api/models";
+import { useToast } from "../Common/ToastContext";
 
 export const plaidQueryKeys = {
   linkToken: ["plaid", "link-token"],
@@ -30,6 +34,7 @@ export const useConnectAccounts = () => {
 export const useSyncPlaidAccount = () => {
   const { syncPlaidAccount } = usePlaidApi();
   const queryClient = useQueryClient();
+  const { setToast } = useToast();
 
   return useMutation({
     mutationFn: ({
@@ -47,6 +52,6 @@ export const useSyncPlaidAccount = () => {
         queryKey: ["accounts"],
       });
     },
+    onError: () => setToast("There was a problem syncing the account"),
   });
 };
-

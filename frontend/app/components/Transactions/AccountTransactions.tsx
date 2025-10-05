@@ -4,12 +4,17 @@ import { useAccounts } from "../Accounts/AccountsQueries";
 import type { BudgetAccount, Transaction } from "~/api/models";
 import Amount from "../Amount";
 import { useState } from "react";
-import { PencilIcon, ArrowPathIcon, TrashIcon } from "@heroicons/react/16/solid";
+import {
+  PencilIcon,
+  ArrowPathIcon,
+  TrashIcon,
+} from "@heroicons/react/16/solid";
 import { EditAccountModal } from "../Accounts/EditAccountModal";
 import { DeleteAccountModal } from "../Accounts/DeleteAccountModal";
 import { AccountTransactionsList } from "./TransactionsList/TransactionsList";
 import { AccountTransactionsContextProvider } from "./AccountTransactionsContext";
 import { useSyncPlaidAccount } from "../Plaid/PlaidQueries";
+import { Tooltip } from "../Common/Tooltip";
 
 const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
   const [editingAccount, setEditingAccount] = useState<BudgetAccount | null>(
@@ -41,25 +46,35 @@ const AccountTransactionsHeader = ({ accountId }: { accountId: string }) => {
     <div className="py-5 px-6">
       <div className="flex gap-2 items-center group">
         <h1 className="text-2xl font-bold">{account?.name}</h1>
-        <button
-          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => setEditingAccount(account)}
-        >
-          <PencilIcon className="text-secondary size-4" />
-        </button>
-        <button
-          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleSync}
-          disabled={syncPlaidAccount.isPending}
-        >
-          <ArrowPathIcon className={`text-secondary size-4 ${syncPlaidAccount.isPending ? 'animate-spin' : ''}`} />
-        </button>
-        <button
-          className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => setDeletingAccount(account)}
-        >
-          <TrashIcon className="text-error size-4" />
-        </button>
+        <Tooltip content="Rename account" position="bottom">
+          <button
+            className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setEditingAccount(account)}
+          >
+            <PencilIcon className="text-secondary size-4" />
+          </button>
+        </Tooltip>
+        <Tooltip content="Force sync" position="bottom">
+          <button
+            className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleSync}
+            disabled={syncPlaidAccount.isPending}
+          >
+            <ArrowPathIcon
+              className={`text-secondary size-4 ${
+                syncPlaidAccount.isPending ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+        </Tooltip>
+        <Tooltip content="Delete account" position="bottom">
+          <button
+            className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setDeletingAccount(account)}
+          >
+            <TrashIcon className="text-error size-4" />
+          </button>
+        </Tooltip>
       </div>
       <h2>
         {<Amount className="text-lg font-bold" amount={account.balance} />}
