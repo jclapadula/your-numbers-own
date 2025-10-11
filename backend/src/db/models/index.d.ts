@@ -120,6 +120,15 @@ export interface Transactions {
   payeeId: string | null;
   plaid_account_id: string | null;
   plaid_transaction_id: string | null;
+  transferId: string | null;
+}
+
+export interface Transfers {
+  createdAt: Generated<Timestamp>;
+  fromAccountId: string;
+  id: Generated<string>;
+  toAccountId: string;
+  updatedAt: Generated<Timestamp>;
 }
 
 export interface Users {
@@ -143,5 +152,6 @@ export interface DB {
   plaid_accounts: PlaidAccounts;
   sessions: Sessions;
   transactions: Transactions;
+  transfers: Transfers;
   users: Users;
 }
