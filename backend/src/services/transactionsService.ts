@@ -1,12 +1,64 @@
 import type { Kysely } from "kysely";
-import type { CreateTransaction, UpdateTransaction } from "./models";
+import type {
+  CreateTransaction,
+  Transaction,
+  UpdateTransaction,
+} from "./models";
 import type { DB } from "../db/models";
 import { accountBalanceService } from "./accountBalanceService";
 import { toZonedDate } from "./ZonedDate";
 import { budgetsService } from "./budgetsService";
 import { balanceUpdater } from "./balanceUpdater";
+import { transfersService, type AffectedTransaction } from "./transfersService";
 
 export namespace transactionsService {
+  const _postInsertSideEffects = async (
+    trx: Kysely<DB>,
+    budgetId: string,
+    { transactionId, amount }: { transactionId: string; amount: number },
+    destinationAccountId: string | null | undefined
+  ) => {
+    if (isNaN(amount)) {
+      return;
+    }
+    const transferResult = await transfersService.createTransfer(
+      trx,
+      budgetId,
+      transactionId,
+      destinationAccountId
+    );
+
+    if (amount === 0) {
+      // Nothing to recalculate
+      return;
+    }
+
+    const affectedAccounts = new Set(
+      transferResult.affectedTransactions.map((t) => t.accountId)
+    );
+
+    for (const accountId of affectedAccounts) {
+      const accountTransactions = transferResult.affectedTransactions.filter(
+        (t) => t.accountId === accountId
+      );
+      await accountBalanceService.updateAccountBalance(
+        trx,
+        budgetId,
+        accountId,
+        accountTransactions
+      );
+    }
+
+    await balanceUpdater.updateMonthlyBalances(
+      trx,
+      budgetId,
+      transferResult.affectedTransactions.map((t) => ({
+        date: t.date,
+        categories: [t.categoryId],
+      }))
+    );
+  };
+
   export const insertTransaction = async (
     db: Kysely<DB>,
     budgetId: string,
@@ -16,92 +68,137 @@ export namespace transactionsService {
       .transaction()
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
-        const { date } = (
+        const { destinationAccountId, ...transactionData } = transaction;
+
+        const { id: transactionId } = (
           await trx
             .insertInto("transactions")
-            .values({ ...transaction })
-            .returning(["date"])
+            .values({ ...transactionData })
+            .returning(["id", "date"])
             .execute()
         )[0]!;
 
-        // post insert side effects
-        const timezone = await budgetsService.getBudgetTimezone(budgetId);
-        const zonedDate = toZonedDate(date, timezone);
-
-        if (!isNaN(transaction.amount)) {
-          await accountBalanceService.updateAccountBalance(
-            trx,
-            budgetId,
-            transaction.accountId,
-            [{ date: zonedDate }]
-          );
-
-          await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
-            { date: zonedDate, categories: [transaction.categoryId] },
-          ]);
-        }
+        await _postInsertSideEffects(
+          trx,
+          budgetId,
+          { transactionId, amount: transaction.amount },
+          destinationAccountId
+        );
       });
+  };
+
+  const _postUpdateSideEffects = async (
+    trx: Kysely<DB>,
+    budgetId: string,
+    oldTransaction: Transaction,
+    transactionUpdates: UpdateTransaction,
+    destinationAccountId: string | null | undefined
+  ) => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
+    let affectedTransactions: AffectedTransaction[] = [
+      { ...oldTransaction, date: toZonedDate(oldTransaction.date, timezone) },
+    ];
+    if (oldTransaction.transferId) {
+      const transferResult = await transfersService.updateTransfer(
+        trx,
+        budgetId,
+        oldTransaction.id,
+        destinationAccountId
+      );
+
+      affectedTransactions.push(...transferResult.affectedTransactions);
+    } else if (destinationAccountId !== null) {
+      const transferResult = await transfersService.createTransfer(
+        trx,
+        budgetId,
+        oldTransaction.id,
+        destinationAccountId
+      );
+
+      affectedTransactions.push(...transferResult.affectedTransactions);
+    }
+
+    const amountChanged =
+      !!transactionUpdates.amount || transactionUpdates.amount === 0;
+    const dateChanged = !!transactionUpdates.date;
+
+    if (amountChanged || dateChanged) {
+      const affectedAccounts = new Set(
+        affectedTransactions.map((t) => t.accountId)
+      );
+
+      for (const accountId of affectedAccounts) {
+        const accountTransactions = affectedTransactions.filter(
+          (t) => t.accountId === accountId
+        );
+        await accountBalanceService.updateAccountBalance(
+          trx,
+          budgetId,
+          accountId,
+          accountTransactions
+        );
+      }
+
+      await balanceUpdater.updateMonthlyBalances(
+        trx,
+        budgetId,
+        affectedTransactions.map((t) => ({
+          date: t.date,
+          categories: [t.categoryId],
+        }))
+      );
+    }
+
+    const categoryChanged = transactionUpdates.categoryId !== undefined;
+    if (amountChanged || dateChanged || categoryChanged) {
+      const categories = [
+        transactionUpdates.categoryId,
+        oldTransaction.categoryId,
+      ].filter((category) => category !== undefined);
+
+      const minDate = [...affectedTransactions].sort(
+        (a, b) => a.date.getTime() - b.date.getTime()
+      )[0]!.date;
+
+      await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
+        { date: toZonedDate(minDate, timezone), categories },
+      ]);
+    }
   };
 
   export const patchTransaction = async (
     db: Kysely<DB>,
     budgetId: string,
-    accountId: string,
     transactionId: string,
     transactionUpdates: UpdateTransaction
   ) => {
-    const timezone = await budgetsService.getBudgetTimezone(budgetId);
-
-    let { date: oldDate, categoryId: oldCategoryId } =
-      (await db
-        .selectFrom("transactions")
-        .where("id", "=", transactionId)
-        .select(["date", "categoryId"])
-        .executeTakeFirst()) || {};
+    const oldTransaction = await db
+      .selectFrom("transactions")
+      .where("id", "=", transactionId)
+      .selectAll()
+      .executeTakeFirstOrThrow();
 
     await db
       .transaction()
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
-        const { date } = (
-          await trx
-            .updateTable("transactions")
-            .set({ ...transactionUpdates })
-            .where("id", "=", transactionId)
-            .returning(["date"])
-            .execute()
-        )[0]!;
+        const { destinationAccountId, ...updateData } = transactionUpdates;
 
-        // Post update side effects
-        const amountChanged =
-          !!transactionUpdates.amount || transactionUpdates.amount === 0;
-        const dateChanged = !!transactionUpdates.date;
+        await trx
+          .updateTable("transactions")
+          .set({ ...updateData })
+          .where("id", "=", transactionId)
+          .returning(["date"])
+          .execute();
 
-        if (amountChanged || dateChanged) {
-          await accountBalanceService.updateAccountBalance(
-            trx,
-            budgetId,
-            accountId,
-            [
-              {
-                date: toZonedDate(date, timezone),
-                ...(oldDate ? [toZonedDate(oldDate, timezone)] : []),
-              },
-            ]
-          );
-        }
-
-        const categoryChanged = transactionUpdates.categoryId !== undefined;
-        if (amountChanged || dateChanged || categoryChanged) {
-          const categories = [
-            transactionUpdates.categoryId,
-            oldCategoryId,
-          ].filter((category) => category !== undefined);
-
-          await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
-            { date: toZonedDate(date, timezone), categories },
-          ]);
-        }
+        await _postUpdateSideEffects(
+          trx,
+          budgetId,
+          oldTransaction,
+          transactionUpdates,
+          destinationAccountId
+        );
       });
   };
 }

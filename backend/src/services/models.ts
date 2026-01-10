@@ -36,6 +36,7 @@ export type CreateTransaction = {
   isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
+  destinationAccountId: string | null;
 };
 
 export type UpdateTransaction = Partial<{
@@ -45,6 +46,7 @@ export type UpdateTransaction = Partial<{
   isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
+  destinationAccountId: string | null;
 }>;
 
 export type Payee = {
@@ -254,4 +256,3 @@ export type PlaidSyncResponse = {
     end_date: string;
   };
 };
-

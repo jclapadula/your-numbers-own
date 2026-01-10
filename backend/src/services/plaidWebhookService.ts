@@ -101,6 +101,7 @@ export namespace plaidWebhookService {
         isReconciled: false,
         notes: plaidTx.merchant_name || plaidTx.original_description || null,
         payeeId: null,
+        destinationAccountId: null,
       };
 
       // Insert transaction using existing service but with Plaid metadata

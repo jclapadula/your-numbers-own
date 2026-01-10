@@ -1,9 +1,12 @@
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
+import type { ZonedDate } from "./ZonedDate";
+import { toZonedDate } from "./ZonedDate";
+import { budgetsService } from "./budgetsService";
 
 export type AffectedTransaction = {
   accountId: string;
-  date: Date;
+  date: ZonedDate;
   categoryId: string | null;
 };
 
@@ -50,13 +53,27 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     sourceTransactionId: string,
-    destinationAccountId: string
+    destinationAccountId: string | null | undefined
   ): Promise<TransferResult> => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     const sourceTransaction = await db
       .selectFrom("transactions")
       .where("id", "=", sourceTransactionId)
       .selectAll()
       .executeTakeFirstOrThrow();
+
+    if (!destinationAccountId) {
+      return {
+        affectedTransactions: [
+          {
+            accountId: sourceTransaction.accountId,
+            date: toZonedDate(sourceTransaction.date, timezone),
+            categoryId: sourceTransaction.categoryId,
+          },
+        ],
+      };
+    }
 
     await validateAccounts(
       db,
@@ -98,7 +115,18 @@ export namespace transfersService {
       .executeTakeFirstOrThrow();
 
     return {
-      affectedTransactions: [sourceTransaction, destinationTransaction],
+      affectedTransactions: [
+        {
+          accountId: sourceTransaction.accountId,
+          date: toZonedDate(sourceTransaction.date, timezone),
+          categoryId: sourceTransaction.categoryId,
+        },
+        {
+          accountId: destinationTransaction.accountId,
+          date: toZonedDate(destinationTransaction.date, timezone),
+          categoryId: destinationTransaction.categoryId,
+        },
+      ],
     };
   };
 
@@ -108,9 +136,12 @@ export namespace transfersService {
    */
   const removeTransfer = async (
     db: Kysely<DB>,
+    budgetId: string,
     transferId: string,
     updatedTransactionId: string
   ): Promise<AffectedTransaction | null> => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     // Find the other transaction
     const otherTransaction = await db
       .selectFrom("transactions")
@@ -134,7 +165,13 @@ export namespace transfersService {
       .where("id", "=", updatedTransactionId)
       .execute();
 
-    return otherTransaction || null;
+    return otherTransaction
+      ? {
+          accountId: otherTransaction.accountId,
+          date: toZonedDate(otherTransaction.date, timezone),
+          categoryId: otherTransaction.categoryId,
+        }
+      : null;
   };
 
   /**
@@ -146,8 +183,10 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     updatedTransactionId: string,
-    destinationAccountId: string | null
+    destinationAccountId: string | null | undefined
   ): Promise<TransferResult> => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     const updatedTransaction = await db
       .selectFrom("transactions")
       .where("id", "=", updatedTransactionId)
@@ -155,18 +194,31 @@ export namespace transfersService {
       .executeTakeFirstOrThrow();
 
     if (!updatedTransaction.transferId) {
-      throw new Error("Transaction is not part of a transfer");
+      return {
+        affectedTransactions: [
+          {
+            ...updatedTransaction,
+            date: toZonedDate(updatedTransaction.date, timezone),
+          },
+        ],
+      };
     }
 
-    // If destinationAccountId is null, remove the transfer
-    if (destinationAccountId === null) {
+    if (!destinationAccountId) {
       const deletedOtherTransaction = await removeTransfer(
         db,
+        budgetId,
         updatedTransaction.transferId,
         updatedTransactionId
       );
 
-      const affectedTransactions: AffectedTransaction[] = [updatedTransaction];
+      const affectedTransactions: AffectedTransaction[] = [
+        {
+          accountId: updatedTransaction.accountId,
+          date: toZonedDate(updatedTransaction.date, timezone),
+          categoryId: updatedTransaction.categoryId,
+        },
+      ];
       if (deletedOtherTransaction) {
         affectedTransactions.push(deletedOtherTransaction);
       }
@@ -195,7 +247,11 @@ export namespace transfersService {
       .executeTakeFirstOrThrow();
 
     // Store old state for balance recalculation
-    const oldOtherTransaction = { ...otherTransaction };
+    const oldOtherTransaction = {
+      accountId: otherTransaction.accountId,
+      date: toZonedDate(otherTransaction.date, timezone),
+      categoryId: otherTransaction.categoryId,
+    };
 
     const isDestinationAccountChanging =
       destinationAccountId !== otherAccountId;
@@ -239,9 +295,17 @@ export namespace transfersService {
 
     return {
       affectedTransactions: [
-        updatedTransaction,
+        {
+          accountId: updatedTransaction.accountId,
+          date: toZonedDate(updatedTransaction.date, timezone),
+          categoryId: updatedTransaction.categoryId,
+        },
         oldOtherTransaction,
-        updatedOtherTransaction,
+        {
+          accountId: updatedOtherTransaction.accountId,
+          date: toZonedDate(updatedOtherTransaction.date, timezone),
+          categoryId: updatedOtherTransaction.categoryId,
+        },
       ],
     };
   };
@@ -252,8 +316,11 @@ export namespace transfersService {
    */
   export const deleteTransfer = async (
     db: Kysely<DB>,
+    budgetId: string,
     transactionId: string
   ): Promise<TransferResult> => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
     const transaction = await db
       .selectFrom("transactions")
       .where("id", "=", transactionId)
@@ -285,9 +352,17 @@ export namespace transfersService {
       .where("id", "=", transaction.transferId)
       .execute();
 
-    affectedTransactions.push(transaction);
+    affectedTransactions.push({
+      accountId: transaction.accountId,
+      date: toZonedDate(transaction.date, timezone),
+      categoryId: transaction.categoryId,
+    });
     if (otherTransaction) {
-      affectedTransactions.push(otherTransaction);
+      affectedTransactions.push({
+        accountId: otherTransaction.accountId,
+        date: toZonedDate(otherTransaction.date, timezone),
+        categoryId: otherTransaction.categoryId,
+      });
     }
 
     return { affectedTransactions };
