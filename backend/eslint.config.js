@@ -24,7 +24,14 @@ export default [
     rules: {
       'prefer-template': 'error',
       'no-console': 'off',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
       'no-undef': 'warn',
     },
   },
