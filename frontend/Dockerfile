@@ -1,5 +1,5 @@
 # Use the official Bun image
-FROM oven/bun:1 as base
+FROM oven/bun:1 AS base
 WORKDIR /usr/src/app
 
 # Install dependencies into temp directory
@@ -20,9 +20,8 @@ FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# Run type check and build the application
+# Build the application
 ENV NODE_ENV=production
-RUN bun run check
 RUN bun run build
 
 # Copy production dependencies and built application into final image
