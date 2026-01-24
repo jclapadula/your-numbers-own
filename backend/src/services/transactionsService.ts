@@ -12,11 +12,48 @@ import { balanceUpdater } from "./balanceUpdater";
 import { transfersService, type AffectedTransaction } from "./transfersService";
 
 export namespace transactionsService {
+  const _updateAccountBalancesForAffectedAccounts = async (
+    trx: Kysely<DB>,
+    budgetId: string,
+    affectedTransactions: AffectedTransaction[],
+  ) => {
+    const affectedAccounts = new Set(
+      affectedTransactions.map((t) => t.accountId),
+    );
+
+    for (const accountId of affectedAccounts) {
+      const accountTransactions = affectedTransactions.filter(
+        (t) => t.accountId === accountId,
+      );
+      await accountBalanceService.updateAccountBalance(
+        trx,
+        budgetId,
+        accountId,
+        accountTransactions,
+      );
+    }
+  };
+
+  const _updateMonthlyBalancesForAffectedTransactions = async (
+    trx: Kysely<DB>,
+    budgetId: string,
+    affectedTransactions: AffectedTransaction[],
+  ) => {
+    await balanceUpdater.updateMonthlyBalances(
+      trx,
+      budgetId,
+      affectedTransactions.map((t) => ({
+        date: t.date,
+        categories: [t.categoryId],
+      })),
+    );
+  };
+
   const _postInsertSideEffects = async (
     trx: Kysely<DB>,
     budgetId: string,
     { transactionId, amount }: { transactionId: string; amount: number },
-    destinationAccountId: string | null | undefined
+    destinationAccountId: string | null | undefined,
   ) => {
     if (isNaN(amount)) {
       return;
@@ -25,7 +62,7 @@ export namespace transactionsService {
       trx,
       budgetId,
       transactionId,
-      destinationAccountId
+      destinationAccountId,
     );
 
     if (amount === 0) {
@@ -33,36 +70,23 @@ export namespace transactionsService {
       return;
     }
 
-    const affectedAccounts = new Set(
-      transferResult.affectedTransactions.map((t) => t.accountId)
-    );
-
-    for (const accountId of affectedAccounts) {
-      const accountTransactions = transferResult.affectedTransactions.filter(
-        (t) => t.accountId === accountId
-      );
-      await accountBalanceService.updateAccountBalance(
-        trx,
-        budgetId,
-        accountId,
-        accountTransactions
-      );
-    }
-
-    await balanceUpdater.updateMonthlyBalances(
+    await _updateAccountBalancesForAffectedAccounts(
       trx,
       budgetId,
-      transferResult.affectedTransactions.map((t) => ({
-        date: t.date,
-        categories: [t.categoryId],
-      }))
+      transferResult.affectedTransactions,
+    );
+
+    await _updateMonthlyBalancesForAffectedTransactions(
+      trx,
+      budgetId,
+      transferResult.affectedTransactions,
     );
   };
 
   export const insertTransaction = async (
     db: Kysely<DB>,
     budgetId: string,
-    transaction: CreateTransaction
+    transaction: CreateTransaction,
   ) => {
     await db
       .transaction()
@@ -82,7 +106,7 @@ export namespace transactionsService {
           trx,
           budgetId,
           { transactionId, amount: transaction.amount },
-          destinationAccountId
+          destinationAccountId,
         );
       });
   };
@@ -92,7 +116,7 @@ export namespace transactionsService {
     budgetId: string,
     oldTransaction: Transaction,
     transactionUpdates: UpdateTransaction,
-    destinationAccountId: string | null | undefined
+    destinationAccountId: string | null | undefined,
   ) => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
@@ -104,7 +128,7 @@ export namespace transactionsService {
         trx,
         budgetId,
         oldTransaction.id,
-        destinationAccountId
+        destinationAccountId,
       );
 
       affectedTransactions.push(...transferResult.affectedTransactions);
@@ -113,7 +137,7 @@ export namespace transactionsService {
         trx,
         budgetId,
         oldTransaction.id,
-        destinationAccountId
+        destinationAccountId,
       );
 
       affectedTransactions.push(...transferResult.affectedTransactions);
@@ -124,29 +148,16 @@ export namespace transactionsService {
     const dateChanged = !!transactionUpdates.date;
 
     if (amountChanged || dateChanged) {
-      const affectedAccounts = new Set(
-        affectedTransactions.map((t) => t.accountId)
-      );
-
-      for (const accountId of affectedAccounts) {
-        const accountTransactions = affectedTransactions.filter(
-          (t) => t.accountId === accountId
-        );
-        await accountBalanceService.updateAccountBalance(
-          trx,
-          budgetId,
-          accountId,
-          accountTransactions
-        );
-      }
-
-      await balanceUpdater.updateMonthlyBalances(
+      await _updateAccountBalancesForAffectedAccounts(
         trx,
         budgetId,
-        affectedTransactions.map((t) => ({
-          date: t.date,
-          categories: [t.categoryId],
-        }))
+        affectedTransactions,
+      );
+
+      await _updateMonthlyBalancesForAffectedTransactions(
+        trx,
+        budgetId,
+        affectedTransactions,
       );
     }
 
@@ -158,7 +169,7 @@ export namespace transactionsService {
       ].filter((category) => category !== undefined);
 
       const minDate = [...affectedTransactions].sort(
-        (a, b) => a.date.getTime() - b.date.getTime()
+        (a, b) => a.date.getTime() - b.date.getTime(),
       )[0]!.date;
 
       await balanceUpdater.updateMonthlyBalances(trx, budgetId, [
@@ -171,7 +182,7 @@ export namespace transactionsService {
     db: Kysely<DB>,
     budgetId: string,
     transactionId: string,
-    transactionUpdates: UpdateTransaction
+    transactionUpdates: UpdateTransaction,
   ) => {
     const oldTransaction = await db
       .selectFrom("transactions")
@@ -197,7 +208,66 @@ export namespace transactionsService {
           budgetId,
           oldTransaction,
           transactionUpdates,
-          destinationAccountId
+          destinationAccountId,
+        );
+      });
+  };
+
+  export const deleteTransactions = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    accountId: string,
+    transactionIds: string[],
+  ) => {
+    await db
+      .transaction()
+      .setIsolationLevel("serializable")
+      .execute(async (trx) => {
+        const transactionsDeletedByTransfer: AffectedTransaction[] = [];
+
+        for (const transactionId of transactionIds) {
+          const transferResult = await transfersService.deleteTransfer(
+            trx,
+            budgetId,
+            transactionId,
+          );
+          transactionsDeletedByTransfer.push(
+            ...transferResult.affectedTransactions,
+          );
+        }
+
+        const timezone = await budgetsService.getBudgetTimezone(budgetId);
+
+        const deletedTransactions = await trx
+          .deleteFrom("transactions")
+          .where("id", "in", transactionIds)
+          .where("accountId", "=", accountId)
+          .returning(["date", "categoryId", "accountId"])
+          .execute();
+
+        const deletedIndividualTransactions = deletedTransactions.map(
+          (t) =>
+            ({
+              ...t,
+              date: toZonedDate(t.date, timezone),
+            }) satisfies AffectedTransaction,
+        );
+
+        const allAffectedTransactions = [
+          ...transactionsDeletedByTransfer,
+          ...deletedIndividualTransactions,
+        ];
+
+        await _updateAccountBalancesForAffectedAccounts(
+          trx,
+          budgetId,
+          allAffectedTransactions,
+        );
+
+        await _updateMonthlyBalancesForAffectedTransactions(
+          trx,
+          budgetId,
+          allAffectedTransactions,
         );
       });
   };
