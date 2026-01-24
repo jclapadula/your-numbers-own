@@ -23,7 +23,7 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     accountId1: string,
-    accountId2: string
+    accountId2: string,
   ): Promise<void> => {
     if (accountId1 === accountId2) {
       throw new Error("Source and destination accounts must be different");
@@ -40,7 +40,7 @@ export namespace transfersService {
 
     if (accounts.length !== 2) {
       throw new Error(
-        "Both accounts must belong to the same budget and not be deleted"
+        "Both accounts must belong to the same budget and not be deleted",
       );
     }
   };
@@ -53,7 +53,7 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     sourceTransactionId: string,
-    destinationAccountId: string | null | undefined
+    destinationAccountId: string | null | undefined,
   ): Promise<TransferResult> => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
@@ -79,7 +79,7 @@ export namespace transfersService {
       db,
       budgetId,
       sourceTransaction.accountId,
-      destinationAccountId
+      destinationAccountId,
     );
 
     const transfer = await db
@@ -138,7 +138,7 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     transferId: string,
-    updatedTransactionId: string
+    updatedTransactionId: string,
   ): Promise<AffectedTransaction | null> => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
@@ -157,13 +157,13 @@ export namespace transfersService {
         .execute();
     }
 
-    await db.deleteFrom("transfers").where("id", "=", transferId).execute();
-
     await db
       .updateTable("transactions")
       .set({ transferId: null })
       .where("id", "=", updatedTransactionId)
       .execute();
+
+    await db.deleteFrom("transfers").where("id", "=", transferId).execute();
 
     return otherTransaction
       ? {
@@ -183,7 +183,7 @@ export namespace transfersService {
     db: Kysely<DB>,
     budgetId: string,
     updatedTransactionId: string,
-    destinationAccountId: string | null | undefined
+    destinationAccountId: string | null | undefined,
   ): Promise<TransferResult> => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
@@ -204,12 +204,12 @@ export namespace transfersService {
       };
     }
 
-    if (!destinationAccountId) {
+    if (destinationAccountId === null) {
       const deletedOtherTransaction = await removeTransfer(
         db,
         budgetId,
         updatedTransaction.transferId,
-        updatedTransactionId
+        updatedTransactionId,
       );
 
       const affectedTransactions: AffectedTransaction[] = [
@@ -254,13 +254,13 @@ export namespace transfersService {
     };
 
     const isDestinationAccountChanging =
-      destinationAccountId !== otherAccountId;
+      destinationAccountId && destinationAccountId !== otherAccountId;
     if (isDestinationAccountChanging) {
       await validateAccounts(
         db,
         budgetId,
         updatedTransaction.accountId,
-        destinationAccountId
+        destinationAccountId,
       );
 
       const update = isFromAccount
@@ -317,7 +317,7 @@ export namespace transfersService {
   export const deleteTransfer = async (
     db: Kysely<DB>,
     budgetId: string,
-    transactionId: string
+    transactionId: string,
   ): Promise<TransferResult> => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 

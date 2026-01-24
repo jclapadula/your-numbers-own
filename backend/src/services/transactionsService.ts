@@ -1,15 +1,12 @@
-import type { Kysely } from "kysely";
-import type {
-  CreateTransaction,
-  Transaction,
-  UpdateTransaction,
-} from "./models";
-import type { DB } from "../db/models";
+import type { Kysely, Selectable } from "kysely";
+import type { CreateTransaction, UpdateTransaction } from "./models";
+import type { DB, Transactions } from "../db/models";
 import { accountBalanceService } from "./accountBalanceService";
 import { toZonedDate } from "./ZonedDate";
 import { budgetsService } from "./budgetsService";
 import { balanceUpdater } from "./balanceUpdater";
 import { transfersService, type AffectedTransaction } from "./transfersService";
+import { isEmpty } from "lodash";
 
 export namespace transactionsService {
   const _updateAccountBalancesForAffectedAccounts = async (
@@ -114,30 +111,32 @@ export namespace transactionsService {
   const _postUpdateSideEffects = async (
     trx: Kysely<DB>,
     budgetId: string,
-    oldTransaction: Transaction,
+    oldTransaction: Selectable<Transactions>,
     transactionUpdates: UpdateTransaction,
-    destinationAccountId: string | null | undefined,
   ) => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
     let affectedTransactions: AffectedTransaction[] = [
       { ...oldTransaction, date: toZonedDate(oldTransaction.date, timezone) },
     ];
-    if (oldTransaction.transferId) {
+
+    const wasTransfer = oldTransaction.transferId;
+    const isNowTransfer = transactionUpdates.destinationAccountId;
+    if (wasTransfer) {
       const transferResult = await transfersService.updateTransfer(
         trx,
         budgetId,
         oldTransaction.id,
-        destinationAccountId,
+        transactionUpdates.destinationAccountId,
       );
 
       affectedTransactions.push(...transferResult.affectedTransactions);
-    } else if (destinationAccountId !== null) {
+    } else if (isNowTransfer) {
       const transferResult = await transfersService.createTransfer(
         trx,
         budgetId,
         oldTransaction.id,
-        destinationAccountId,
+        transactionUpdates.destinationAccountId,
       );
 
       affectedTransactions.push(...transferResult.affectedTransactions);
@@ -194,21 +193,21 @@ export namespace transactionsService {
       .transaction()
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
-        const { destinationAccountId, ...updateData } = transactionUpdates;
+        const { destinationAccountId: _, ...updateData } = transactionUpdates;
 
-        await trx
-          .updateTable("transactions")
-          .set({ ...updateData })
-          .where("id", "=", transactionId)
-          .returning(["date"])
-          .execute();
+        if (!isEmpty(updateData)) {
+          await trx
+            .updateTable("transactions")
+            .set({ ...updateData })
+            .where("id", "=", transactionId)
+            .execute();
+        }
 
         await _postUpdateSideEffects(
           trx,
           budgetId,
           oldTransaction,
           transactionUpdates,
-          destinationAccountId,
         );
       });
   };

@@ -49,9 +49,9 @@ const MonthAndArrows = () => {
         <h1 className={twMerge(!isCurrentMonth && "text-base-content/50")}>
           {format(
             getZonedDate(
-              new Date(selectedMonth.year, selectedMonth.month - 1, 1)
+              new Date(selectedMonth.year, selectedMonth.month - 1, 1),
             ),
-            "MMMM"
+            "MMMM",
           )}
         </h1>
       </div>
@@ -85,13 +85,13 @@ const AvailableBudget = () => {
 
     const totalAssignedAmount = monthlyBudget.spendCategories.reduce(
       (acc, category) => acc + category.assignedAmount,
-      0
+      0,
     );
     const totalPreviousBalance = monthlyBudget.lastMonthCarryOver;
 
     const totalIncome = monthlyBudget.incomeCategories.reduce(
       (acc, category) => acc + category.balance,
-      0
+      0,
     );
 
     return totalPreviousBalance - totalAssignedAmount + totalIncome;
@@ -103,7 +103,7 @@ const AvailableBudget = () => {
     <div
       className={twMerge(
         "flex flex-col items-center m-3 prose relative",
-        isLoadingMonthlyBudget && "animate-pulse"
+        isLoadingMonthlyBudget && "animate-pulse",
       )}
     >
       <span className="prose-sm">
@@ -113,7 +113,7 @@ const AvailableBudget = () => {
         className={twMerge(
           "text-success",
           "text-2xl",
-          isOverBudgeted && "text-error"
+          isOverBudgeted && "text-error",
         )}
         amount={availableBudget}
       />
@@ -123,9 +123,9 @@ const AvailableBudget = () => {
 
 export const MonthlyBudget = () => {
   const { selectedMonth } = useSelectedMonthContext();
-  const { data: monthlyBudget, isLoading } = useMonthlyBudget(selectedMonth);
+  const { data: monthlyBudget, isPending } = useMonthlyBudget(selectedMonth);
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="h-full max-w-xl w-full m-auto">
         <div className="pt-4">

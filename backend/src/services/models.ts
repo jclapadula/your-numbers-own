@@ -17,7 +17,7 @@ export type Transaction = {
   isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
-  transferId: string | null;
+  destinationAccountId: string | null;
 };
 
 export type Transfer = {

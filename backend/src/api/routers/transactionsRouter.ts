@@ -1,9 +1,11 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { sql } from "kysely";
 import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import type {
   CreateTransaction,
+  Transaction,
   UpdateTransaction,
 } from "../../services/models";
 import { transactionsService } from "../../services/transactionsService";
@@ -19,12 +21,29 @@ transactionsRouter.get(
     req: Request<{ budgetId: string; accountId: string }>,
     res: Response,
   ) => {
-    const transactions = await db
+    const transactions: Transaction[] = await db
       .selectFrom("transactions")
+      .leftJoin("transfers", "transactions.transferId", "transfers.id")
       .where("accountId", "=", req.params.accountId)
       .orderBy("date", "desc")
       .orderBy("id")
-      .selectAll()
+      .select([
+        "transactions.id",
+        "transactions.date",
+        "transactions.accountId",
+        "transactions.amount",
+        "transactions.categoryId",
+        "transactions.isReconciled",
+        "transactions.notes",
+        "transactions.payeeId",
+        sql<string | null>`
+          CASE
+            WHEN transactions."accountId" = transfers."fromAccountId" THEN transfers."toAccountId"
+            WHEN transactions."accountId" = transfers."toAccountId" THEN transfers."fromAccountId"
+            ELSE NULL
+          END
+        `.as("destinationAccountId"),
+      ])
       .execute();
 
     res.json(transactions);

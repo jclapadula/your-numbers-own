@@ -18,7 +18,7 @@ export type Transaction = {
   isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
-  destinationAccountId?: string | null;
+  destinationAccountId: string | null;
 };
 
 export type CreateTransaction = {
@@ -245,4 +245,3 @@ export type PlaidSyncResponse = {
     end_date: string;
   };
 };
-

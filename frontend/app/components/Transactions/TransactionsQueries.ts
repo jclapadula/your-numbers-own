@@ -63,7 +63,7 @@ export const useUpdateTransaction = (accountId: string) => {
       transactionId: string;
       changes: UpdateTransaction;
     }) => patch(transactionId, changes),
-    onSuccess: (_, { transactionId, changes }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: accountsQueryKeys.accounts,
       });
@@ -87,8 +87,8 @@ export const useUpdateTransaction = (accountId: string) => {
           previous.map((transaction) =>
             transaction.id === transactionId
               ? { ...transaction, ...changes }
-              : transaction
-          )
+              : transaction,
+          ),
       );
     },
   });

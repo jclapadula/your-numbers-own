@@ -54,10 +54,10 @@ export const TransactionDateCell = ({
 type PayeeFieldChanges =
   | {
       payeeId: string | null;
-      destinationAccountId?: never;
+      destinationAccountId: null;
     }
   | {
-      payeeId?: never;
+      payeeId: null;
       destinationAccountId: string | null;
     }
   | {
@@ -68,7 +68,7 @@ type PayeeFieldChanges =
 type TransactionPayeeFieldProps = {
   transaction: Pick<
     Transaction,
-    "payeeId" | "accountId" | "destinationAccountId"
+    "payeeId" | "accountId" | "destinationAccountId" | "amount"
   >;
   onChange: (changes: PayeeFieldChanges) => void;
 };
@@ -90,9 +90,12 @@ export const TransactionPayeeCell = ({
     if (selection === null) {
       onChange({ payeeId: null, destinationAccountId: null });
     } else if (selection.type === "payee") {
-      onChange({ payeeId: selection.payeeId });
+      onChange({ payeeId: selection.payeeId, destinationAccountId: null });
     } else {
-      onChange({ destinationAccountId: selection.destinationAccountId });
+      onChange({
+        destinationAccountId: selection.destinationAccountId,
+        payeeId: null,
+      });
     }
     setIsFocused(false);
   };
@@ -101,8 +104,9 @@ export const TransactionPayeeCell = ({
     setIsFocused(false);
   }, [transaction.payeeId, transaction.destinationAccountId]);
 
+  const direction = transaction.amount < 0 ? "to" : "from";
   const displayValue = account
-    ? `Transfer: ${account.name}`
+    ? `Transfer ${direction} ${account.name}`
     : payee?.name || "--";
 
   return (
@@ -118,7 +122,7 @@ export const TransactionPayeeCell = ({
       {isFocused ? (
         <PayeeInput
           payeeId={transaction.payeeId}
-          destinationAccountId={transaction.destinationAccountId || null}
+          destinationAccountId={transaction.destinationAccountId}
           currentAccountId={transaction.accountId}
           onSelectionChange={handleChange}
           onBlur={() => setIsFocused(false)}
