@@ -16,13 +16,13 @@ import {
 } from "../TransactionsQueries";
 import { useAccountTransactions } from "../AccountTransactionsContext";
 import { z } from "zod";
-import { toObjectErrors } from "~/components/Common/formUtils";
 import { twMerge } from "tailwind-merge";
 
 const transactionSchema = z.object({
   accountId: z.string().min(1),
   date: z.string().datetime({ offset: true }),
   payeeId: z.string().uuid().nullable(),
+  destinationAccountId: z.string().uuid().nullable(),
   categoryId: z.string().uuid().nullable(),
   notes: z.string(),
   amount: z.coerce.number(),
@@ -68,7 +68,7 @@ export const TransactionRow = ({
       <div
         className={twMerge(
           "flex flex-row text-sm",
-          isPending && "animate-pulse"
+          isPending && "animate-pulse",
         )}
       >
         <div
@@ -88,9 +88,9 @@ export const TransactionRow = ({
           }}
         />
         <TransactionPayeeCell
-          value={transaction.payeeId || null}
-          onChange={(payeeId) => {
-            saveChanges({ payeeId });
+          transaction={transaction}
+          onChange={(changes) => {
+            saveChanges(changes);
           }}
         />
         <TransactionCategoryCell
@@ -98,6 +98,7 @@ export const TransactionRow = ({
           onChange={(categoryId) => {
             saveChanges({ categoryId });
           }}
+          disabled={!!transaction.destinationAccountId}
         />
         <TransactionNotesCell
           value={transaction.notes || null}
@@ -158,6 +159,7 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
   const [newTransaction, setNewTransaction] = useState<TransactionFormData>({
     accountId,
     payeeId: null,
+    destinationAccountId: null,
     categoryId: null,
     notes: "",
     date: formatISO(new Date()),
@@ -198,16 +200,21 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
           autoFocus
         />
         <TransactionPayeeCell
-          value={newTransaction.payeeId || null}
-          onChange={(payeeId) => {
-            setNewTransaction({ ...newTransaction, payeeId });
+          transaction={newTransaction}
+          onChange={(changes) => {
+            setNewTransaction((t) => ({
+              ...t,
+              ...changes,
+              ...(changes.destinationAccountId ? { categoryId: null } : {}),
+            }));
           }}
         />
         <TransactionCategoryCell
           value={newTransaction.categoryId || null}
           onChange={(categoryId) => {
-            setNewTransaction({ ...newTransaction, categoryId });
+            setNewTransaction((t) => ({ ...t, categoryId }));
           }}
+          disabled={!!newTransaction.destinationAccountId}
         />
         <TransactionNotesCell
           value={newTransaction.notes || null}

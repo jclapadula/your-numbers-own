@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePayees } from "~/components/Budget/budgetQueries";
+import { useAccounts } from "~/components/Accounts/AccountsQueries";
 import { CategorySelect } from "~/components/Budget/Inputs/CategorySelect";
 import { TransactionTableWidths } from "./TransactionListHeader";
 import Amount, { rawValueToString } from "~/components/Amount";
@@ -8,6 +9,8 @@ import { RowCell } from "./RowCell";
 import { format, formatISO } from "date-fns";
 import { useCategories } from "~/components/Budget/Categories/CategoriesQueries";
 import { PayeeInput } from "~/components/Budget/Inputs/PayeeInput";
+import type { Transaction } from "~/api/models";
+import type { PayeeOrTransfer } from "~/types";
 
 type TransactionDateFieldProps = {
   value: string;
@@ -48,28 +51,59 @@ export const TransactionDateCell = ({
   );
 };
 
+type PayeeFieldChanges =
+  | {
+      payeeId: string | null;
+      destinationAccountId?: never;
+    }
+  | {
+      payeeId?: never;
+      destinationAccountId: string | null;
+    }
+  | {
+      payeeId: null;
+      destinationAccountId: null;
+    };
+
 type TransactionPayeeFieldProps = {
-  value: string | null;
-  onChange: (value: string | null) => void;
+  transaction: Pick<
+    Transaction,
+    "payeeId" | "accountId" | "destinationAccountId"
+  >;
+  onChange: (changes: PayeeFieldChanges) => void;
 };
 
 export const TransactionPayeeCell = ({
-  value,
+  transaction,
   onChange,
 }: TransactionPayeeFieldProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const { data: payees = [] } = usePayees();
+  const { data: accounts = [] } = useAccounts();
 
-  const payee = payees.find((p) => p.id === value);
+  const payee = payees.find((p) => p.id === transaction.payeeId);
+  const account = accounts.find(
+    (a) => a.id === transaction.destinationAccountId,
+  );
 
-  const handleChange = (payeeId: string | null) => {
-    onChange(payeeId);
+  const handleChange = (selection: PayeeOrTransfer) => {
+    if (selection === null) {
+      onChange({ payeeId: null, destinationAccountId: null });
+    } else if (selection.type === "payee") {
+      onChange({ payeeId: selection.payeeId });
+    } else {
+      onChange({ destinationAccountId: selection.destinationAccountId });
+    }
     setIsFocused(false);
   };
 
   useEffect(() => {
     setIsFocused(false);
-  }, [value]);
+  }, [transaction.payeeId, transaction.destinationAccountId]);
+
+  const displayValue = account
+    ? `Transfer: ${account.name}`
+    : payee?.name || "--";
 
   return (
     <RowCell
@@ -83,13 +117,15 @@ export const TransactionPayeeCell = ({
     >
       {isFocused ? (
         <PayeeInput
-          value={payee?.name || ""}
-          onPayeeSelected={handleChange}
+          payeeId={transaction.payeeId}
+          destinationAccountId={transaction.destinationAccountId || null}
+          currentAccountId={transaction.accountId}
+          onSelectionChange={handleChange}
           onBlur={() => setIsFocused(false)}
           className="w-full h-full"
         />
       ) : (
-        <span className="block w-full">{payee?.name || "--"}</span>
+        <span className="block w-full">{displayValue}</span>
       )}
     </RowCell>
   );
@@ -98,11 +134,13 @@ export const TransactionPayeeCell = ({
 type TransactionCategoryFieldProps = {
   value: string | null;
   onChange: (value: string) => void;
+  disabled?: boolean;
 };
 
 export const TransactionCategoryCell = ({
   value,
   onChange,
+  disabled = false,
 }: TransactionCategoryFieldProps) => {
   const cellRef = useRef<HTMLDivElement | null>(null);
 
@@ -115,6 +153,19 @@ export const TransactionCategoryCell = ({
     onChange(categoryId);
     setIsFocused(false);
   };
+
+  if (disabled) {
+    return (
+      <RowCell
+        grows
+        ref={cellRef}
+        style={TransactionTableWidths.category}
+        className="opacity-50"
+      >
+        <span className="block w-full text-base-content/50">--</span>
+      </RowCell>
+    );
+  }
 
   return (
     <RowCell

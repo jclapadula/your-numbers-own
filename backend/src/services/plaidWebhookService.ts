@@ -42,7 +42,7 @@ export namespace plaidWebhookService {
   const getTransactions = async (
     accessToken: string,
     startDate: string,
-    endDate: string
+    endDate: string,
   ): Promise<PlaidTransaction[]> => {
     const client = initializePlaidClient();
 
@@ -58,7 +58,7 @@ export namespace plaidWebhookService {
 
   const getConnectedAccountsForItem = async (
     db: Kysely<DB>,
-    itemId: string
+    itemId: string,
   ) => {
     const connectedAccounts = await db
       .selectFrom("plaid_accounts")
@@ -79,7 +79,7 @@ export namespace plaidWebhookService {
     budgetId: string,
     accountId: string,
     plaidAccountId: string,
-    plaidTransactions: PlaidTransaction[]
+    plaidTransactions: PlaidTransaction[],
   ) => {
     for (const plaidTx of plaidTransactions) {
       // Check if we already have this transaction
@@ -125,7 +125,7 @@ export namespace plaidWebhookService {
           await transactionsService.insertTransaction(
             trx,
             budgetId,
-            transaction
+            transaction,
           );
         });
     }
@@ -134,10 +134,10 @@ export namespace plaidWebhookService {
   export const handleTransactionsWebhook = async (
     db: Kysely<DB>,
     itemId: string,
-    webhookCode: string
+    webhookCode: string,
   ) => {
     console.log(
-      `Processing TRANSACTIONS webhook - ${webhookCode} for item: ${itemId}`
+      `Processing TRANSACTIONS webhook - ${webhookCode} for item: ${itemId}`,
     );
 
     const connectedAccounts = await getConnectedAccountsForItem(db, itemId);
@@ -154,7 +154,7 @@ export namespace plaidWebhookService {
     const plaidTransactions = await getTransactions(
       accessToken,
       startDate!,
-      endDate!
+      endDate!,
     );
 
     for (const account of connectedAccounts) {
@@ -165,8 +165,8 @@ export namespace plaidWebhookService {
           account.account_id,
           account.plaid_account_id,
           plaidTransactions.filter(
-            (tx) => tx.account_id === account.plaid_account_id
-          )
+            (tx) => tx.account_id === account.plaid_account_id,
+          ),
         ));
     }
   };
@@ -174,7 +174,7 @@ export namespace plaidWebhookService {
   export const handleItemWebhook = async (
     db: Kysely<DB>,
     itemId: string,
-    webhookCode: string
+    webhookCode: string,
   ) => {
     console.log(`Processing ITEM webhook - ${webhookCode} for item: ${itemId}`);
 
@@ -205,7 +205,7 @@ export namespace plaidWebhookService {
 
   export const verifyWebhookSignature = async (
     body: string,
-    headers: IncomingHttpHeaders
+    headers: IncomingHttpHeaders,
   ): Promise<boolean> => {
     try {
       const signedJwt = headers["plaid-verification"] as string;

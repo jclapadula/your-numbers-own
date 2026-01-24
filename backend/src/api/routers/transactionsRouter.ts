@@ -17,7 +17,7 @@ transactionsRouter.get(
   "/budgets/:budgetId/accounts/:accountId/transactions",
   async (
     req: Request<{ budgetId: string; accountId: string }>,
-    res: Response
+    res: Response,
   ) => {
     const transactions = await db
       .selectFrom("transactions")
@@ -28,7 +28,7 @@ transactionsRouter.get(
       .execute();
 
     res.json(transactions);
-  }
+  },
 );
 
 transactionsRouter.post(
@@ -39,16 +39,16 @@ transactionsRouter.post(
       {},
       CreateTransaction
     >,
-    res: Response
+    res: Response,
   ) => {
     await transactionsService.insertTransaction(
       db,
       req.params.budgetId,
-      req.body
+      req.body,
     );
 
     res.status(200).send({});
-  }
+  },
 );
 
 transactionsRouter.patch(
@@ -63,7 +63,7 @@ transactionsRouter.patch(
       {},
       UpdateTransaction
     >,
-    res: Response
+    res: Response,
   ) => {
     const { transactionId } = req.params;
 
@@ -71,11 +71,11 @@ transactionsRouter.patch(
       db,
       req.params.budgetId,
       transactionId,
-      req.body
+      req.body,
     );
 
     res.status(200).send({});
-  }
+  },
 );
 
 transactionsRouter.delete(
@@ -86,7 +86,7 @@ transactionsRouter.delete(
       {},
       { transactionIds: string[] }
     >,
-    res: Response
+    res: Response,
   ) => {
     const { transactionIds } = req.body;
 
@@ -94,9 +94,9 @@ transactionsRouter.delete(
       db,
       req.params.budgetId,
       req.params.accountId,
-      transactionIds
+      transactionIds,
     );
 
     res.status(200).send({});
-  }
+  },
 );
