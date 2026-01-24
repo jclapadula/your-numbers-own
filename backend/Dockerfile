@@ -20,19 +20,19 @@ FROM base AS prerelease
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
-# Run type check and build the application
+# Run type check
 ENV NODE_ENV=production
 RUN bun run check
-RUN bun run build
 
-# Copy production dependencies and built application into final image
+# Copy production dependencies and source code into final image
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/build ./build
+COPY --from=prerelease /usr/src/app/src ./src
 COPY --from=prerelease /usr/src/app/package.json .
+COPY --from=prerelease /usr/src/app/index.ts .
 
 # Expose the port that the application listens on
-EXPOSE 3000
+EXPOSE 8080
 
-# Run the application using the React Router serve command
-CMD ["bun", "run", "start"]
+# Run the application
+CMD ["bun", "run", "index.ts"]
