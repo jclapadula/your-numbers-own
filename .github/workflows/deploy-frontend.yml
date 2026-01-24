@@ -33,6 +33,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
+          platforms: linux/arm64
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/frontend:latest
