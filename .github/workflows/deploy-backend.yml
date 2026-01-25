@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - '.github/workflows/deploy-backend.yml'
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
 
 jobs:
   deploy:
@@ -41,11 +41,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Deploy to Coolify
-      #   run: |
-      #     curl -X POST "${{ secrets.COOLIFY_DEPLOY_KEY }}" \
-      #       -H "Content-Type: application/json" \
-      #       -d '{
-      #         "image": "ghcr.io/${{ github.repository }}/backend:${{ github.sha }}",
-      #         "service": "backend"
-      #       }'
+      - name: Deploy to Coolify
+        run: |
+          curl -X GET "https://vps2.juanlapadula.eu/api/v1/deploy?uuid=nsocwsscw884g8wss8og0kgc&force=false" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_DEPLOY_KEY }}"
