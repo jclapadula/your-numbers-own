@@ -22,6 +22,7 @@ COPY . .
 
 # Build the application
 ENV NODE_ENV=production
+RUN bun react-router typegen
 RUN bun run build
 
 # Copy production dependencies and built application into final image

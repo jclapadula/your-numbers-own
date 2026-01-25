@@ -46,7 +46,7 @@ export const LoginForm: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="input input-bordered w-full"
+                className="input input-bordered w-full data-[com-onepassword-filled]:bg-clip-text"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -62,7 +62,7 @@ export const LoginForm: React.FC = () => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="input input-bordered w-full"
+                className="input input-bordered w-full data-[com-onepassword-filled]:bg-clip-text"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
