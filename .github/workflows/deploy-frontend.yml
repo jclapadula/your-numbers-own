@@ -41,11 +41,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # - name: Deploy to Coolify
-      #   run: |
-      #     curl -X POST "${{ secrets.COOLIFY_DEPLOY_KEY }}" \
-      #       -H "Content-Type: application/json" \
-      #       -d '{
-      #         "image": "ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}",
-      #         "service": "frontend"
-      #       }'
+      - name: Deploy to Coolify
+        run: |
+          curl -X GET "https://vps2.juanlapadula.eu/api/v1/deploy?uuid=v8ogs0ggksgws84ggw0ckwco&force=false" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_DEPLOY_KEY }}"
