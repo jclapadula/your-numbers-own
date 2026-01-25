@@ -22,13 +22,12 @@ app.use(
     origin:
       config.env === "development"
         ? "http://localhost:5173"
-        : "https://app.your-numbers.app",
+        : "https://new.your-numbers.app",
     credentials: true,
-  })
+  }),
 );
 
 declare module "http" {
-  // eslint-disable-next-line no-unused-vars
   interface IncomingMessage {
     rawBody: string;
   }
@@ -39,7 +38,7 @@ app.use(
     verify: (req, res, buf) => {
       req.rawBody = buf.toString();
     },
-  })
+  }),
 );
 
 app.use(
@@ -54,7 +53,7 @@ app.use(
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-  })
+  }),
 );
 
 app.use(passport.initialize());
