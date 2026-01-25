@@ -8,11 +8,15 @@ import { config } from "./src/config";
 import dotenv from "dotenv";
 import passport from "./src/config/passport";
 import { PostgresSessionStore } from "./src/config/sessionStore";
+import { buildMigrator } from "./src/db/scripts/migrator";
 
 // Load environment variables
 const envFile =
   process.env.NODE_ENV === "development" ? ".env.development" : ".env";
 dotenv.config({ path: envFile });
+
+process.env.NODE_ENV === "production" &&
+  buildMigrator().migrator.migrateToLatest();
 
 const app = express();
 const port = 8080;

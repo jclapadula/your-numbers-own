@@ -9,7 +9,7 @@ import {
   sql,
 } from "kysely";
 
-const buildMigrator = () => {
+export const buildMigrator = () => {
   const db = new Kysely<unknown>({
     dialect: new PostgresDialect({
       pool: new Pool({
