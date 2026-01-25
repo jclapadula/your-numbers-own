@@ -8,7 +8,7 @@ import { config } from "./src/config";
 import dotenv from "dotenv";
 import passport from "./src/config/passport";
 import { PostgresSessionStore } from "./src/config/sessionStore";
-import { buildMigrator } from "./src/db/scripts/migrator";
+import { buildMigrator } from "./src/db/scripts/buildMigrator";
 
 // Load environment variables
 const envFile =
