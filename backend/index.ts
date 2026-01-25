@@ -20,6 +20,11 @@ process.env.NODE_ENV === "production" &&
 
 const app = express();
 const port = 8080;
+app.set("trust proxy", 2 /* number of proxies between user and server */);
+
+app.get("/ip", (request, response) => {
+  response.send(request.ip);
+});
 
 app.use(
   cors({
