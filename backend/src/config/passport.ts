@@ -1,7 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { AuthService } from "../services/authService";
-import type { Users } from "../db/models";
 
 // Configure local strategy
 passport.use(
@@ -22,8 +21,8 @@ passport.use(
       } catch (error) {
         return done(error);
       }
-    }
-  )
+    },
+  ),
 );
 
 // Serialize user for session

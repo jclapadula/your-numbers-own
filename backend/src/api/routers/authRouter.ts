@@ -1,12 +1,21 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import passport from "../../config/passport";
 import { AuthService } from "../../services/authService";
 import type { Request, Response } from "express";
 
 const router = Router();
 
+const rateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: "Too many login attempts, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Register endpoint
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", rateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -52,7 +61,7 @@ router.post("/register", async (req: Request, res: Response) => {
 });
 
 // Login endpoint
-router.post("/login", (req: Request, res: Response, next) => {
+router.post("/login", rateLimiter, (req: Request, res: Response, next) => {
   passport.authenticate("local", (err: any, user: any, info: any) => {
     if (err) {
       return next(err);
