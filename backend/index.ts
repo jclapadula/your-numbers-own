@@ -15,8 +15,12 @@ const envFile =
   process.env.NODE_ENV === "development" ? ".env.development" : ".env";
 dotenv.config({ path: envFile });
 
-process.env.NODE_ENV === "production" &&
-  buildMigrator().migrator.migrateToLatest();
+if (process.env.NODE_ENV === "production") {
+  const result = await buildMigrator().migrator.migrateToLatest();
+  if (result.error) {
+    console.log(JSON.stringify(result.error));
+  }
+}
 
 const app = express();
 const port = 8080;
