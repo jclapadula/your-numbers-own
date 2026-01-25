@@ -14,7 +14,7 @@ export namespace balanceUpdater {
     modifiedTransactions: {
       date: ZonedDate;
       categories: (string | null)[];
-    }[]
+    }[],
   ) =>
     _(modifiedTransactions)
       .map(({ date, ...ids }) => ({
@@ -33,7 +33,7 @@ export namespace balanceUpdater {
         const sortedGroup = sortBy(
           group,
           (e) => e.monthOfYear.year,
-          (e) => e.monthOfYear.month
+          (e) => e.monthOfYear.month,
         );
         const earliestModifiedMonth = sortedGroup[0]!.monthOfYear;
 
@@ -49,14 +49,14 @@ export namespace balanceUpdater {
     budgetId: string,
     categoryId: string | null,
     year: number,
-    month: number
+    month: number,
   ) => {
     const prevBalanceResult = await db
       .selectFrom("monthly_category_budgets")
       .where("budgetId", "=", budgetId)
       .where(categoryIdOrNull(categoryId))
       .where(({ eb, tuple, refTuple }) =>
-        eb(refTuple("year", "month"), "<", tuple(year, month))
+        eb(refTuple("year", "month"), "<", tuple(year, month)),
       )
       .orderBy("year", "desc")
       .orderBy("month", "desc")
@@ -71,7 +71,7 @@ export namespace balanceUpdater {
     budgetId: string,
     categoryId: string | null,
     start: { year: number; month: number },
-    isIncomeCategory: boolean
+    isIncomeCategory: boolean,
   ) => {
     let previousBalance = isIncomeCategory
       ? 0
@@ -80,7 +80,7 @@ export namespace balanceUpdater {
           budgetId,
           categoryId,
           start.year,
-          start.month
+          start.month,
         );
 
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
@@ -147,7 +147,7 @@ export namespace balanceUpdater {
         .onConflict((oc) =>
           oc.columns(["budgetId", "categoryId", "year", "month"]).doUpdateSet({
             balance,
-          })
+          }),
         )
         .execute();
 
@@ -160,7 +160,7 @@ export namespace balanceUpdater {
   const updateBudgetMonthlyBalances = async (
     db: Kysely<DB>,
     budgetId: string,
-    start: { year: number; month: number }
+    start: { year: number; month: number },
   ) => {
     let { balance: previousBalance = 0 } =
       (await db
@@ -192,7 +192,7 @@ export namespace balanceUpdater {
         .innerJoin(
           "categories",
           "monthly_category_budgets.categoryId",
-          "categories.id"
+          "categories.id",
         )
         .where("monthly_category_budgets.budgetId", "=", budgetId)
         .where("year", "=", year)
@@ -220,7 +220,7 @@ export namespace balanceUpdater {
         .onConflict((oc) =>
           oc.columns(["budgetId", "year", "month"]).doUpdateSet({
             balance,
-          })
+          }),
         )
         .execute();
 
@@ -236,7 +236,7 @@ export namespace balanceUpdater {
     modifiedTransactions: {
       date: ZonedDate;
       categories: (string | null)[];
-    }[]
+    }[],
   ) => {
     const affectedCategories =
       getEarliestAffectedMonthByCategory(modifiedTransactions);
@@ -247,7 +247,7 @@ export namespace balanceUpdater {
       const isIncomeCategory = await categoriesService.isIncomeCategory(
         db,
         budgetId,
-        categoryId
+        categoryId,
       );
 
       await recalculateCategoryBalances(
@@ -255,7 +255,7 @@ export namespace balanceUpdater {
         budgetId,
         categoryId,
         earliestModifiedMonth,
-        isIncomeCategory
+        isIncomeCategory,
       );
     }
 

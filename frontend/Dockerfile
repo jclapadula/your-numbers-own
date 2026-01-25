@@ -25,14 +25,24 @@ ENV NODE_ENV=production
 RUN bun react-router typegen
 RUN bun run build
 
-# Copy production dependencies and built application into final image
-FROM base AS release
-COPY --from=install /temp/prod/node_modules node_modules
-COPY --from=prerelease /usr/src/app/build ./build
-COPY --from=prerelease /usr/src/app/package.json .
+# Serve static files with nginx
+FROM nginx:alpine AS release
+
+# Copy the static build output to nginx html directory
+COPY --from=prerelease /usr/src/app/build/client /usr/share/nginx/html
+
+# Create nginx configuration for SPA routing
+RUN echo 'server { \
+    listen 3000; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
 # Expose the port that the application listens on
 EXPOSE 3000
 
-# Run the application using the React Router serve command
-CMD ["bun", "run", "start"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

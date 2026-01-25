@@ -6,7 +6,7 @@ import { monthOfYearIs } from "../db/utils";
 export namespace monthlyBudgetService {
   const getLatestMonthlySpendBudgets = async (
     budgetId: string,
-    monthOfYear: MonthOfYear
+    monthOfYear: MonthOfYear,
   ) => {
     const query = db
       .selectFrom((query) =>
@@ -24,15 +24,15 @@ export namespace monthlyBudgetService {
             eb(
               refTuple("year", "month"),
               "<=",
-              eb.tuple(monthOfYear.year, monthOfYear.month)
-            )
+              eb.tuple(monthOfYear.year, monthOfYear.month),
+            ),
           )
           .where("budgetId", "=", budgetId)
           .orderBy("categoryId")
           .orderBy("year", "desc")
           .orderBy("month", "desc")
           .distinctOn("categoryId")
-          .as("latest")
+          .as("latest"),
       )
       .leftJoinLateral(
         ({ eb, ref }) =>
@@ -44,14 +44,14 @@ export namespace monthlyBudgetService {
               eb(
                 refTuple("year", "month"),
                 "<",
-                eb.tuple(monthOfYear.year, monthOfYear.month)
-              )
+                eb.tuple(monthOfYear.year, monthOfYear.month),
+              ),
             )
             .orderBy("year", "desc")
             .orderBy("month", "desc")
             .limit(1)
             .as("previous_balance"),
-        (join) => join.onTrue()
+        (join) => join.onTrue(),
       )
       .select([
         "latest.categoryId",
@@ -67,7 +67,7 @@ export namespace monthlyBudgetService {
 
   const getIncomeBalancesForMonth = async (
     budgetId: string,
-    monthOfYear: MonthOfYear
+    monthOfYear: MonthOfYear,
   ) => {
     return await db
       .selectFrom("monthly_category_budgets")
@@ -78,7 +78,7 @@ export namespace monthlyBudgetService {
       .innerJoin(
         "categories",
         "monthly_category_budgets.categoryId",
-        "categories.id"
+        "categories.id",
       )
       .where("monthly_category_budgets.budgetId", "=", budgetId)
       .where("categories.isIncome", "=", true)
@@ -86,15 +86,15 @@ export namespace monthlyBudgetService {
         eb(
           refTuple("year", "month"),
           "=",
-          eb.tuple(monthOfYear.year, monthOfYear.month)
-        )
+          eb.tuple(monthOfYear.year, monthOfYear.month),
+        ),
       )
       .execute();
   };
 
   export const getMonthlyBudget = async (
     budgetId: string,
-    monthOfYear: MonthOfYear
+    monthOfYear: MonthOfYear,
   ) => {
     const categories = await db
       .selectFrom("categories")
@@ -104,12 +104,12 @@ export namespace monthlyBudgetService {
 
     const latestMonthlySpendBudgets = await getLatestMonthlySpendBudgets(
       budgetId,
-      monthOfYear
+      monthOfYear,
     );
 
     const currentMonthIncomeBalances = await getIncomeBalancesForMonth(
       budgetId,
-      monthOfYear
+      monthOfYear,
     );
 
     const lastMonthCarryOver = await db
@@ -126,7 +126,7 @@ export namespace monthlyBudgetService {
       .map((category) => {
         const latestMonthlyBudget = latestMonthlySpendBudgets.find(
           (latestMonthlyBudget) =>
-            latestMonthlyBudget.categoryId === category.id
+            latestMonthlyBudget.categoryId === category.id,
         );
 
         const previousBalance = latestMonthlyBudget?.previousBalance ?? 0;
@@ -155,7 +155,7 @@ export namespace monthlyBudgetService {
       .map((category) => {
         const monthBalance = currentMonthIncomeBalances.find(
           (latestMonthlyBudget) =>
-            latestMonthlyBudget.categoryId === category.id
+            latestMonthlyBudget.categoryId === category.id,
         );
 
         const balance = monthBalance?.balance ?? 0;

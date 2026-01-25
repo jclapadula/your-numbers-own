@@ -59,17 +59,17 @@ const TableHeaders = () => {
     monthlyBudget?.spendCategories.reduce(
       (acc, category) =>
         category.categoryId ? acc + category.assignedAmount : acc,
-      0
+      0,
     ) || 0;
   const totalBalance =
     monthlyBudget?.spendCategories.reduce(
       (acc, category) => (category.categoryId ? acc + category.balance : acc),
-      0
+      0,
     ) || 0;
   const totalSpent =
     monthlyBudget?.spendCategories.reduce(
       (acc, category) => (category.categoryId ? acc + category.spent : acc),
-      0
+      0,
     ) || 0;
 
   return (
@@ -123,41 +123,41 @@ const useMonthlyBudgetData = (monthlyBudget: MonthlyBudget) => {
 
   const spendCategoriesById = _.keyBy(
     monthlyBudget?.spendCategories,
-    "categoryId"
+    "categoryId",
   );
   const incomeCategoriesById = _.keyBy(
     monthlyBudget?.incomeCategories,
-    "categoryId"
+    "categoryId",
   );
 
   const categoriesByGroup = groupBy(
     categories.sort((a, b) => a.position - b.position),
-    "groupId"
+    "groupId",
   );
 
   const groupTotals = mapValues(categoriesByGroup, (groupCategories) => ({
     assignedAmount: sumBy(
       groupCategories,
-      (category) => spendCategoriesById[category.id]?.assignedAmount || 0
+      (category) => spendCategoriesById[category.id]?.assignedAmount || 0,
     ),
     spent: sumBy(
       groupCategories,
-      (category) => spendCategoriesById[category.id]?.spent || 0
+      (category) => spendCategoriesById[category.id]?.spent || 0,
     ),
     balance: sumBy(
       groupCategories,
       (category) =>
         spendCategoriesById[category.id]?.balance ||
         incomeCategoriesById[category.id]?.balance ||
-        0
+        0,
     ),
   }));
 
   const spendCategoryGroups = categoryGroups.filter(
-    (categoryGroup) => !categoryGroup.isIncome
+    (categoryGroup) => !categoryGroup.isIncome,
   );
   const incomeCategoryGroups = categoryGroups.filter(
-    (categoryGroup) => categoryGroup.isIncome
+    (categoryGroup) => categoryGroup.isIncome,
   );
 
   return {
@@ -205,7 +205,7 @@ export const MonthlyBudgetTable = ({
   const [draggingCategoryGroup, setDraggingCategoryGroup] =
     useState<CategoryGroup | null>(null);
   const [draggingCategory, setDraggingCategory] = useState<Category | null>(
-    null
+    null,
   );
 
   const customCollisionDetection: CollisionDetection = (args) => {
@@ -289,14 +289,14 @@ export const MonthlyBudgetTable = ({
 
     if (isCategory(e.active)) {
       const category = categories.find(
-        (cat: Category) => cat.id === e.active.id
+        (cat: Category) => cat.id === e.active.id,
       );
       if (category) {
         setDraggingCategory(category);
       }
     } else {
       const categoryGroup = spendCategoryGroups.find(
-        (group) => group.id === e.active.id
+        (group) => group.id === e.active.id,
       );
       if (categoryGroup) {
         setDraggingCategoryGroup(categoryGroup);
@@ -308,7 +308,7 @@ export const MonthlyBudgetTable = ({
     <div
       className={twMerge(
         "text-sm bg-neutral/50 rounded-sm",
-        (isMovingCategoryGroup || isMovingCategory) && "animate-pulse"
+        (isMovingCategoryGroup || isMovingCategory) && "animate-pulse",
       )}
     >
       <TableHeaders />

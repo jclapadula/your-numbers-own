@@ -9,7 +9,7 @@ export namespace categoriesService {
   const getSortedElements = <T extends { id: string; position: number }>(
     elements: T[],
     elementId: string,
-    newPosition: number
+    newPosition: number,
   ) => {
     // copy so we don't mutate the original array
     elements = _.sortBy(elements, (e) => e.position);
@@ -31,7 +31,7 @@ export namespace categoriesService {
   const moveToCategoryGroup = async (
     db: Kysely<DB>,
     category: { id: string; groupId: string },
-    categoryGroupId: string
+    categoryGroupId: string,
   ) => {
     await db
       .updateTable("categories")
@@ -50,7 +50,7 @@ export namespace categoriesService {
       (c, idx) => ({
         ...c,
         position: idx,
-      })
+      }),
     );
 
     for (const category of resortedCategories) {
@@ -67,7 +67,7 @@ export namespace categoriesService {
     budgetId: string,
     categoryGroupId: string,
     categoryId: string,
-    newPosition: number
+    newPosition: number,
   ) => {
     const category = await db
       .selectFrom("categories")
@@ -90,7 +90,7 @@ export namespace categoriesService {
     const resortedCategories = getSortedElements(
       currentCategoryGroupCategories,
       categoryId,
-      newPosition
+      newPosition,
     );
 
     for (const category of resortedCategories) {
@@ -106,7 +106,7 @@ export namespace categoriesService {
     db: Kysely<DB>,
     budgetId: string,
     categoryGroupId: string,
-    newPosition: number
+    newPosition: number,
   ) => {
     const allGroups = await db
       .selectFrom("category_groups")
@@ -118,7 +118,7 @@ export namespace categoriesService {
     const resortedGroups = getSortedElements(
       allGroups,
       categoryGroupId,
-      newPosition
+      newPosition,
     );
 
     for (const group of resortedGroups) {
@@ -133,7 +133,7 @@ export namespace categoriesService {
   const unassignCategoryFromDeletedAccountsTransactions = async (
     db: Kysely<DB>,
     budgetId: string,
-    categoryId: string
+    categoryId: string,
   ) => {
     await db
       .updateTable("transactions")
@@ -146,7 +146,7 @@ export namespace categoriesService {
           .selectFrom("accounts")
           .select("id")
           .where("budgetId", "=", budgetId)
-          .where("deletedAt", "is not", null)
+          .where("deletedAt", "is not", null),
       )
       .execute();
   };
@@ -155,12 +155,12 @@ export namespace categoriesService {
     db: Kysely<DB>,
     budgetId: string,
     categoryId: string,
-    moveToCategoryId: string
+    moveToCategoryId: string,
   ) => {
     await unassignCategoryFromDeletedAccountsTransactions(
       db,
       budgetId,
-      categoryId
+      categoryId,
     );
 
     const { earliestTransactionDate } =
@@ -172,7 +172,7 @@ export namespace categoriesService {
 
     if (earliestTransactionDate && !moveToCategoryId) {
       throw new Error(
-        "Category has transactions. Please select a category to move the transactions to."
+        "Category has transactions. Please select a category to move the transactions to.",
       );
     }
 
@@ -200,14 +200,14 @@ export namespace categoriesService {
     db: Kysely<DB>,
     budgetId: string,
     categoryId: string,
-    moveTransactionsToCategoryId: string
+    moveTransactionsToCategoryId: string,
   ) => {
     await db.transaction().execute(async (db) => {
       await moveTransactionsToOtherCategory(
         db,
         budgetId,
         categoryId,
-        moveTransactionsToCategoryId
+        moveTransactionsToCategoryId,
       );
 
       const category = await db
@@ -222,7 +222,7 @@ export namespace categoriesService {
         budgetId,
         category.groupId,
         categoryId,
-        10_000 // Put in the last position of the group
+        10_000, // Put in the last position of the group
       );
 
       await db.deleteFrom("categories").where("id", "=", categoryId).execute();
@@ -232,7 +232,7 @@ export namespace categoriesService {
   export const isIncomeCategory = async (
     db: Kysely<DB>,
     budgetId: string,
-    categoryId: string | null
+    categoryId: string | null,
   ) => {
     if (!categoryId) return false;
 

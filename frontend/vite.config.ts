@@ -8,6 +8,9 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+    ssr: {
+      noExternal: ["lodash"],
+    },
     resolve:
       command === "build"
         ? {
