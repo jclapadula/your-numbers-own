@@ -11,6 +11,7 @@ import { useCategories } from "~/components/Budget/Categories/CategoriesQueries"
 import { PayeeInput } from "~/components/Budget/Inputs/PayeeInput";
 import type { Transaction } from "~/api/models";
 import type { PayeeOrTransfer } from "~/types";
+import { evaluateMathInput } from "~/utils/mathEval";
 
 type TransactionDateFieldProps = {
   value: string;
@@ -36,7 +37,7 @@ export const TransactionDateCell = ({
       {isFocused && (
         <input
           type="date"
-          className={twMerge("input px-0 h-auto !outline-none")}
+          className={twMerge("input px-0 h-auto outline-none!")}
           value={format(new Date(value), "yyyy-MM-dd")}
           onChange={(e) => {
             const date = new Date(e.target.value);
@@ -233,7 +234,7 @@ export const TransactionNotesCell = ({
     >
       {isFocused ? (
         <input
-          className="input w-full h-auto pl-0 !outline-0"
+          className="input w-full h-auto pl-0 outline-0!"
           value={notes}
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
@@ -277,7 +278,7 @@ export const TransactionPaymentDepositCell = ({
     >
       {isFocused ? (
         <input
-          className="input w-full h-auto pl-0 !outline-0"
+          className="input w-full h-auto pl-0 outline-0!"
           value={amount?.toString()}
           onChange={(e) => {
             setAmount(e.target.value);
@@ -288,12 +289,9 @@ export const TransactionPaymentDepositCell = ({
               return;
             }
 
-            const valueAsNumber = Number(e.target.value);
-            if (!isNaN(valueAsNumber)) {
-              const roundedValue = Number(valueAsNumber.toFixed(2));
-              onChange(roundedValue);
-              setAmount(roundedValue.toString());
-            }
+            const result = evaluateMathInput(e.target.value, rawValue || 0);
+            onChange(result);
+            setAmount(result.toString());
             setIsFocused(false);
           }}
           onKeyDown={(e) => {

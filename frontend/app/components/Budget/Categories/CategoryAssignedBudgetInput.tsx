@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Amount, { rawValueToString } from "~/components/Amount";
+import { evaluateMathInput } from "~/utils/mathEval";
 
 type CategoryAssignedBudgetInputProps = {
   rawValue: number | null;
@@ -46,7 +47,7 @@ export const CategoryAssignedBudgetInput = ({
     >
       {isFocused ? (
         <input
-          className="input w-full h-auto pr-0 !outline-0 text-right"
+          className="input w-full h-auto pr-0 outline-0! text-right"
           value={amount?.toString()}
           onChange={(e) => {
             setAmount(e.target.value);
@@ -57,12 +58,9 @@ export const CategoryAssignedBudgetInput = ({
               return;
             }
 
-            const valueAsNumber = Number(e.target.value);
-            if (!isNaN(valueAsNumber)) {
-              const roundedValue = Number(valueAsNumber.toFixed(2));
-              onChange(roundedValue);
-              setAmount(roundedValue.toString());
-            }
+            const result = evaluateMathInput(e.target.value, rawValue || 0);
+            onChange(result);
+            setAmount(result.toString());
             setIsFocused(false);
           }}
           onKeyDown={(e) => {

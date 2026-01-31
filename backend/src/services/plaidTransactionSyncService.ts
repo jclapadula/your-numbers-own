@@ -1,11 +1,10 @@
 import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
 import type {
-  Transaction as PlaidTransaction,
   TransactionsSyncRequest,
   TransactionsSyncResponse,
   RemovedTransaction,
 } from "plaid";
-import type { Insertable, Kysely, Selectable } from "kysely";
+import type { Insertable, Kysely } from "kysely";
 import type { DB, Payees, Transactions } from "../db/models";
 import { balanceUpdater } from "./balanceUpdater";
 import { accountBalanceService } from "./accountBalanceService";
