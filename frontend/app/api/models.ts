@@ -6,6 +6,7 @@ export type BudgetAccount = {
   id: string;
   name: string;
   balance: number;
+  isLinked: boolean;
   deletedAt?: string | null;
 };
 

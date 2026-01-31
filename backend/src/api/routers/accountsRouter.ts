@@ -16,9 +16,14 @@ accountsRouter.get(
   async (req: Request<{ budgetId: string }>, res: Response) => {
     const accounts = await db
       .selectFrom("accounts")
-      .where("budgetId", "=", req.params.budgetId)
-      .where("deletedAt", "is", null)
-      .selectAll()
+      .leftJoin("plaid_accounts", "plaid_accounts.account_id", "accounts.id")
+      .where("accounts.budgetId", "=", req.params.budgetId)
+      .where("accounts.deletedAt", "is", null)
+      .select([
+        "accounts.id",
+        "accounts.name",
+        "plaid_accounts.id as plaidAccountId",
+      ])
       .execute();
 
     const accountsIds = accounts.map((a) => a.id);
@@ -31,6 +36,7 @@ accountsRouter.get(
       id: a.id,
       name: a.name,
       balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0,
+      isLinked: a.plaidAccountId !== null,
     }));
 
     res.json(accountsResponse);
