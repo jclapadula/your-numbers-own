@@ -31,7 +31,7 @@ plaidRouter.post(
   "/budgets/:budgetId/plaid/connect-accounts",
   async (
     req: Request<{ budgetId: string }, {}, PlaidConnectAccountsRequest>,
-    res: Response
+    res: Response,
   ) => {
     try {
       const { publicToken: public_token } = req.body;
@@ -43,7 +43,7 @@ plaidRouter.post(
       }
 
       const { accessToken, itemId } = await plaidService.exchangePublicToken(
-        public_token
+        public_token,
       );
 
       const plaidAccounts = await plaidService.getAccounts(accessToken);
@@ -60,12 +60,12 @@ plaidRouter.post(
 
       // Auto-connect all available accounts
       const plaidAccountIds = plaidAccounts.map(
-        (account) => account.account_id
+        (account) => account.account_id,
       );
       const createdAccountIds = await plaidService.connectPlaidAccounts(
         db,
         budgetId,
-        plaidAccountIds
+        plaidAccountIds,
       );
 
       res.json({
@@ -76,7 +76,7 @@ plaidRouter.post(
       console.error("Error linking account:", error);
       res.status(500).json({ error: "Failed to link account" });
     }
-  }
+  },
 );
 
 // Manual sync endpoint (for testing or manual refresh)
@@ -84,7 +84,7 @@ plaidRouter.post(
   "/budgets/:budgetId/accounts/:accountId/plaid/sync",
   async (
     req: Request<{ budgetId: string; accountId: string }>,
-    res: Response
+    res: Response,
   ) => {
     try {
       const { accountId, budgetId } = req.params;
@@ -93,7 +93,7 @@ plaidRouter.post(
       // Get Plaid account info
       const plaidAccount = await plaidService.getPlaidAccountByAccountId(
         db,
-        accountId
+        accountId,
       );
       if (!plaidAccount) {
         res.status(404).json({ error: "Plaid account not found" });
@@ -115,10 +115,10 @@ plaidRouter.post(
       //   "DEFAULT_UPDATE"
       // );
 
-      await plaidTransactionSyncService.syncTransactions(
+      await plaidTransactionSyncService.syncAccountTransactions(
         db,
         budgetId,
-        accountId
+        accountId,
       );
 
       res.json({
@@ -130,5 +130,5 @@ plaidRouter.post(
       console.error("Error syncing transactions:", error);
       res.status(500).json({ error: "Failed to sync transactions" });
     }
-  }
+  },
 );

@@ -4,21 +4,26 @@ import { db } from "../../db";
 import { plaidWebhookService } from "../../services/plaidWebhookService";
 import { json } from "express";
 
+interface PlaidWebhookPayload {
+  webhook_type: "TRANSACTIONS" | "ITEM";
+  webhook_code: string;
+  item_id: string;
+}
+
 export const plaidWebhookRouter = Router();
 
 // Webhook endpoint (no authentication required for webhooks)
 plaidWebhookRouter.post(
   "/api/plaid/webhook",
   json({ type: "text" }), // Get raw body for signature verification
-  async (req: Request, res: Response) => {
+  async (req: Request<{}, {}, PlaidWebhookPayload>, res: Response) => {
     try {
-      console.log(req.rawBody);
       const isValid = await plaidWebhookService.verifyWebhookSignature(
         req.rawBody,
-        req.headers
+        req.headers,
       );
       if (!isValid) {
-        console.log("Invalid webhook signature");
+        console.warn("Invalid webhook signature");
         res.status(401).json({ error: "Invalid signature" });
         return;
       }
@@ -27,20 +32,19 @@ plaidWebhookRouter.post(
 
       console.log(`Received Plaid webhook: ${webhook_type} - ${webhook_code}`);
 
-      // Process the webhook based on type
       switch (webhook_type) {
         case "TRANSACTIONS":
           await plaidWebhookService.handleTransactionsWebhook(
             db,
             item_id,
-            webhook_code
+            webhook_code,
           );
           break;
         case "ITEM":
           await plaidWebhookService.handleItemWebhook(
             db,
             item_id,
-            webhook_code
+            webhook_code,
           );
           break;
         default:
@@ -54,5 +58,5 @@ plaidWebhookRouter.post(
       console.error("Error processing webhook:", error);
       res.status(500).json({ error: "Webhook processing failed" });
     }
-  }
+  },
 );

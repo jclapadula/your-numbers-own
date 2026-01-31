@@ -5,7 +5,7 @@ import type {
   TransactionsSyncResponse,
   RemovedTransaction,
 } from "plaid";
-import type { Insertable, Kysely } from "kysely";
+import type { Insertable, Kysely, Selectable } from "kysely";
 import type { DB, Payees, Transactions } from "../db/models";
 import { balanceUpdater } from "./balanceUpdater";
 import { accountBalanceService } from "./accountBalanceService";
@@ -41,23 +41,16 @@ export namespace plaidTransactionSyncService {
     db: Kysely<DB>,
     budgetId: string,
     accountId: string,
-    modifiedTransactions: (PlaidTransaction | RemovedTransaction)[],
+    modifiedTransactions: { categoryId: string | null; date: Date }[],
   ) => {
-    const modifiedCategories = await db
-      .selectFrom("transactions")
-      .where("accountId", "=", accountId)
-      .where(
-        "plaid_transaction_id",
-        "in",
-        modifiedTransactions.map((tx) => tx.transaction_id),
-      )
-      .select(({ eb }) => [
-        "categoryId",
-        eb.fn.max("date").as("maxDate"),
-        eb.fn.min("date").as("minDate"),
-      ])
-      .groupBy("categoryId")
-      .execute();
+    const modifiedCategories = _(modifiedTransactions)
+      .groupBy((tx) => tx.categoryId)
+      .map((group) => ({
+        categoryId: group[0]!.categoryId,
+        maxDate: new Date(Math.max(...group.map((tx) => tx.date.getTime()))),
+        minDate: new Date(Math.min(...group.map((tx) => tx.date.getTime()))),
+      }))
+      .value();
 
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
     const categoriesWithDateLimits = modifiedCategories.flatMap(
@@ -88,16 +81,18 @@ export namespace plaidTransactionSyncService {
     accountId: string,
     removed: RemovedTransaction[],
   ) => {
-    removed.length &&
-      (await db
-        .deleteFrom("transactions")
-        .where("accountId", "=", accountId)
-        .where(
-          "plaid_account_id",
-          "in",
-          removed.map((tx) => tx.transaction_id),
-        )
-        .execute());
+    if (!removed.length) return [];
+
+    return await db
+      .deleteFrom("transactions")
+      .where("accountId", "=", accountId)
+      .where(
+        "plaid_account_id",
+        "in",
+        removed.map((tx) => tx.transaction_id),
+      )
+      .returningAll()
+      .execute();
   };
 
   const createMissingPayees = async (
@@ -138,7 +133,7 @@ export namespace plaidTransactionSyncService {
             ({
               budgetId,
               name,
-            }) satisfies Insertable<Payees>,
+            } satisfies Insertable<Payees>),
         ),
       )
       .execute();
@@ -171,7 +166,11 @@ export namespace plaidTransactionSyncService {
     response: TransactionsSyncResponse,
   ) => {
     await db.transaction().execute(async (db) => {
-      await deleteTransactions(db, accountId, response.removed);
+      const deletedTransactions = await deleteTransactions(
+        db,
+        accountId,
+        response.removed,
+      );
 
       await createMissingPayees(db, budgetId, response);
 
@@ -197,11 +196,13 @@ export namespace plaidTransactionSyncService {
             notes: trx.original_description,
             payeeId:
               (trx.merchant_name && payeeIdByName[trx.merchant_name]) || null,
-          }) satisfies Insertable<Transactions>,
+          } satisfies Insertable<Transactions>),
       );
 
+      let upsertedTransactions: { categoryId: string | null; date: Date }[] =
+        [];
       if (transactionsToUpsert.length) {
-        await db
+        upsertedTransactions = await db
           .insertInto("transactions")
           .values(transactionsToUpsert)
           .onConflict((oc) =>
@@ -214,6 +215,7 @@ export namespace plaidTransactionSyncService {
                 isReconciled: (eb) => eb.ref("excluded.isReconciled"),
               }),
           )
+          .returning(["categoryId", "date"])
           .execute();
       }
 
@@ -225,14 +227,13 @@ export namespace plaidTransactionSyncService {
 
       // update account and partial balances
       await updateAccountAndMonthlyBalances(db, budgetId, accountId, [
-        ...response.added,
-        ...response.modified,
-        ...response.removed,
+        ...upsertedTransactions,
+        ...deletedTransactions,
       ]);
     });
   };
 
-  export const syncTransactions = async (
+  export const syncAccountTransactions = async (
     db: Kysely<DB>,
     budgetId: string,
     accountId: string,
@@ -264,7 +265,24 @@ export namespace plaidTransactionSyncService {
 
     if (response.data.has_more) {
       console.log("Calling syncTransactions again");
-      await syncTransactions(db, budgetId, accountId);
+      await syncAccountTransactions(db, budgetId, accountId);
+    }
+  };
+
+  export const syncItemTransactions = async (
+    db: Kysely<DB>,
+    itemId: string,
+  ) => {
+    const accountsToSync = await db
+      .selectFrom("plaid_accounts")
+      .where("plaid_item_id", "=", itemId)
+      .select(["account_id", "budget_id"])
+      .execute();
+
+    if (!accountsToSync.length) return;
+
+    for (const { account_id, budget_id } of accountsToSync) {
+      account_id && (await syncAccountTransactions(db, budget_id, account_id));
     }
   };
 }

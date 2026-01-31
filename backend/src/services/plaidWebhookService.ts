@@ -1,19 +1,14 @@
 import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
-import type {
-  TransactionsGetRequest,
-  Transaction as PlaidTransaction,
-  WebhookVerificationKeyGetRequest,
-} from "plaid";
+import type { WebhookVerificationKeyGetRequest } from "plaid";
 import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
-import type { CreateTransaction } from "./models";
-import { transactionsService } from "./transactionsService";
 // @ts-ignore
 import compare from "secure-compare";
 import { jwtDecode } from "jwt-decode";
 import * as JWT from "jose";
 import { sha256 } from "js-sha256";
 import type { IncomingHttpHeaders } from "http";
+import { plaidTransactionSyncService } from "./plaidTransactionSyncService";
 
 export namespace plaidWebhookService {
   let plaidClient: PlaidApi;
@@ -39,23 +34,6 @@ export namespace plaidWebhookService {
     return plaidClient;
   };
 
-  const getTransactions = async (
-    accessToken: string,
-    startDate: string,
-    endDate: string,
-  ): Promise<PlaidTransaction[]> => {
-    const client = initializePlaidClient();
-
-    const request: TransactionsGetRequest = {
-      access_token: accessToken,
-      start_date: startDate,
-      end_date: endDate,
-    };
-
-    const response = await client.transactionsGet(request);
-    return response.data.transactions;
-  };
-
   const getConnectedAccountsForItem = async (
     db: Kysely<DB>,
     itemId: string,
@@ -74,63 +52,6 @@ export namespace plaidWebhookService {
     return connectedAccounts;
   };
 
-  const syncTransactionsForAccount = async (
-    db: Kysely<DB>,
-    budgetId: string,
-    accountId: string,
-    plaidAccountId: string,
-    plaidTransactions: PlaidTransaction[],
-  ) => {
-    for (const plaidTx of plaidTransactions) {
-      // Check if we already have this transaction
-      const existingTransaction = await db
-        .selectFrom("transactions")
-        .where("plaid_transaction_id", "=", plaidTx.transaction_id)
-        .executeTakeFirst();
-
-      if (existingTransaction) {
-        continue; // Skip if already exists
-      }
-
-      // Convert Plaid transaction to Your Numbers format
-      const transaction: CreateTransaction = {
-        date: new Date(plaidTx.date),
-        accountId,
-        amount: -plaidTx.amount, // Plaid uses positive for outflows, we use negative
-        categoryId: null, // Will need to be categorized manually or with auto-categorization
-        isReconciled: false,
-        notes: plaidTx.merchant_name || plaidTx.original_description || null,
-        payeeId: null,
-        destinationAccountId: null,
-      };
-
-      // Insert transaction using existing service but with Plaid metadata
-      await db
-        .transaction()
-        .setIsolationLevel("serializable")
-        .execute(async (trx) => {
-          // Insert with Plaid-specific fields
-          await trx
-            .insertInto("transactions")
-            .values({
-              ...transaction,
-              plaid_transaction_id: plaidTx.transaction_id,
-              plaid_account_id: plaidAccountId,
-              merchant_name: plaidTx.merchant_name || null,
-            })
-            .execute();
-
-          // Use existing transaction service for balance updates
-          // Note: This approach reuses the balance update logic from transactionsService
-          await transactionsService.insertTransaction(
-            trx,
-            budgetId,
-            transaction,
-          );
-        });
-    }
-  };
-
   export const handleTransactionsWebhook = async (
     db: Kysely<DB>,
     itemId: string,
@@ -139,36 +60,9 @@ export namespace plaidWebhookService {
     console.log(
       `Processing TRANSACTIONS webhook - ${webhookCode} for item: ${itemId}`,
     );
+    if (webhookCode === "SYNC_UPDATES_AVAILABLE") return;
 
-    const connectedAccounts = await getConnectedAccountsForItem(db, itemId);
-    if (!connectedAccounts) return;
-
-    const accessToken = connectedAccounts[0]!.access_token;
-
-    // Get transactions from the last 30 days (you can adjust this)
-    const endDate = new Date().toISOString().split("T")[0];
-    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
-
-    const plaidTransactions = await getTransactions(
-      accessToken,
-      startDate!,
-      endDate!,
-    );
-
-    for (const account of connectedAccounts) {
-      account.account_id &&
-        (await syncTransactionsForAccount(
-          db,
-          account.budget_id,
-          account.account_id,
-          account.plaid_account_id,
-          plaidTransactions.filter(
-            (tx) => tx.account_id === account.plaid_account_id,
-          ),
-        ));
-    }
+    await plaidTransactionSyncService.syncItemTransactions(db, itemId);
   };
 
   export const handleItemWebhook = async (
