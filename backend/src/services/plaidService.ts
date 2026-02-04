@@ -49,7 +49,7 @@ export namespace plaidService {
       },
       client_name: "Your Numbers",
       products: [Products.Transactions],
-      country_codes: [CountryCode.Es, CountryCode.De], // EU countries supported by Plaid
+      country_codes: [CountryCode.Es],
       language: "en",
       webhook: process.env.PLAID_WEBHOOK_URL, // Your webhook endpoint
     };
