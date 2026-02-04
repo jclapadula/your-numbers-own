@@ -1,13 +1,13 @@
-import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
-import type { WebhookVerificationKeyGetRequest } from "plaid";
-import type { Kysely } from "kysely";
-import type { DB } from "../db/models";
-// @ts-ignore
-import compare from "secure-compare";
-import { jwtDecode } from "jwt-decode";
+import type { IncomingHttpHeaders } from "http";
 import * as JWT from "jose";
 import { sha256 } from "js-sha256";
-import type { IncomingHttpHeaders } from "http";
+import { jwtDecode } from "jwt-decode";
+import type { Kysely } from "kysely";
+import type { WebhookVerificationKeyGetRequest } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
+import type { DB } from "../db/models";
+//@ts-ignore
+import compare from "secure-compare";
 import { plaidTransactionSyncService } from "./plaidTransactionSyncService";
 
 export namespace plaidWebhookService {
@@ -16,7 +16,7 @@ export namespace plaidWebhookService {
   const initializePlaidClient = () => {
     if (!plaidClient) {
       const environment =
-        process.env.PLAID_ENVIRONMENT === "production"
+        process.env.NODE_ENV === "production"
           ? PlaidEnvironments.production
           : PlaidEnvironments.sandbox;
 
@@ -36,7 +36,7 @@ export namespace plaidWebhookService {
 
   const getConnectedAccountsForItem = async (
     db: Kysely<DB>,
-    itemId: string,
+    itemId: string
   ) => {
     const connectedAccounts = await db
       .selectFrom("plaid_accounts")
@@ -55,10 +55,10 @@ export namespace plaidWebhookService {
   export const handleTransactionsWebhook = async (
     db: Kysely<DB>,
     itemId: string,
-    webhookCode: string,
+    webhookCode: string
   ) => {
     console.log(
-      `Processing TRANSACTIONS webhook - ${webhookCode} for item: ${itemId}`,
+      `Processing TRANSACTIONS webhook - ${webhookCode} for item: ${itemId}`
     );
     if (webhookCode === "SYNC_UPDATES_AVAILABLE") return;
 
@@ -68,7 +68,7 @@ export namespace plaidWebhookService {
   export const handleItemWebhook = async (
     db: Kysely<DB>,
     itemId: string,
-    webhookCode: string,
+    webhookCode: string
   ) => {
     console.log(`Processing ITEM webhook - ${webhookCode} for item: ${itemId}`);
 
@@ -99,7 +99,7 @@ export namespace plaidWebhookService {
 
   export const verifyWebhookSignature = async (
     body: string,
-    headers: IncomingHttpHeaders,
+    headers: IncomingHttpHeaders
   ): Promise<boolean> => {
     try {
       const signedJwt = headers["plaid-verification"] as string;

@@ -1,16 +1,16 @@
-import { PlaidApi, Configuration, PlaidEnvironments } from "plaid";
+import type { Insertable, Kysely } from "kysely";
+import _ from "lodash";
 import type {
+  RemovedTransaction,
   TransactionsSyncRequest,
   TransactionsSyncResponse,
-  RemovedTransaction,
 } from "plaid";
-import type { Insertable, Kysely } from "kysely";
+import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 import type { DB, Payees, Transactions } from "../db/models";
-import { balanceUpdater } from "./balanceUpdater";
 import { accountBalanceService } from "./accountBalanceService";
+import { balanceUpdater } from "./balanceUpdater";
 import { budgetsService } from "./budgetsService";
 import { toZonedDate } from "./ZonedDate";
-import _ from "lodash";
 
 export namespace plaidTransactionSyncService {
   let plaidClient: PlaidApi;
@@ -18,7 +18,7 @@ export namespace plaidTransactionSyncService {
   const initializePlaidClient = () => {
     if (!plaidClient) {
       const environment =
-        process.env.PLAID_ENVIRONMENT === "production"
+        process.env.NODE_ENV === "production"
           ? PlaidEnvironments.production
           : PlaidEnvironments.sandbox;
 
@@ -40,7 +40,7 @@ export namespace plaidTransactionSyncService {
     db: Kysely<DB>,
     budgetId: string,
     accountId: string,
-    modifiedTransactions: { categoryId: string | null; date: Date }[],
+    modifiedTransactions: { categoryId: string | null; date: Date }[]
   ) => {
     const modifiedCategories = _(modifiedTransactions)
       .groupBy((tx) => tx.categoryId)
@@ -56,29 +56,29 @@ export namespace plaidTransactionSyncService {
       ({ categoryId, maxDate, minDate }) => [
         { categoryId, date: toZonedDate(maxDate, timezone) },
         { categoryId, date: toZonedDate(minDate, timezone) },
-      ],
+      ]
     );
     await accountBalanceService.updateAccountBalance(
       db,
       budgetId,
       accountId,
-      categoriesWithDateLimits,
+      categoriesWithDateLimits
     );
 
     const categoriesForBalanceUpdater = categoriesWithDateLimits.map(
-      ({ categoryId, date }) => ({ date, categories: [categoryId] }),
+      ({ categoryId, date }) => ({ date, categories: [categoryId] })
     );
     await balanceUpdater.updateMonthlyBalances(
       db,
       budgetId,
-      categoriesForBalanceUpdater,
+      categoriesForBalanceUpdater
     );
   };
 
   const deleteTransactions = async (
     db: Kysely<DB>,
     accountId: string,
-    removed: RemovedTransaction[],
+    removed: RemovedTransaction[]
   ) => {
     if (!removed.length) return [];
 
@@ -88,7 +88,7 @@ export namespace plaidTransactionSyncService {
       .where(
         "plaid_account_id",
         "in",
-        removed.map((tx) => tx.transaction_id),
+        removed.map((tx) => tx.transaction_id)
       )
       .returningAll()
       .execute();
@@ -97,12 +97,12 @@ export namespace plaidTransactionSyncService {
   const createMissingPayees = async (
     db: Kysely<DB>,
     budgetId: string,
-    response: TransactionsSyncResponse,
+    response: TransactionsSyncResponse
   ) => {
     const allPayeesNames = new Set(
       [...response.added, ...response.modified]
         .map((t) => t.merchant_name)
-        .filter((name): name is string => !!name),
+        .filter((name): name is string => !!name)
     );
     if (!allPayeesNames.size) {
       return;
@@ -116,7 +116,7 @@ export namespace plaidTransactionSyncService {
           .where("name", "in", [...allPayeesNames])
           .where("budgetId", "=", budgetId)
           .execute()
-      ).map(({ name }) => name),
+      ).map(({ name }) => name)
     );
 
     const payeesToCreate = allPayeesNames.difference(existingPayees);
@@ -132,8 +132,8 @@ export namespace plaidTransactionSyncService {
             ({
               budgetId,
               name,
-            } satisfies Insertable<Payees>),
-        ),
+            } satisfies Insertable<Payees>)
+        )
       )
       .execute();
   };
@@ -141,12 +141,12 @@ export namespace plaidTransactionSyncService {
   const getAllPayeesByName = async (
     db: Kysely<DB>,
     budgetId: string,
-    response: TransactionsSyncResponse,
+    response: TransactionsSyncResponse
   ) => {
     const allPayeesNames = new Set(
       [...response.added, ...response.modified]
         .map((t) => t.merchant_name)
-        .filter((name): name is string => !!name),
+        .filter((name): name is string => !!name)
     );
 
     const allPayees = await db
@@ -162,13 +162,13 @@ export namespace plaidTransactionSyncService {
     db: Kysely<DB>,
     budgetId: string,
     accountId: string,
-    response: TransactionsSyncResponse,
+    response: TransactionsSyncResponse
   ) => {
     await db.transaction().execute(async (db) => {
       const deletedTransactions = await deleteTransactions(
         db,
         accountId,
-        response.removed,
+        response.removed
       );
 
       await createMissingPayees(db, budgetId, response);
@@ -195,7 +195,7 @@ export namespace plaidTransactionSyncService {
             notes: trx.original_description,
             payeeId:
               (trx.merchant_name && payeeIdByName[trx.merchant_name]) || null,
-          } satisfies Insertable<Transactions>),
+          } satisfies Insertable<Transactions>)
       );
 
       let upsertedTransactions: { categoryId: string | null; date: Date }[] =
@@ -212,7 +212,7 @@ export namespace plaidTransactionSyncService {
                 date: (eb) => eb.ref("excluded.date"),
                 amount: (eb) => eb.ref("excluded.amount"),
                 isReconciled: (eb) => eb.ref("excluded.isReconciled"),
-              }),
+              })
           )
           .returning(["categoryId", "date"])
           .execute();
@@ -235,7 +235,7 @@ export namespace plaidTransactionSyncService {
   export const syncAccountTransactions = async (
     db: Kysely<DB>,
     budgetId: string,
-    accountId: string,
+    accountId: string
   ) => {
     const client = initializePlaidClient();
 
@@ -270,7 +270,7 @@ export namespace plaidTransactionSyncService {
 
   export const syncItemTransactions = async (
     db: Kysely<DB>,
-    itemId: string,
+    itemId: string
   ) => {
     const accountsToSync = await db
       .selectFrom("plaid_accounts")
