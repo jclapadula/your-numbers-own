@@ -1,18 +1,18 @@
+import type { Kysely } from "kysely";
+import type {
+  AccountsGetRequest,
+  ItemPublicTokenExchangeRequest,
+  ItemRemoveRequest,
+  LinkTokenCreateRequest,
+  AccountBase as PlaidAccount,
+} from "plaid";
 import {
-  PlaidApi,
   Configuration,
-  PlaidEnvironments,
   CountryCode,
+  PlaidApi,
+  PlaidEnvironments,
   Products,
 } from "plaid";
-import type {
-  LinkTokenCreateRequest,
-  ItemPublicTokenExchangeRequest,
-  AccountsGetRequest,
-  AccountBase as PlaidAccount,
-  ItemRemoveRequest,
-} from "plaid";
-import type { Kysely } from "kysely";
 import type { DB } from "../db/models";
 import { plaidTransactionSyncService } from "./plaidTransactionSyncService";
 
@@ -22,7 +22,7 @@ export namespace plaidService {
   const initializePlaidClient = () => {
     if (!plaidClient) {
       const environment =
-        process.env.PLAID_ENVIRONMENT === "production"
+        process.env.NODE_ENV === "production"
           ? PlaidEnvironments.production
           : PlaidEnvironments.sandbox;
 
@@ -76,7 +76,7 @@ export namespace plaidService {
     db: Kysely<DB>,
     budgetId: string,
     plaidAccounts: PlaidAccount[],
-    { accessToken, itemId }: { accessToken: string; itemId: string },
+    { accessToken, itemId }: { accessToken: string; itemId: string }
   ) => {
     await db
       .insertInto("plaid_accounts")
@@ -90,7 +90,7 @@ export namespace plaidService {
           account_name: plaidAccount.name,
           account_type: plaidAccount.type,
           account_subtype: plaidAccount.subtype,
-        })),
+        }))
       )
       .onConflict((oc) =>
         oc.columns(["plaid_account_id", "budget_id"]).doUpdateSet({
@@ -99,7 +99,7 @@ export namespace plaidService {
           account_name: (eb) => eb.ref("excluded.account_name"),
           account_type: (eb) => eb.ref("excluded.account_type"),
           account_subtype: (eb) => eb.ref("excluded.account_subtype"),
-        }),
+        })
       )
       .execute();
   };
@@ -107,7 +107,7 @@ export namespace plaidService {
   export const connectPlaidAccounts = async (
     db: Kysely<DB>,
     budgetId: string,
-    plaidAccountIds: string[],
+    plaidAccountIds: string[]
   ) => {
     const accountsToConnect = await db
       .selectFrom("plaid_accounts")
@@ -150,7 +150,7 @@ export namespace plaidService {
       plaidTransactionSyncService.syncAccountTransactions(
         db,
         budgetId,
-        accountId,
+        accountId
       );
     });
 
@@ -158,7 +158,7 @@ export namespace plaidService {
   };
 
   export const getAccounts = async (
-    accessToken: string,
+    accessToken: string
   ): Promise<PlaidAccount[]> => {
     const client = initializePlaidClient();
 
@@ -172,7 +172,7 @@ export namespace plaidService {
 
   export const getPlaidAccountByAccountId = async (
     db: Kysely<DB>,
-    accountId: string,
+    accountId: string
   ) => {
     return await db
       .selectFrom("plaid_accounts")
