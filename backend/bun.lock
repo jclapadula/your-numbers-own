@@ -24,6 +24,7 @@
         "kysely": "^0.28.10",
         "kysely-codegen": "^0.19.0",
         "lodash": "^4.17.23",
+        "otplib": "^13.2.1",
         "passport": "^0.7.0",
         "passport-local": "^1.0.0",
         "pg": "^8.17.2",
@@ -135,7 +136,23 @@
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
 
+    "@noble/hashes": ["@noble/hashes@2.0.1", "", {}, "sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw=="],
+
+    "@otplib/core": ["@otplib/core@13.2.1", "", {}, "sha512-IyfHvYNCyipDxhmJdcUUvUeT3Hz84/GgM6G2G6BTEmnAKPzNA7U0kYGkxKZWY9h23W94RJk4qiClJRJN5zKGvg=="],
+
+    "@otplib/hotp": ["@otplib/hotp@13.2.1", "", { "dependencies": { "@otplib/core": "13.2.1", "@otplib/uri": "13.2.1" } }, "sha512-iRKqvj0TnemtXXtEswzBX50Z0yMNa0lH9PSdr5N4CJc1mDEuUmFFZQqnu3PfA3fPd3WeAU+mHgmK/xq18+K1QA=="],
+
+    "@otplib/plugin-base32-scure": ["@otplib/plugin-base32-scure@13.2.1", "", { "dependencies": { "@otplib/core": "13.2.1", "@scure/base": "^2.0.0" } }, "sha512-vnA2qqgJ/FbFbDNGOLAS8dKfCsJFXwFsZKYklE8yl2INkCOUR0vbVdJ2TVmufzC8R1RRZHW+cDR20ACgc9XFYg=="],
+
+    "@otplib/plugin-crypto-noble": ["@otplib/plugin-crypto-noble@13.2.1", "", { "dependencies": { "@noble/hashes": "^2.0.1", "@otplib/core": "13.2.1" } }, "sha512-Dxjmt4L+5eDWJf5EvbcMp+fxcliyKoB9N9sNQq/vuVAUvq+KiqpiiCQZ/wHyrN0ArB0NdevtK1KByyAq080ldg=="],
+
+    "@otplib/totp": ["@otplib/totp@13.2.1", "", { "dependencies": { "@otplib/core": "13.2.1", "@otplib/hotp": "13.2.1", "@otplib/uri": "13.2.1" } }, "sha512-LzDzAAK3w8rspF3urBnWjOlxso1SCGxX9Pnu/iy+HkC0y0HgiLsW7jhkr2hJ3u4cyBdL/tOKUhhELwsjyvunwQ=="],
+
+    "@otplib/uri": ["@otplib/uri@13.2.1", "", { "dependencies": { "@otplib/core": "13.2.1" } }, "sha512-ssYnfiUrFTs/rPRUW8h59m0MVLYOC+UKk7tVGYgtG15lLaLBrNBQjM2YFanuzn9Jm4iv9JxiNG7TRkwcnyR09A=="],
+
     "@petamoriken/float16": ["@petamoriken/float16@3.9.2", "", {}, "sha512-VgffxawQde93xKxT3qap3OH+meZf7VaSB5Sqd4Rqc+FP5alWbpOyan/7tRbOAvynjpG3GpdtAuGU/NdhQpmrog=="],
+
+    "@scure/base": ["@scure/base@2.0.0", "", {}, "sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w=="],
 
     "@types/bcryptjs": ["@types/bcryptjs@3.0.0", "", { "dependencies": { "bcryptjs": "*" } }, "sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg=="],
 
@@ -496,6 +513,8 @@
     "once": ["once@1.4.0", "", { "dependencies": { "wrappy": "1" } }, "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w=="],
 
     "optionator": ["optionator@0.9.4", "", { "dependencies": { "deep-is": "^0.1.3", "fast-levenshtein": "^2.0.6", "levn": "^0.4.1", "prelude-ls": "^1.2.1", "type-check": "^0.4.0", "word-wrap": "^1.2.5" } }, "sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g=="],
+
+    "otplib": ["otplib@13.2.1", "", { "dependencies": { "@otplib/core": "13.2.1", "@otplib/hotp": "13.2.1", "@otplib/plugin-base32-scure": "13.2.1", "@otplib/plugin-crypto-noble": "13.2.1", "@otplib/totp": "13.2.1", "@otplib/uri": "13.2.1" } }, "sha512-Cft9h/m34LtvnoB2TjP1E1E6v0biwcUntl6U4e+HgWrTa0bpwmb+u/D9gLFA+U6/ztlvrult0811Bu30nUVUuA=="],
 
     "p-limit": ["p-limit@3.1.0", "", { "dependencies": { "yocto-queue": "^0.1.0" } }, "sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ=="],
 

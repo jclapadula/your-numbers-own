@@ -1,8 +1,9 @@
+import type { Request, Response } from "express";
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import passport from "../../config/passport";
 import { AuthService } from "../../services/authService";
-import type { Request, Response } from "express";
+import { MfaService } from "../../services/mfaService";
 
 const router = Router();
 
@@ -44,6 +45,8 @@ router.post("/register", rateLimiter, async (req: Request, res: Response) => {
         id: user.id,
         email: user.email,
         timeZone: user.timeZone,
+        mfaEnabled: false,
+        showMfaSetup: true,
       });
     });
   } catch (error) {
@@ -62,7 +65,7 @@ router.post("/register", rateLimiter, async (req: Request, res: Response) => {
 
 // Login endpoint
 router.post("/login", rateLimiter, (req: Request, res: Response, next) => {
-  passport.authenticate("local", (err: any, user: any, info: any) => {
+  passport.authenticate("local", async (err: any, user: any, info: any) => {
     if (err) {
       return next(err);
     }
@@ -71,6 +74,17 @@ router.post("/login", rateLimiter, (req: Request, res: Response, next) => {
       return res
         .status(401)
         .json({ error: info?.message || "Invalid credentials" });
+    }
+
+    const mfaEnabled = await MfaService.checkUserMfaEnabled(user.id);
+
+    if (mfaEnabled) {
+      req.session.pendingMfaUserId = user.id;
+
+      return res.json({
+        requiresMfa: true,
+        message: "MFA verification required",
+      });
     }
 
     req.login(user, (err) => {
@@ -82,10 +96,71 @@ router.post("/login", rateLimiter, (req: Request, res: Response, next) => {
         id: user.id,
         email: user.email,
         timeZone: user.timeZone,
+        mfaEnabled: false,
       });
     });
   })(req, res, next);
 });
+
+// MFA verify-login endpoint
+router.post(
+  "/mfa/verify-login",
+  rateLimiter,
+  async (req: Request, res: Response) => {
+    try {
+      const { code } = req.body;
+
+      if (!code || code.length !== 6) {
+        res.status(400).json({ error: "Invalid verification code format" });
+        return;
+      }
+
+      const pendingUserId = req.session.pendingMfaUserId;
+      if (!pendingUserId) {
+        res.status(400).json({ error: "No pending MFA verification" });
+        return;
+      }
+
+      const mfaSecret = await MfaService.getUserMfaSecret(pendingUserId);
+      if (!mfaSecret) {
+        res.status(500).json({ error: "MFA configuration error" });
+        return;
+      }
+
+      const isValidCode = MfaService.verifyMfaCode(mfaSecret, code);
+
+      if (!isValidCode) {
+        res.status(401).json({ error: "Invalid verification code" });
+        return;
+      }
+
+      const user = await AuthService.getUserById(pendingUserId);
+      if (!user) {
+        res.status(500).json({ error: "User not found" });
+        return;
+      }
+
+      delete req.session.pendingMfaUserId;
+
+      req.login(user, (err) => {
+        if (err) {
+          res.status(500).json({ error: "Failed to complete login" });
+          return;
+        }
+
+        res.json({
+          id: user.id,
+          email: user.email,
+          timeZone: user.timeZone,
+          mfaEnabled: true,
+        });
+      });
+    } catch (error) {
+      console.error("MFA verify-login error:", error);
+      res.status(500).json({ error: "Failed to verify MFA code" });
+    }
+  },
+);
 
 // Logout endpoint
 router.post("/logout", (req: Request, res: Response) => {
@@ -110,7 +185,15 @@ router.get("/me", (req: Request, res: Response) => {
     id: user.id,
     email: user.email,
     timeZone: user.timeZone,
+    mfaEnabled: user.mfaEnabled || false,
   });
 });
+
+declare module "express-session" {
+  interface SessionData {
+    pendingMfaUserId?: string;
+    pendingMfaSecret?: string;
+  }
+}
 
 export default router;

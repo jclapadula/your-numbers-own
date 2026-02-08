@@ -135,6 +135,8 @@ export interface Users {
   createdAt: Generated<Timestamp>;
   email: string;
   id: Generated<string>;
+  mfaEnabled: Generated<boolean>;
+  mfaSecret: string | null;
   passwordHash: string;
   timeZone: Generated<string>;
   updatedAt: Generated<Timestamp>;

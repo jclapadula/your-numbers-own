@@ -2,14 +2,19 @@ import { Link, Outlet, useLocation } from "react-router";
 import { useAuth } from "../Auth/AuthContext";
 import { AccountsList } from "./AccountsList";
 import { CreateAccountModal } from "../Accounts/CreateAccountModal";
+import { MfaSetupModal } from "../Auth/MfaSetupModal";
+import { DisableMfaModal } from "../Auth/DisableMfaModal";
 import { useLogin } from "./useLogin";
 import { useState } from "react";
 import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 export default function Layout() {
   const { isLoading, isAuthenticated } = useLogin();
-  const { logout } = useAuth();
+  const { logout, user, showMfaSetupModal, dismissMfaSetup } = useAuth();
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+  const [showMfaSetupFromSettings, setShowMfaSetupFromSettings] =
+    useState(false);
+  const [showDisableMfaModal, setShowDisableMfaModal] = useState(false);
   const { budgetId } = useCurrentBudgetContext();
   const { pathname } = useLocation();
 
@@ -66,16 +71,64 @@ export default function Layout() {
           </ul>
           <ul>
             <li>
-              <button
-                className="btn btn-sm btn-secondary btn-soft"
-                onClick={() => logout()}
-              >
-                Log out
-              </button>
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-sm btn-secondary btn-soft flex-1"
+                  onClick={() => logout()}
+                >
+                  Log out
+                </button>
+                <div className="dropdown dropdown-top dropdown-end">
+                  <button
+                    tabIndex={0}
+                    className="btn btn-sm btn-secondary btn-soft"
+                  >
+                    •••
+                  </button>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52"
+                  >
+                    {user?.mfaEnabled ? (
+                      <li>
+                        <button onClick={() => setShowDisableMfaModal(true)}>
+                          Disable MFA
+                        </button>
+                      </li>
+                    ) : (
+                      <li>
+                        <button
+                          onClick={() => setShowMfaSetupFromSettings(true)}
+                        >
+                          Set up MFA
+                        </button>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
             </li>
           </ul>
         </div>
       </div>
+
+      {(showMfaSetupModal || showMfaSetupFromSettings) && (
+        <MfaSetupModal
+          onClose={() => {
+            dismissMfaSetup();
+            setShowMfaSetupFromSettings(false);
+          }}
+          onSuccess={() => {
+            if (user) {
+              user.mfaEnabled = true;
+            }
+          }}
+        />
+      )}
+
+      {showDisableMfaModal && (
+        <DisableMfaModal onClose={() => setShowDisableMfaModal(false)} />
+      )}
     </div>
   );
 }

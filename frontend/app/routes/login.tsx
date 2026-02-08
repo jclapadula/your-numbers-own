@@ -1,5 +1,7 @@
 import type { Route } from "./+types/login";
 import { LoginForm } from "~/components/Auth/LoginForm";
+import { MfaLoginForm } from "~/components/Auth/MfaLoginForm";
+import { useAuth } from "~/components/Auth/AuthContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -9,5 +11,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function LoginPage() {
-  return <LoginForm />;
+  const { requiresMfa } = useAuth();
+
+  return requiresMfa ? <MfaLoginForm /> : <LoginForm />;
 }

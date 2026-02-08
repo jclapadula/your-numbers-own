@@ -8,12 +8,14 @@ import { categoriesRouter } from "./routers/categoriesRouter";
 import { plaidRouter } from "./routers/plaidRouter";
 import { plaidWebhookRouter } from "./routers/plaidWebhookRouter";
 import authRouter from "./routers/authRouter";
+import mfaRouter from "./routers/mfaRouter";
 
 export const mainRouter = Router();
 
 mainRouter.use(plaidWebhookRouter);
 
 mainRouter.use("/auth", authRouter);
+mainRouter.use("/auth/mfa", mfaRouter);
 mainRouter.use(usersRouter);
 mainRouter.use(accountsRouter);
 mainRouter.use(transactionsRouter);

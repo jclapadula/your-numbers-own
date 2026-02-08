@@ -5,9 +5,13 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  requiresMfa: boolean;
+  showMfaSetupModal: boolean;
   login: (email: string, password: string) => Promise<void>;
+  verifyMfa: (code: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  dismissMfaSetup: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [requiresMfa, setRequiresMfa] = useState(false);
+  const [showMfaSetupModal, setShowMfaSetupModal] = useState(false);
 
   const checkAuthStatus = async () => {
     try {
@@ -44,11 +50,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const user = await authApi.login({ email, password });
-      setUser(user);
+      const response = await authApi.login({ email, password });
+
+      if (response.requiresMfa) {
+        setRequiresMfa(true);
+        setUser(null);
+      } else {
+        setUser(response);
+        setRequiresMfa(false);
+      }
     } catch (error) {
       setUser(null);
-      throw error; // Re-throw so LoginForm can handle it
+      setRequiresMfa(false);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyMfa = async (code: string) => {
+    setIsLoading(true);
+    try {
+      const user = await authApi.verifyMfaLogin(code);
+      setUser(user);
+      setRequiresMfa(false);
+    } catch (error) {
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -57,11 +84,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const user = await authApi.register({ email, password });
-      setUser(user);
+      const response = await authApi.register({ email, password });
+      setUser(response as User);
+
+      if (response.showMfaSetup) {
+        setShowMfaSetupModal(true);
+      }
     } catch (error) {
       setUser(null);
-      throw error; // Re-throw so RegisterForm can handle it
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -72,18 +103,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await authApi.logout();
       setUser(null);
+      setRequiresMfa(false);
+      setShowMfaSetupModal(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const dismissMfaSetup = () => {
+    setShowMfaSetupModal(false);
   };
 
   const value: AuthContextType = {
     user,
     isLoading,
     isAuthenticated: !!user,
+    requiresMfa,
+    showMfaSetupModal,
     login,
+    verifyMfa,
     register,
     logout,
+    dismissMfaSetup,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

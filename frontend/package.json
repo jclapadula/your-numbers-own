@@ -21,6 +21,7 @@
     "date-fns-tz": "^3.2.0",
     "isbot": "^5.1.33",
     "lodash": "^4.17.23",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-plaid-link": "^4.1.1",
