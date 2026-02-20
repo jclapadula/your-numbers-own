@@ -32,18 +32,6 @@ const COLOR_PALETTE: ColorEntry[] = [
     ],
   },
   {
-    //red ok
-    mainColor: "#F42272",
-    variants: [
-      "#921444",
-      "#c31b5b",
-      "#f42272",
-      "#f64e8e",
-      "#f87aaa",
-      "#fba7c7",
-    ],
-  },
-  {
     // blue ok
     mainColor: "#00bbf9",
     variants: [
@@ -77,6 +65,18 @@ const COLOR_PALETTE: ColorEntry[] = [
       "#f2d16b",
       "#f7e19c",
       "#5e4803",
+    ],
+  },
+  {
+    //red ok
+    mainColor: "#F42272",
+    variants: [
+      "#921444",
+      "#c31b5b",
+      "#f42272",
+      "#f64e8e",
+      "#f87aaa",
+      "#fba7c7",
     ],
   },
   {
