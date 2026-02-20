@@ -1,5 +1,6 @@
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { groupBy, keyBy, mapValues, sumBy } from "lodash";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Pie,
   PieChart,
@@ -12,120 +13,85 @@ import { useCategoryGroups } from "./CategoryGroups/CategoryGroupsQueries";
 import { useMonthlyBudget } from "./MonthlyBudgetQueries";
 import { useSelectedMonthContext } from "./SelectedMonthContext";
 
-// 15 base colors for category groups (first 10 are most important)
-// Red shades moved to end to avoid "overbudgeted" association
-// Colors reordered to separate similar hues (blues/greens)
-const BASE_COLORS = [
-  "#00BBF9", // Sky Blue
-  "#F77F00", // Softer Orange
-  "#06D6A0", // Emerald
-  "#6C7DFF", // Periwinkle Blue
-  "#2EC4B6", // Teal
-  "#FECB2F", // Warm Yellow
-  "#00F5D4", // Aqua
-  "#7A2FE0", // Indigo (slightly softer)
-  "#8AC926", // Lime Green
-  "#559EFF", // Slightly softer Vivid Blue
+interface ColorEntry {
+  mainColor: string;
+  variants: string[];
+}
 
-  "#FFD166", // Warm Gold
-  "#FF8C1A", // Amber (slightly muted)
-  "#FF4D85", // Pink-Magenta (less aggressive)
-  "#EF6C7F", // Coral (softer)
-  "#D62828", // True Red (last)
+const COLOR_PALETTE: ColorEntry[] = [
+  {
+    // green ok
+    mainColor: "#048966",
+    variants: [
+      "#048966",
+      "#02523d",
+      "#036e52",
+      "#36a185",
+      "#68b8a3",
+      "#023729",
+    ],
+  },
+  {
+    //red ok
+    mainColor: "#F42272",
+    variants: [
+      "#921444",
+      "#c31b5b",
+      "#f42272",
+      "#f64e8e",
+      "#f87aaa",
+      "#fba7c7",
+    ],
+  },
+  {
+    // blue ok
+    mainColor: "#00bbf9",
+    variants: [
+      "#004b64",
+      "#007095",
+      "#0096c7",
+      "#33c9fa",
+      "#66d6fb",
+      "#99e4fd",
+    ],
+  },
+  {
+    // orange ok
+    mainColor: "#f77f00",
+    variants: [
+      "#633300",
+      "#944c00",
+      "#c66600",
+      "#f99933",
+      "#fab266",
+      "#fccc99",
+    ],
+  },
+  {
+    // orange, good
+    mainColor: "#eab308",
+    variants: [
+      "#8c6b05",
+      "#bb8f06",
+      "#eec239",
+      "#f2d16b",
+      "#f7e19c",
+      "#5e4803",
+    ],
+  },
+  {
+    // violet meh
+    mainColor: "#aa4586",
+    variants: ["#aa4586", "#88376b", "#bb6a9e", "#cc8fb6", "#662950"],
+  },
 ];
 
-// Convert hex to HSL
-const hexToHSL = (hex: string): [number, number, number] => {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
-        break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
-        break;
-    }
-  }
-
-  return [h * 360, s * 100, l * 100];
-};
-
-// Convert HSL to hex
-const hslToHex = (h: number, s: number, l: number): string => {
-  h = h / 360;
-  s = s / 100;
-  l = l / 100;
-
-  let r, g, b;
-
-  if (s === 0) {
-    r = g = b = l;
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-
-  const toHex = (x: number) => {
-    const hex = Math.round(x * 255).toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-  };
-
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
-
-// Generate N shades of a base color dynamically
-const generateShades = (baseColor: string, count: number): string[] => {
-  if (count === 1) return [baseColor];
-
-  const [h, s, l] = hexToHSL(baseColor);
-
-  // Generate shades from lighter to darker
-  // Adjust lightness range based on the base lightness
-  const minLightness = Math.max(l - 20, 20);
-  const maxLightness = Math.min(l + 20, 80);
-
-  const shades: string[] = [];
-  for (let i = 0; i < count; i++) {
-    const lightness =
-      maxLightness - (i * (maxLightness - minLightness)) / (count - 1);
-    shades.push(hslToHex(h, s, lightness));
-  }
-
-  return shades;
-};
-
 interface ChartDataItem {
+  id: string;
   name: string;
   value: number;
   fill: string;
+  groupId?: string;
   percentOfTotal?: number;
   percentOfGroup?: number;
   groupName?: string;
@@ -209,7 +175,7 @@ const useBudgetChartData = () => {
 
     const spendCategoriesById = keyBy(
       monthlyBudget.spendCategories,
-      "categoryId"
+      "categoryId",
     );
 
     // Filter to only spending categories
@@ -221,31 +187,33 @@ const useBudgetChartData = () => {
     // Group categories by groupId
     const categoriesByGroup = groupBy(
       spendCategories.sort((a, b) => a.position - b.position),
-      "groupId"
+      "groupId",
     );
 
     // Calculate group totals
     const groupTotals = mapValues(categoriesByGroup, (groupCategories) =>
       sumBy(
         groupCategories,
-        (category) => spendCategoriesById[category.id]?.assignedAmount || 0
-      )
+        (category) => spendCategoriesById[category.id]?.assignedAmount || 0,
+      ),
     );
 
     // Calculate total for percentage calculations
     const total = spendCategoryGroups.reduce(
       (sum, group) => sum + (groupTotals[group.id] || 0),
-      0
+      0,
     );
 
     // Build outer data (category groups)
     const outerData: ChartDataItem[] = spendCategoryGroups
       .map((group, index) => {
         const value = groupTotals[group.id] || 0;
+        const colorEntry = COLOR_PALETTE[index % COLOR_PALETTE.length];
         return {
+          id: group.id,
           name: group.name,
           value,
-          fill: BASE_COLORS[index % BASE_COLORS.length],
+          fill: colorEntry?.mainColor ?? "#888888",
           percentOfTotal: total > 0 ? (value / total) * 100 : 0,
         };
       })
@@ -255,17 +223,24 @@ const useBudgetChartData = () => {
     const innerData: ChartDataItem[] = [];
     spendCategoryGroups.forEach((group, groupIndex) => {
       const groupCategories = categoriesByGroup[group.id] || [];
-      const baseColor = BASE_COLORS[groupIndex % BASE_COLORS.length];
-      const shades = generateShades(baseColor, groupCategories.length);
+      const colorEntry = COLOR_PALETTE[groupIndex % COLOR_PALETTE.length];
       const groupTotal = groupTotals[group.id] || 0;
 
       groupCategories.forEach((category, catIndex) => {
         const value = spendCategoriesById[category.id]?.assignedAmount || 0;
         if (value > 0) {
+          const variant =
+            colorEntry?.variants[
+              catIndex % (colorEntry.variants.length || 1)
+            ] ??
+            colorEntry?.mainColor ??
+            "#888888";
           innerData.push({
+            id: category.id,
             name: category.name,
             value,
-            fill: shades[catIndex],
+            fill: variant,
+            groupId: group.id,
             percentOfTotal: total > 0 ? (value / total) * 100 : 0,
             percentOfGroup: groupTotal > 0 ? (value / groupTotal) * 100 : 0,
             groupName: group.name,
@@ -283,6 +258,7 @@ export const BudgetSummaryChart = () => {
   const { data: monthlyBudget, isLoading: isLoadingMonthlyBudget } =
     useMonthlyBudget(selectedMonth);
   const { outerData, innerData, isAnimationActive } = useBudgetChartData();
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   if (isLoadingMonthlyBudget || !monthlyBudget) {
     return <div>Loading...</div>;
@@ -296,63 +272,74 @@ export const BudgetSummaryChart = () => {
     );
   }
 
+  const isGroupsView = selectedGroupId === null;
+  const displayData = isGroupsView
+    ? outerData
+    : innerData.filter((item) => item.groupId === selectedGroupId);
+
   return (
-    <div className="w-full h-96">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={outerData}
-            dataKey="value"
-            cx="50%"
-            cy="50%"
-            outerRadius="80%"
-            innerRadius="60%"
-            label={CustomLabel}
-            labelLine={false}
-            stroke="none"
-            isAnimationActive={isAnimationActive}
-          />
-          <Pie
-            data={innerData}
-            dataKey="value"
-            cx="50%"
-            cy="50%"
-            outerRadius="50%"
-            innerRadius="0%"
-            stroke="none"
-            isAnimationActive={isAnimationActive}
-          />
-          <Tooltip
-            isAnimationActive={false}
-            content={({ active, payload }) => {
-              if (!active || !payload || !payload.length) return null;
+    <div className="w-full">
+      <div className="h-8 flex items-center">
+        {!isGroupsView && (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setSelectedGroupId(null)}
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            See groups
+          </button>
+        )}
+      </div>
+      <div className="h-96">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={displayData}
+              dataKey="value"
+              cx="50%"
+              cy="50%"
+              label={CustomLabel}
+              stroke="none"
+              isAnimationActive={isAnimationActive}
+              style={{ cursor: isGroupsView ? "pointer" : "default" }}
+              onClick={(data: ChartDataItem) => {
+                if (isGroupsView && data.id) {
+                  setSelectedGroupId(data.id);
+                }
+              }}
+            />
+            <Tooltip
+              isAnimationActive={false}
+              content={({ active, payload }) => {
+                if (!active || !payload || !payload.length) return null;
 
-              const data = payload[0].payload as ChartDataItem;
-              const formattedValue = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-              }).format(data.value / 100);
+                const data = payload[0].payload as ChartDataItem;
+                const formattedValue = new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                }).format(data.value / 100);
 
-              return (
-                <div className="bg-base-100 border border-base-300 rounded-lg p-3 shadow-lg">
-                  <p className="font-semibold mb-1">{data.name}</p>
-                  <p className="text-sm">{formattedValue}</p>
-                  {data.percentOfTotal !== undefined && (
-                    <p className="text-sm text-neutral-content/70">
-                      {data.percentOfTotal.toFixed(1)}% of budget
-                    </p>
-                  )}
-                  {data.percentOfGroup !== undefined && data.groupName && (
-                    <p className="text-sm text-neutral-content/70">
-                      {data.percentOfGroup.toFixed(1)}% of {data.groupName}
-                    </p>
-                  )}
-                </div>
-              );
-            }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+                return (
+                  <div className="bg-base-100 border border-base-300 rounded-lg p-3 shadow-lg">
+                    <p className="font-semibold mb-1">{data.name}</p>
+                    <p className="text-sm">{formattedValue}</p>
+                    {data.percentOfTotal !== undefined && (
+                      <p className="text-sm text-neutral-content/70">
+                        {data.percentOfTotal.toFixed(1)}% of budget
+                      </p>
+                    )}
+                    {data.percentOfGroup !== undefined && data.groupName && (
+                      <p className="text-sm text-neutral-content/70">
+                        {data.percentOfGroup.toFixed(1)}% of {data.groupName}
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
