@@ -356,7 +356,7 @@ export const MonthlyBudgetTable = ({
                   ) : (
                     groupCategories.map((category: Category) => {
                       const budgetData = spendCategoriesById[category.id] || {
-                        budgeted: 0,
+                        assignedAmount: 0,
                         spent: 0,
                         balance: 0,
                       };
@@ -415,7 +415,7 @@ export const MonthlyBudgetTable = ({
                   const budgetData = spendCategoriesById[
                     draggingCategory.id
                   ] || {
-                    budgeted: 0,
+                    assignedAmount: 0,
                     spent: 0,
                     balance: 0,
                   };
@@ -498,7 +498,7 @@ export const MonthlyBudgetTable = ({
                   const budgetData = spendCategoriesById[
                     draggingCategory.id
                   ] || {
-                    budgeted: 0,
+                    assignedAmount: 0,
                     spent: 0,
                     balance: 0,
                   };

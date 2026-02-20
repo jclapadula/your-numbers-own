@@ -8,7 +8,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import _ from "lodash";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePersistentState } from "../../hooks/usePersistentState";
 import { twMerge } from "tailwind-merge";
 import Amount from "../Amount";
 import {
@@ -147,7 +148,7 @@ const AvailableBudget = ({
 export const MonthlyBudget = () => {
   const { selectedMonth } = useSelectedMonthContext();
   const { data: monthlyBudget, isPending } = useMonthlyBudget(selectedMonth);
-  const [showGraph, setShowGraph] = useState(false);
+  const [showGraph, setShowGraph] = usePersistentState("showGraph", false, "local");
 
   if (isPending) {
     return (
