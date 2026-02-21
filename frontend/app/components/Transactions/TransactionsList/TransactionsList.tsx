@@ -1,31 +1,43 @@
-import { PlusIcon, TrashIcon } from "@heroicons/react/16/solid";
+import { PlusIcon, TrashIcon, ArrowUpTrayIcon } from "@heroicons/react/16/solid";
 import { useState } from "react";
 import type { Transaction } from "~/api/models";
 import { TransactionListHeader } from "./TransactionListHeader";
 import { NewTransactionRow, TransactionRow } from "./TransactionRow";
 import { useDeleteTransactions } from "../TransactionsQueries";
 import { useAccountTransactions } from "../AccountTransactionsContext";
+import { CsvImportModal } from "../CsvImportModal";
 
 type TransactionListActionsProps = {
   onAddTransaction: () => void;
+  onImport: () => void;
   selectedCount: number;
   onDeleteSelected: () => void;
 };
 
 const TransactionListActions = ({
   onAddTransaction,
+  onImport,
   selectedCount,
   onDeleteSelected,
 }: TransactionListActionsProps) => {
   return (
     <div className="p-2 flex justify-between">
-      <button
-        className="btn btn-sm btn-primary btn-outline"
-        onClick={onAddTransaction}
-      >
-        <PlusIcon className=" size-4" />
-        Add
-      </button>
+      <div className="flex gap-2">
+        <button
+          className="btn btn-sm btn-primary btn-outline"
+          onClick={onAddTransaction}
+        >
+          <PlusIcon className="size-4" />
+          Add
+        </button>
+        <button
+          className="btn btn-sm btn-secondary btn-outline"
+          onClick={onImport}
+        >
+          <ArrowUpTrayIcon className="size-4" />
+          Import
+        </button>
+      </div>
       {selectedCount > 0 && (
         <button className="btn btn-sm btn-error" onClick={onDeleteSelected}>
           <TrashIcon className="size-4" />
@@ -42,6 +54,7 @@ export const AccountTransactionsList = ({
   transactions: Transaction[];
 }) => {
   const [addingTransaction, setAddingTransaction] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(
     new Set()
   );
@@ -75,9 +88,13 @@ export const AccountTransactionsList = ({
     <div className="h-full">
       <TransactionListActions
         onAddTransaction={() => setAddingTransaction(true)}
+        onImport={() => setImportingCsv(true)}
         selectedCount={selectedTransactions.size}
         onDeleteSelected={onDeleteSelected}
       />
+      {importingCsv && (
+        <CsvImportModal onClose={() => setImportingCsv(false)} />
+      )}
       <div className="border border-base-content/5">
         <div>
           <TransactionListHeader
