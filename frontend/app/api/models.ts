@@ -48,6 +48,29 @@ export type Payee = {
   name: string;
 };
 
+export type ImportConfig = {
+  firstRowIsData: boolean;
+  dateColumn: number | null;
+  dateFormat: "EU" | "US" | "ISO";
+  singleAmountColumn: boolean;
+  amountColumn: number | null;
+  debitColumn: number | null;
+  creditColumn: number | null;
+  payeeColumn: number | null;
+  notesColumn: number | null;
+};
+
+export type ImportCsvRequest = {
+  config: ImportConfig;
+  rows: string[][];
+};
+
+export type ImportCsvResponse = {
+  imported: number;
+  updated: number;
+  skipped: number;
+};
+
 export type Category = {
   id: string;
   name: string;

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   CreateTransaction,
+  ImportCsvRequest,
+  ImportCsvResponse,
   Transaction,
   UpdateTransaction,
 } from "~/api/models";
@@ -90,6 +92,38 @@ export const useUpdateTransaction = (accountId: string) => {
               : transaction,
           ),
       );
+    },
+  });
+};
+
+export const useImportTransactions = (accountId: string) => {
+  const { budgetId } = useCurrentBudgetContext();
+  const { importCsv } = useTransactionsApi(accountId);
+  const queryClient = useQueryClient();
+  const { setToast } = useToast();
+
+  return useMutation({
+    mutationFn: (request: ImportCsvRequest) => importCsv(request),
+    onSuccess: (result: ImportCsvResponse) => {
+      queryClient.invalidateQueries({
+        queryKey: transactionsQueryKeys.transactions(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
+      });
+      const parts = [
+        result.imported > 0 && `${result.imported} imported`,
+        result.updated > 0 && `${result.updated} updated`,
+        result.skipped > 0 && `${result.skipped} skipped`,
+      ].filter(Boolean);
+      setToast(parts.length ? parts.join(", ") : "Nothing new to import", "success");
+    },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to import transactions", "error");
     },
   });
 };

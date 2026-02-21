@@ -112,6 +112,7 @@ export interface Transactions {
   accountId: string;
   amount: Generated<Int8>;
   categoryId: string | null;
+  csv_row_hash: string | null;
   date: Timestamp;
   id: Generated<string>;
   isReconciled: Generated<boolean>;

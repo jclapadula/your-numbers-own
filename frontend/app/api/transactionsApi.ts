@@ -2,6 +2,8 @@ import { useCurrentBudgetContext } from "~/components/Contexts/CurrentBudgetCont
 import { useHttpClient } from "./httpClient";
 import type {
   CreateTransaction,
+  ImportCsvRequest,
+  ImportCsvResponse,
   Transaction,
   UpdateTransaction,
 } from "./models";
@@ -29,6 +31,11 @@ export const useTransactionsApi = (accountId: string) => {
       httpClient.patch<UpdateTransaction>(
         `/budgets/${budgetId}/accounts/${accountId}/transactions/${transactionId}`,
         transaction
+      ),
+    importCsv: (request: ImportCsvRequest) =>
+      httpClient.post<ImportCsvResponse>(
+        `/budgets/${budgetId}/accounts/${accountId}/transactions/import-csv`,
+        request
       ),
   };
 };

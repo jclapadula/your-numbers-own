@@ -5,9 +5,11 @@ import { db } from "../../db";
 import { authenticate, authorizeRequest } from "../middlewares";
 import type {
   CreateTransaction,
+  ImportCsvRequest,
   Transaction,
   UpdateTransaction,
 } from "../../services/models";
+import { importTransactionsService } from "../../services/importTransactionsService";
 import { transactionsService } from "../../services/transactionsService";
 
 export const transactionsRouter = Router();
@@ -47,6 +49,36 @@ transactionsRouter.get(
       .execute();
 
     res.json(transactions);
+  },
+);
+
+transactionsRouter.post(
+  "/budgets/:budgetId/accounts/:accountId/transactions/import-csv",
+  async (
+    req: Request<
+      { budgetId: string; accountId: string },
+      {},
+      ImportCsvRequest
+    >,
+    res: Response,
+  ) => {
+    const { config, rows } = req.body;
+    try {
+      const result = await importTransactionsService.importTransactions(
+        db,
+        req.params.budgetId,
+        req.params.accountId,
+        config,
+        rows,
+      );
+      res.json(result);
+    } catch (err) {
+      if (err instanceof Error && err.name === "ImportRowParseError") {
+        res.status(422).json({ error: err.message });
+        return;
+      }
+      throw err;
+    }
   },
 );
 

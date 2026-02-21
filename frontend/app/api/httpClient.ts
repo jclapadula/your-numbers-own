@@ -30,7 +30,8 @@ async function apiRequest<T>(
       }
       throw new Error("Unauthorized");
     }
-    throw new Error(`API request failed: ${response.statusText}`);
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? `API request failed: ${response.statusText}`);
   }
 
   return response.json();

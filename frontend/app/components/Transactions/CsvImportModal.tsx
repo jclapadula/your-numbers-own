@@ -1,19 +1,10 @@
 import { useState, useRef } from "react";
 import { Modal } from "../Common/Modal";
+import type { ImportConfig } from "~/api/models";
+import { useImportTransactions } from "./TransactionsQueries";
+import { useAccountTransactions } from "./AccountTransactionsContext";
 
 type Step = "select-file" | "configure";
-
-type ImportConfig = {
-  firstRowIsData: boolean;
-  dateColumn: number | null;
-  dateFormat: "EU" | "US" | "ISO";
-  singleAmountColumn: boolean;
-  amountColumn: number | null;
-  debitColumn: number | null;
-  creditColumn: number | null;
-  payeeColumn: number | null;
-  notesColumn: number | null;
-};
 
 type CsvImportModalProps = {
   onClose: () => void;
@@ -44,6 +35,7 @@ type ColumnSelectProps = {
   rows: string[][];
   firstRowIsData: boolean;
   optional?: boolean;
+  excludedColumns?: number[];
 };
 
 const ColumnSelect = ({
@@ -53,6 +45,7 @@ const ColumnSelect = ({
   rows,
   firstRowIsData,
   optional,
+  excludedColumns = [],
 }: ColumnSelectProps) => {
   const columnLabels = getColumnLabels(rows, firstRowIsData);
 
@@ -75,6 +68,7 @@ const ColumnSelect = ({
       >
         <option value="">(none)</option>
         {columnLabels.map((colLabel, i) => {
+          if (excludedColumns.includes(i)) return null;
           const sample = getColumnSampleValue(rows, i, firstRowIsData);
           const displayLabel = firstRowIsData
             ? `${colLabel}${sample ? ` – "${sample}"` : ""}`
@@ -293,10 +287,15 @@ const ImportPreview = ({
 };
 
 export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
+  const { accountId } = useAccountTransactions();
+  const { mutateAsync: importCsv, isPending: isImporting } =
+    useImportTransactions(accountId);
+
   const [step, setStep] = useState<Step>("select-file");
   const [rows, setRows] = useState<string[][]>([]);
   const [isParsing, setIsParsing] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [config, setConfig] = useState<ImportConfig>({
@@ -342,16 +341,34 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
     }
   };
 
+  const usedColumns = new Set(
+    [
+      config.dateColumn,
+      config.singleAmountColumn ? config.amountColumn : config.debitColumn,
+      config.singleAmountColumn ? null : config.creditColumn,
+      config.payeeColumn,
+      config.notesColumn,
+    ].filter((v): v is number => v !== null)
+  );
+
+  function excludeOthers(ownValue: number | null): number[] {
+    return [...usedColumns].filter((v) => v !== ownValue);
+  }
+
   const isImportReady = (() => {
     if (config.dateColumn === null) return false;
     if (config.singleAmountColumn) return config.amountColumn !== null;
     return config.debitColumn !== null || config.creditColumn !== null;
   })();
 
-  const handleImport = () => {
-    console.log("CSV Import config:", config);
-    console.log("CSV rows:", rows);
-    onClose();
+  const handleImport = async () => {
+    setImportError(null);
+    try {
+      await importCsv({ config, rows });
+      onClose();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : "Failed to import transactions. Please try again.");
+    }
   };
 
   if (step === "select-file") {
@@ -410,8 +427,9 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
       onClose={onClose}
       onBack={() => setStep("select-file")}
       onSave={handleImport}
-      onSaveDisabled={!isImportReady}
-      saveButtonText="Import"
+      onSaveDisabled={!isImportReady || isImporting}
+      disabled={isImporting}
+      saveButtonText={isImporting ? "Importing…" : "Import"}
     >
       <div className="flex flex-col max-h-[65vh]">
         {/* Scrollable config form */}
@@ -438,6 +456,7 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
             onChange={(v) => updateConfig("dateColumn", v)}
             rows={rows}
             firstRowIsData={config.firstRowIsData}
+            excludedColumns={excludeOthers(config.dateColumn)}
           />
 
           <fieldset className="fieldset">
@@ -498,6 +517,7 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
               onChange={(v) => updateConfig("amountColumn", v)}
               rows={rows}
               firstRowIsData={config.firstRowIsData}
+              excludedColumns={excludeOthers(config.amountColumn)}
             />
           ) : (
             <>
@@ -507,6 +527,7 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
                 onChange={(v) => updateConfig("debitColumn", v)}
                 rows={rows}
                 firstRowIsData={config.firstRowIsData}
+                excludedColumns={excludeOthers(config.debitColumn)}
               />
               <ColumnSelect
                 label="Credit column (deposit)"
@@ -514,6 +535,7 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
                 onChange={(v) => updateConfig("creditColumn", v)}
                 rows={rows}
                 firstRowIsData={config.firstRowIsData}
+                excludedColumns={excludeOthers(config.creditColumn)}
               />
             </>
           )}
@@ -526,6 +548,7 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
             rows={rows}
             firstRowIsData={config.firstRowIsData}
             optional
+            excludedColumns={excludeOthers(config.payeeColumn)}
           />
 
           <ColumnSelect
@@ -535,11 +558,15 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
             rows={rows}
             firstRowIsData={config.firstRowIsData}
             optional
+            excludedColumns={excludeOthers(config.notesColumn)}
           />
         </div>
 
         {/* Sticky preview — always visible at the bottom */}
-        <div className="shrink-0 border-t border-base-content/10 pt-3">
+        <div className="shrink-0 border-t border-base-content/10 pt-3 flex flex-col gap-2">
+          {importError && (
+            <div className="alert alert-error text-sm">{importError}</div>
+          )}
           <PreviewSection rows={rows} config={config} />
         </div>
       </div>
