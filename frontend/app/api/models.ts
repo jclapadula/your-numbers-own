@@ -8,6 +8,7 @@ export type BudgetAccount = {
   balance: number;
   isLinked: boolean;
   deletedAt?: string | null;
+  csvImportConfig: ImportConfig | null;
 };
 
 export type Transaction = {

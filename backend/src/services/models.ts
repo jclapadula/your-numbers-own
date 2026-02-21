@@ -7,6 +7,7 @@ export type BudgetAccount = {
   name: string;
   balance: number;
   isLinked: boolean;
+  csvImportConfig: ImportConfig | null;
 };
 
 export type Transaction = {

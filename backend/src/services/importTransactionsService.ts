@@ -18,14 +18,25 @@ type ParsedRow = {
 };
 
 class ImportRowParseError extends Error {
-  constructor(rowNumber: number, row: string[], field: "date" | "amount", value: string) {
+  constructor(
+    rowNumber: number,
+    row: string[],
+    field: "date" | "amount",
+    value: string,
+  ) {
     const preview = row.join(" | ");
-    super(`Row ${rowNumber}: could not parse ${field} — "${value}". Row: [${preview}]`);
+    super(
+      `Row ${rowNumber}: could not parse ${field} — "${value}". Row: [${preview}]`,
+    );
     this.name = "ImportRowParseError";
   }
 }
 
-function parseDateFromParts(year: number, month: number, day: number): Date | null {
+function parseDateFromParts(
+  year: number,
+  month: number,
+  day: number,
+): Date | null {
   const date = new Date(year, month - 1, day);
   const isValid =
     date.getFullYear() === year &&
@@ -77,7 +88,10 @@ function parseDate(
 ): Date | null {
   const trimmed = value.trim();
 
-  if (format === "ISO" && (trimmed.includes("T") || /^\d{4}-\d{2}-\d{2} /.test(trimmed))) {
+  if (
+    format === "ISO" &&
+    (trimmed.includes("T") || /^\d{4}-\d{2}-\d{2} /.test(trimmed))
+  ) {
     return parseISODatetime(trimmed.replace(" ", "T"), timezone);
   }
 
@@ -347,7 +361,9 @@ async function fetchExistingTransactionsByHash(
     .where("csv_row_hash", "in", hashes)
     .execute();
 
-  return new Map(existing.map((t) => [t.csv_row_hash!, { id: t.id, amount: t.amount }]));
+  return new Map(
+    existing.map((t) => [t.csv_row_hash!, { id: t.id, amount: t.amount }]),
+  );
 }
 
 function collectUniquePayeeNames(parsed: ParsedRow[]): Set<string> {
@@ -380,7 +396,8 @@ async function upsertParsedRows(
 
     if (existing) {
       const isUserZeroed = Number(existing.amount) === 0;
-      if (isUserZeroed) {
+      const isSameAmount = Number(existing.amount) === row.amountCents;
+      if (isUserZeroed || isSameAmount) {
         skipped++;
       } else {
         await trx
@@ -449,7 +466,11 @@ export namespace importTransactionsService {
 
         const uniquePayeeNames = collectUniquePayeeNames(parsed);
         await createMissingPayees(trx, budgetId, uniquePayeeNames);
-        const payeeIdByName = await getPayeeIdByName(trx, budgetId, uniquePayeeNames);
+        const payeeIdByName = await getPayeeIdByName(
+          trx,
+          budgetId,
+          uniquePayeeNames,
+        );
 
         const result = await upsertParsedRows(
           trx,

@@ -3,6 +3,7 @@ import { Modal } from "../Common/Modal";
 import type { ImportConfig } from "~/api/models";
 import { useImportTransactions } from "./TransactionsQueries";
 import { useAccountTransactions } from "./AccountTransactionsContext";
+import { useAccounts } from "../Accounts/AccountsQueries";
 
 type Step = "select-file" | "configure";
 
@@ -286,10 +287,23 @@ const ImportPreview = ({
   );
 };
 
+const defaultImportConfig: ImportConfig = {
+  firstRowIsData: false,
+  dateColumn: null,
+  dateFormat: "EU",
+  singleAmountColumn: true,
+  amountColumn: null,
+  debitColumn: null,
+  creditColumn: null,
+  payeeColumn: null,
+  notesColumn: null,
+};
+
 export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
   const { accountId } = useAccountTransactions();
   const { mutateAsync: importCsv, isPending: isImporting } =
     useImportTransactions(accountId);
+  const { data: accounts } = useAccounts();
 
   const [step, setStep] = useState<Step>("select-file");
   const [rows, setRows] = useState<string[][]>([]);
@@ -298,17 +312,11 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [config, setConfig] = useState<ImportConfig>({
-    firstRowIsData: false,
-    dateColumn: null,
-    dateFormat: "EU",
-    singleAmountColumn: true,
-    amountColumn: null,
-    debitColumn: null,
-    creditColumn: null,
-    payeeColumn: null,
-    notesColumn: null,
-  });
+  const savedConfig = accounts?.find((a) => a.id === accountId)?.csvImportConfig ?? null;
+
+  const [config, setConfig] = useState<ImportConfig>(
+    () => savedConfig ?? defaultImportConfig
+  );
 
   const updateConfig = <K extends keyof ImportConfig>(
     key: K,

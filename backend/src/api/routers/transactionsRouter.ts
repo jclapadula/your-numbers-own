@@ -9,6 +9,7 @@ import type {
   Transaction,
   UpdateTransaction,
 } from "../../services/models";
+import type { Json } from "../../db/models";
 import { importTransactionsService } from "../../services/importTransactionsService";
 import { transactionsService } from "../../services/transactionsService";
 
@@ -71,6 +72,13 @@ transactionsRouter.post(
         config,
         rows,
       );
+
+      await db
+        .updateTable("accounts")
+        .set({ csv_import_config: config as unknown as Json })
+        .where("id", "=", req.params.accountId)
+        .execute();
+
       res.json(result);
     } catch (err) {
       if (err instanceof Error && err.name === "ImportRowParseError") {

@@ -34,6 +34,7 @@ export interface AccountPartialBalances {
 
 export interface Accounts {
   budgetId: string;
+  csv_import_config: Json | null;
   deletedAt: Timestamp | null;
   id: Generated<string>;
   name: string;

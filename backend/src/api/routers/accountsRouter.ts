@@ -22,6 +22,7 @@ accountsRouter.get(
       .select([
         "accounts.id",
         "accounts.name",
+        "accounts.csv_import_config",
         "plaid_accounts.id as plaidAccountId",
       ])
       .execute();
@@ -37,6 +38,7 @@ accountsRouter.get(
       name: a.name,
       balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0,
       isLinked: a.plaidAccountId !== null,
+      csvImportConfig: a.csv_import_config as BudgetAccount["csvImportConfig"],
     }));
 
     res.json(accountsResponse);
