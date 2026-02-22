@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { usePayees } from "~/components/Budget/budgetQueries";
-import { useAccounts } from "~/components/Accounts/AccountsQueries";
-import { CategorySelect } from "~/components/Budget/Inputs/CategorySelect";
-import { TransactionTableWidths } from "./TransactionListHeader";
-import Amount, { rawValueToString } from "~/components/Amount";
-import { twMerge } from "tailwind-merge";
-import { RowCell } from "./RowCell";
 import { format, formatISO } from "date-fns";
-import { useCategories } from "~/components/Budget/Categories/CategoriesQueries";
-import { PayeeInput } from "~/components/Budget/Inputs/PayeeInput";
+import { useEffect, useState } from "react";
+import { twMerge } from "tailwind-merge";
 import type { Transaction } from "~/api/models";
+import { useAccounts } from "~/components/Accounts/AccountsQueries";
+import Amount, { rawValueToString } from "~/components/Amount";
+import { usePayees } from "~/components/Budget/budgetQueries";
+import { useCategories } from "~/components/Budget/Categories/CategoriesQueries";
+import { CategorySelect } from "~/components/Budget/Inputs/CategorySelect";
+import { PayeeInput } from "~/components/Budget/Inputs/PayeeInput";
 import type { PayeeOrTransfer } from "~/types";
 import { evaluateMathInput } from "~/utils/mathEval";
+import { RowCell } from "./RowCell";
+import { TransactionTableWidths } from "./TransactionListHeader";
+import { useTransactionCellNavigation } from "./useTransactionCellNavigation";
 
 type TransactionDateFieldProps = {
   value: string;
@@ -25,12 +26,15 @@ export const TransactionDateCell = ({
   autoFocus = false,
 }: TransactionDateFieldProps) => {
   const [isFocused, setIsFocused] = useState(autoFocus);
+  const { cellProps, getInputKeyDownHandler } = useTransactionCellNavigation(0);
 
   const displayValue = new Date(value).toLocaleDateString();
 
   return (
     <RowCell
+      {...cellProps}
       onClick={() => setIsFocused(true)}
+      onFocus={() => setIsFocused(true)}
       style={TransactionTableWidths.date}
       className={"px-2 py-1"}
     >
@@ -44,6 +48,7 @@ export const TransactionDateCell = ({
             return onChange(formatISO(date));
           }}
           onBlur={() => setIsFocused(false)}
+          onKeyDown={getInputKeyDownHandler(() => setIsFocused(false))}
           autoFocus
         />
       )}
@@ -81,6 +86,8 @@ export const TransactionPayeeCell = ({
   const [isFocused, setIsFocused] = useState(false);
   const { data: payees = [] } = usePayees();
   const { data: accounts = [] } = useAccounts();
+  const { cellProps, getDropdownKeyDownHandler } =
+    useTransactionCellNavigation(1);
 
   const payee = payees.find((p) => p.id === transaction.payeeId);
   const account = accounts.find(
@@ -112,6 +119,7 @@ export const TransactionPayeeCell = ({
 
   return (
     <RowCell
+      {...cellProps}
       grows
       onClick={(e) => {
         e.stopPropagation();
@@ -121,14 +129,16 @@ export const TransactionPayeeCell = ({
       style={TransactionTableWidths.payee}
     >
       {isFocused ? (
-        <PayeeInput
-          payeeId={transaction.payeeId}
-          destinationAccountId={transaction.destinationAccountId}
-          currentAccountId={transaction.accountId}
-          onSelectionChange={handleChange}
-          onBlur={() => setIsFocused(false)}
-          className="w-full h-full"
-        />
+        <div onKeyDown={getDropdownKeyDownHandler()}>
+          <PayeeInput
+            payeeId={transaction.payeeId}
+            destinationAccountId={transaction.destinationAccountId}
+            currentAccountId={transaction.accountId}
+            onSelectionChange={handleChange}
+            onBlur={() => setIsFocused(false)}
+            className="w-full h-full"
+          />
+        </div>
       ) : (
         <span className="block w-full">{displayValue}</span>
       )}
@@ -147,7 +157,8 @@ export const TransactionCategoryCell = ({
   onChange,
   disabled = false,
 }: TransactionCategoryFieldProps) => {
-  const cellRef = useRef<HTMLDivElement | null>(null);
+  const { cellProps, getDropdownKeyDownHandler } =
+    useTransactionCellNavigation(2);
 
   const [isFocused, setIsFocused] = useState(false);
   const { data: categories = [] } = useCategories();
@@ -163,7 +174,6 @@ export const TransactionCategoryCell = ({
     return (
       <RowCell
         grows
-        ref={cellRef}
         style={TransactionTableWidths.category}
         className="opacity-50"
       >
@@ -174,23 +184,25 @@ export const TransactionCategoryCell = ({
 
   return (
     <RowCell
+      {...cellProps}
       grows
       onClick={(e) => {
         e.stopPropagation();
         setIsFocused(true);
       }}
       onFocus={() => setIsFocused(true)}
-      ref={cellRef}
       style={TransactionTableWidths.category}
     >
       {isFocused ? (
-        <CategorySelect
-          value={category?.name || ""}
-          onCategorySelected={handleChange}
-          onBlur={() => setIsFocused(false)}
-          autoFocus
-          containerRef={cellRef}
-        />
+        <div onKeyDown={getDropdownKeyDownHandler()}>
+          <CategorySelect
+            value={category?.name || ""}
+            onCategorySelected={handleChange}
+            onBlur={() => setIsFocused(false)}
+            autoFocus
+            containerRef={cellProps.ref}
+          />
+        </div>
       ) : category ? (
         <span className="block w-full">{category.name}</span>
       ) : (
@@ -209,6 +221,7 @@ export const TransactionNotesCell = ({
   value,
   onChange,
 }: TransactionNotesFieldProps) => {
+  const { cellProps, getInputKeyDownHandler } = useTransactionCellNavigation(3);
   const [isFocused, setIsFocused] = useState(false);
   const [notes, setNotes] = useState(value ?? "");
 
@@ -227,6 +240,7 @@ export const TransactionNotesCell = ({
 
   return (
     <RowCell
+      {...cellProps}
       grows
       onClick={() => setIsFocused(true)}
       onFocus={() => setIsFocused(true)}
@@ -239,11 +253,9 @@ export const TransactionNotesCell = ({
           onChange={(e) => handleChange(e.target.value)}
           onBlur={handleBlur}
           autoFocus
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleBlur();
-            }
-          }}
+          onKeyDown={getInputKeyDownHandler(() =>
+            (document.activeElement as HTMLElement)?.blur(),
+          )}
         />
       ) : (
         <span>{notes}</span>
@@ -255,12 +267,16 @@ export const TransactionNotesCell = ({
 type TransactionPaymentDepositFieldProps = {
   rawValue: number | null;
   onChange: (value: number) => void;
+  column: number;
 };
 
 export const TransactionPaymentDepositCell = ({
   rawValue,
   onChange,
+  column,
 }: TransactionPaymentDepositFieldProps) => {
+  const { cellProps, getInputKeyDownHandler } =
+    useTransactionCellNavigation(column);
   const [isFocused, setIsFocused] = useState(false);
 
   const initialValue = rawValueToString(rawValue);
@@ -272,6 +288,7 @@ export const TransactionPaymentDepositCell = ({
 
   return (
     <RowCell
+      {...cellProps}
       onClick={() => setIsFocused(true)}
       onFocus={() => setIsFocused(true)}
       style={TransactionTableWidths.paymentDeposit}
@@ -294,11 +311,9 @@ export const TransactionPaymentDepositCell = ({
             setAmount(result.toString());
             setIsFocused(false);
           }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              (e.target as any).blur();
-            }
-          }}
+          onKeyDown={getInputKeyDownHandler(() =>
+            (document.activeElement as HTMLElement)?.blur(),
+          )}
           accept="[0-9]*[.,]?[0-9]*"
           autoFocus
         />

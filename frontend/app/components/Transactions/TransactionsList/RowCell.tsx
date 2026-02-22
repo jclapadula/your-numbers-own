@@ -1,40 +1,25 @@
-import { forwardRef } from "react";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { twMerge } from "tailwind-merge";
 
-export const RowCell = forwardRef(
-  (
-    {
-      children,
-      className,
-      style,
-      onClick,
-      onFocus,
-      grows,
-    }: {
-      children: React.ReactNode;
-      className?: string;
-      style?: React.CSSProperties;
-      onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-      onFocus?: (e: React.FocusEvent<HTMLDivElement>) => void;
-      grows?: boolean;
-    },
-    ref: React.Ref<HTMLDivElement>
-  ) => {
+type RowCellProps = ComponentPropsWithoutRef<"div"> & {
+  grows?: boolean;
+};
+
+export const RowCell = forwardRef<HTMLDivElement, RowCellProps>(
+  ({ children, className, grows, ...rest }, ref) => {
     return (
       <div
+        {...rest}
         className={twMerge(
           "px-2 py-1",
           grows && "flex-auto basis-0",
-          className
+          className,
         )}
-        style={style}
-        onClick={onClick}
-        onFocus={onFocus}
         tabIndex={0}
         ref={ref}
       >
         {children}
       </div>
     );
-  }
+  },
 );

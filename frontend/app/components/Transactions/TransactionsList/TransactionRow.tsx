@@ -1,5 +1,15 @@
+import { formatISO } from "date-fns";
 import { useState } from "react";
+import { twMerge } from "tailwind-merge";
+import { z } from "zod";
 import type { Transaction } from "~/api/models";
+import { rawNumberToAmount } from "~/components/Amount";
+import { useAccountTransactions } from "../AccountTransactionsContext";
+import {
+  useCreateTransaction,
+  useUpdateTransaction,
+} from "../TransactionsQueries";
+import { TransactionTableWidths } from "./TransactionListHeader";
 import {
   TransactionCategoryCell,
   TransactionDateCell,
@@ -7,16 +17,6 @@ import {
   TransactionPayeeCell,
   TransactionPaymentDepositCell,
 } from "./TransactionRowFields";
-import { formatISO } from "date-fns";
-import { rawNumberToAmount } from "~/components/Amount";
-import { TransactionTableWidths } from "./TransactionListHeader";
-import {
-  useCreateTransaction,
-  useUpdateTransaction,
-} from "../TransactionsQueries";
-import { useAccountTransactions } from "../AccountTransactionsContext";
-import { z } from "zod";
-import { twMerge } from "tailwind-merge";
 
 const transactionSchema = z.object({
   accountId: z.string().min(1),
@@ -117,6 +117,7 @@ export const TransactionRow = ({
               amount: rawNumberToAmount(amount * -1) || 0,
             });
           }}
+          column={4}
         />
         <TransactionPaymentDepositCell
           rawValue={
@@ -129,6 +130,7 @@ export const TransactionRow = ({
               amount: rawNumberToAmount(amount) || 0,
             });
           }}
+          column={5}
         />
         <div
           style={TransactionTableWidths.reconciled}
@@ -234,6 +236,7 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
               amount: rawNumberToAmount(amount * -1) || 0,
             });
           }}
+          column={4}
         />
         <TransactionPaymentDepositCell
           rawValue={
@@ -247,6 +250,7 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
               amount: rawNumberToAmount(amount) || 0,
             });
           }}
+          column={5}
         />
         <div
           style={TransactionTableWidths.reconciled}

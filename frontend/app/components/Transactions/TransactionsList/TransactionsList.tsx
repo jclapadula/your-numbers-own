@@ -1,11 +1,15 @@
-import { PlusIcon, TrashIcon, ArrowUpTrayIcon } from "@heroicons/react/16/solid";
+import {
+  ArrowUpTrayIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/16/solid";
 import { useState } from "react";
 import type { Transaction } from "~/api/models";
-import { TransactionListHeader } from "./TransactionListHeader";
-import { NewTransactionRow, TransactionRow } from "./TransactionRow";
-import { useDeleteTransactions } from "../TransactionsQueries";
 import { useAccountTransactions } from "../AccountTransactionsContext";
 import { CsvImportModal } from "../CsvImportModal";
+import { useDeleteTransactions } from "../TransactionsQueries";
+import { TransactionListHeader } from "./TransactionListHeader";
+import { NewTransactionRow, TransactionRow } from "./TransactionRow";
 
 type TransactionListActionsProps = {
   onAddTransaction: () => void;
@@ -56,7 +60,7 @@ export const AccountTransactionsList = ({
   const [addingTransaction, setAddingTransaction] = useState(false);
   const [importingCsv, setImportingCsv] = useState(false);
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const { accountId } = useAccountTransactions();
   const { mutateAsync: deleteTransaction } = useDeleteTransactions(accountId);

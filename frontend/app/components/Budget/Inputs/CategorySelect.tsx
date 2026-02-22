@@ -6,11 +6,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { useCategories } from "../Categories/CategoriesQueries";
-import { useCategoryGroups } from "../CategoryGroups/CategoryGroupsQueries";
 import { twMerge } from "tailwind-merge";
 import type { Category } from "~/api/models";
 import { useDropdownArrowNavigation } from "../../Common/useDropdownArrowNavigation";
+import { useCategories } from "../Categories/CategoriesQueries";
+import { useCategoryGroups } from "../CategoryGroups/CategoryGroupsQueries";
 
 type CategoryInputProps = {
   value: string | null;
@@ -28,7 +28,7 @@ type CategoryInputProps = {
 const noFilter = () => true;
 
 const sortCategoriesByGroupOrder = (
-  categoryGroups: { id: string; position: number }[]
+  categoryGroups: { id: string; position: number }[],
 ) => {
   return (a: Category, b: Category) => {
     const groupA = categoryGroups.find((g) => g.id === a.groupId);
@@ -62,7 +62,7 @@ export const CategorySelect = ({
   const filteredCategories = useMemo(() => {
     return categories
       .filter((category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       .filter(categoryFilter)
       .sort(sortCategoriesByGroupOrder(categoryGroups));
@@ -147,14 +147,14 @@ export const CategorySelect = ({
           placeholder="Search categories..."
           className={twMerge(
             "input input-bordered w-full h-auto pl-0",
-            variant === "full" && "!input"
+            variant === "full" && "input!",
           )}
           autoFocus={autoFocus}
         />
         <ul
           className={twMerge(
             "dropdown-content menu p-0 shadow bg-base-300 rounded mt-1",
-            "w-max max-w-xs max-h-[250px] overflow-y-scroll flex-nowrap min-w-full"
+            "w-max max-w-xs max-h-[250px] overflow-y-scroll flex-nowrap min-w-full",
           )}
         >
           {categoryGroups.map((group) => {
@@ -170,13 +170,13 @@ export const CategorySelect = ({
               <Fragment key={group.id}>
                 <li
                   key={group.id}
-                  className="menu-disabled -ml-1 !text-base-content/50"
+                  className="menu-disabled -ml-1 text-base-content/50!"
                 >
                   <span className="text-[13px]">{group.name}</span>
                 </li>
                 {groupCategories.map((category) => {
                   const categoryIndex = filteredCategories.findIndex(
-                    (c) => c.id === category.id
+                    (c) => c.id === category.id,
                   );
                   return (
                     <li key={category.id}>
