@@ -33,6 +33,10 @@ export const PayeeInput = ({
   const { data: accounts = [] } = useAccounts();
   const { mutateAsync: createPayee } = useCreatePayee();
   const [searchTerm, setSearchTerm] = useState("");
+  const [stagedSelection, setStagedSelection] = useState<PayeeOrTransfer | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(true);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const filteredPayees = useMemo(
     () =>
@@ -95,13 +99,30 @@ export const PayeeInput = ({
     resetArrowsFocus();
   }, [onBlur, resetArrowsFocus]);
 
+  const confirmAndBlur = useCallback(() => {
+    if (stagedSelection !== null) {
+      onSelectionChange(stagedSelection);
+    }
+    handleBlur();
+  }, [stagedSelection, onSelectionChange, handleBlur]);
+
+  const stageSelection = useCallback(
+    (selection: PayeeOrTransfer, displayName: string) => {
+      setStagedSelection(selection);
+      setSearchTerm(displayName);
+      setIsDropdownOpen(false);
+      inputRef.current?.focus();
+    },
+    [],
+  );
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         divRef.current !== event.target &&
         !divRef.current?.contains(event.target as Node)
       ) {
-        handleBlur();
+        confirmAndBlur();
       }
     };
 
@@ -110,12 +131,14 @@ export const PayeeInput = ({
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, [handleBlur]);
+  }, [confirmAndBlur]);
 
   useEffect(() => {
     const initialPayee = payees.find((p) => p.id === payeeId);
     const initialAccount = accounts.find((a) => a.id === destinationAccountId);
     setSearchTerm(initialPayee?.name || initialAccount?.name || "");
+    setStagedSelection(null);
+    setIsDropdownOpen(true);
   }, [payeeId, destinationAccountId, payees, accounts]);
 
   const hasPayees = filteredPayees.length > 0;
@@ -127,112 +150,147 @@ export const PayeeInput = ({
       ref={divRef}
       onKeyDown={(e) => {
         if (e.key === "Tab") {
-          handleBlur();
+          confirmAndBlur();
         }
         if (e.key === "ArrowDown") {
+          setIsDropdownOpen(true);
           focusOnNextElement();
         }
         if (e.key === "ArrowUp") {
+          setIsDropdownOpen(true);
           focusOnPreviousElement();
         }
         if (e.key === "Escape") {
           handleBlur();
         }
+        if (e.key === "Enter") {
+          if (document.activeElement === inputRef.current) {
+            if (stagedSelection !== null) {
+              confirmAndBlur();
+              // let bubble → parent navigates down
+            }
+            // if no staged selection, input's own onKeyDown handles create
+          } else {
+            // focused on a dropdown button — stage it without navigating
+            e.stopPropagation();
+            e.preventDefault();
+            const itemId = (e.target as HTMLElement).getAttribute("data-itemId");
+            const itemType = (e.target as HTMLElement).getAttribute("data-item-type");
+            if (itemType === "payee") {
+              const payee = filteredPayees.find((p) => p.id === itemId);
+              if (payee) stageSelection({ type: "payee", payeeId: payee.id }, payee.name);
+            } else if (itemType === "account") {
+              const account = filteredAccounts.find((a) => a.id === itemId);
+              if (account)
+                stageSelection(
+                  { type: "transfer", destinationAccountId: account.id },
+                  account.name,
+                );
+            }
+          }
+        }
       }}
     >
       <input
+        ref={inputRef}
         type="text"
         value={searchTerm}
         onChange={(e) => {
           setSearchTerm(e.target.value);
+          setIsDropdownOpen(true);
+          setStagedSelection(null);
         }}
         placeholder="Search payees or accounts..."
         className="input input-bordered w-full h-auto pl-0"
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
+          if (e.key === "Enter" && stagedSelection === null) {
             handleCreatePayee();
           }
         }}
         autoFocus
       />
-      <ul
-        className={twMerge(
-          "dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs min-w-full",
-        )}
-      >
-        {hasPayees && (
-          <Fragment>
-            <li className="menu-disabled -ml-1 !text-base-content/50">
-              <span className="text-[13px]">Payees</span>
-            </li>
-            {filteredPayees.map((payee) => {
-              const itemIndex = navigationItems.findIndex(
-                (item) => item.id === payee.id,
-              );
-              return (
-                <li key={payee.id}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectionChange({ type: "payee", payeeId: payee.id });
-                    }}
-                    onFocus={() => setFocusedItemIndex(itemIndex)}
-                    data-itemId={payee.id}
-                    className="text-[13px]"
-                  >
-                    {payee.name}
-                  </button>
-                </li>
-              );
-            })}
-          </Fragment>
-        )}
-
-        {hasAccounts && (
-          <Fragment>
-            <li className="menu-disabled -ml-1 !text-base-content/50">
-              <span className="text-[13px]">Accounts</span>
-            </li>
-            {filteredAccounts.map((account) => {
-              const itemIndex = navigationItems.findIndex(
-                (item) => item.id === account.id,
-              );
-              return (
-                <li key={account.id}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectionChange({
-                        type: "transfer",
-                        destinationAccountId: account.id,
-                      });
-                    }}
-                    onFocus={() => setFocusedItemIndex(itemIndex)}
-                    data-itemId={account.id}
-                    className="text-[13px]"
-                  >
-                    {account.name}
-                  </button>
-                </li>
-              );
-            })}
-          </Fragment>
-        )}
-
-        {searchTerm.trim() &&
-          !filteredPayees.some(
-            (p) => p.name.toLowerCase() === searchTerm.toLowerCase(),
-          ) && (
-            <li className="mt-1">
-              <button
-                onClick={handleCreatePayee}
-                className="btn btn-primary btn-sm text-left"
-              >
-                Create "{searchTerm}"
-              </button>
-            </li>
+      {isDropdownOpen && (
+        <ul
+          className={twMerge(
+            "dropdown-content menu p-0 shadow bg-base-300 rounded overflow-hidden mt-1 w-max max-w-xs min-w-full",
           )}
-      </ul>
+        >
+          {hasPayees && (
+            <Fragment>
+              <li className="menu-disabled -ml-1 text-base-content/50!">
+                <span className="text-[13px]">Payees</span>
+              </li>
+              {filteredPayees.map((payee) => {
+                const itemIndex = navigationItems.findIndex(
+                  (item) => item.id === payee.id,
+                );
+                return (
+                  <li key={payee.id}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        stageSelection({ type: "payee", payeeId: payee.id }, payee.name);
+                      }}
+                      onFocus={() => setFocusedItemIndex(itemIndex)}
+                      data-itemId={payee.id}
+                      data-item-type="payee"
+                      className="text-[13px]"
+                    >
+                      {payee.name}
+                    </button>
+                  </li>
+                );
+              })}
+            </Fragment>
+          )}
+
+          {hasAccounts && (
+            <Fragment>
+              <li className="menu-disabled -ml-1 text-base-content/50!">
+                <span className="text-[13px]">Accounts</span>
+              </li>
+              {filteredAccounts.map((account) => {
+                const itemIndex = navigationItems.findIndex(
+                  (item) => item.id === account.id,
+                );
+                return (
+                  <li key={account.id}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        stageSelection(
+                          { type: "transfer", destinationAccountId: account.id },
+                          account.name,
+                        );
+                      }}
+                      onFocus={() => setFocusedItemIndex(itemIndex)}
+                      data-itemId={account.id}
+                      data-item-type="account"
+                      className="text-[13px]"
+                    >
+                      {account.name}
+                    </button>
+                  </li>
+                );
+              })}
+            </Fragment>
+          )}
+
+          {searchTerm.trim() &&
+            !filteredPayees.some(
+              (p) => p.name.toLowerCase() === searchTerm.toLowerCase(),
+            ) && (
+              <li className="mt-1">
+                <button
+                  onClick={handleCreatePayee}
+                  className="btn btn-primary btn-sm text-left"
+                >
+                  Create "{searchTerm}"
+                </button>
+              </li>
+            )}
+        </ul>
+      )}
     </div>
   );
 };

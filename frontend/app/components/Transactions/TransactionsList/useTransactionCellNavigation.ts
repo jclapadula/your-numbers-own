@@ -52,6 +52,9 @@ export const useTransactionCellNavigation = (column: number) => {
     if (e.key === "Tab") {
       e.preventDefault();
       navigate(e.shiftKey ? "prev" : "next");
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      navigate("down");
     }
   };
 
