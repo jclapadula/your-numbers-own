@@ -32,6 +32,7 @@ export const CategoryGroupRow = ({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -55,10 +56,9 @@ export const CategoryGroupRow = ({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
     >
       <div className="flex justify-between border-b border-neutral-content/10 [&>div]:p-2 bg-base-300">
-        <CategoryCell className="flex items-center justify-between group">
+        <CategoryCell ref={setActivatorNodeRef} className="flex items-center justify-between group cursor-grab" {...listeners}>
           <span className="font-semibold">{categoryGroup.name}</span>
           <Menu className="group-focus-within:opacity-100 group-hover:opacity-100 opacity-0 transition-opacity">
             <MenuItem onClick={() => setShowCreateModal(true)}>

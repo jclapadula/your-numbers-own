@@ -25,6 +25,7 @@ export const IncomeCategoryRow = ({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -48,10 +49,9 @@ export const IncomeCategoryRow = ({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
     >
-      <CategoryCell className="pl-6 text-sm group flex justify-between items-center">
-        <span className="text-[13px] cursor-grab">{category.name}</span>
+      <CategoryCell ref={setActivatorNodeRef} className="pl-6 text-sm group flex justify-between items-center cursor-grab" {...listeners}>
+        <span className="text-[13px]">{category.name}</span>
         <Menu className="group-focus-within:opacity-100 group-hover:opacity-100 opacity-0 transition-opacity">
           <MenuItem onClick={() => setShowEditModal(true)}>Rename</MenuItem>
           <MenuItem onClick={() => setShowDeleteModal(true)}>Delete</MenuItem>

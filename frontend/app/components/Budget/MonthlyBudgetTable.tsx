@@ -195,7 +195,10 @@ export const MonthlyBudgetTable = ({
     categories,
   } = useMonthlyBudgetData(monthlyBudget);
 
-  const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  );
 
   const { mutateAsync: moveCategoryGroup, isPending: isMovingCategoryGroup } =
     useMoveCategoryGroup();
