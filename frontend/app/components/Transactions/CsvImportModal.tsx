@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
-import { Modal } from "../Common/Modal";
+import { useRef, useState } from "react";
 import type { ImportConfig } from "~/api/models";
-import { useImportTransactions } from "./TransactionsQueries";
-import { useAccountTransactions } from "./AccountTransactionsContext";
 import { useAccounts } from "../Accounts/AccountsQueries";
+import { Modal } from "../Common/Modal";
+import { useAccountTransactions } from "./AccountTransactionsContext";
+import { useImportTransactions } from "./TransactionsQueries";
 
 type Step = "select-file" | "configure";
 
@@ -23,7 +23,7 @@ function getColumnLabels(rows: string[][], firstRowIsData: boolean): string[] {
 function getColumnSampleValue(
   rows: string[][],
   colIndex: number,
-  firstRowIsData: boolean
+  firstRowIsData: boolean,
 ): string | null {
   const sampleRow = firstRowIsData ? rows[0] : rows[1];
   return sampleRow?.[colIndex] ?? null;
@@ -51,7 +51,7 @@ const ColumnSelect = ({
   const columnLabels = getColumnLabels(rows, firstRowIsData);
 
   return (
-    <fieldset className="fieldset">
+    <fieldset className="fieldset py-0">
       <legend className="fieldset-legend">
         {label}
         {optional && (
@@ -61,7 +61,7 @@ const ColumnSelect = ({
         )}
       </legend>
       <select
-        className="select select-bordered w-full"
+        className="select select-bordered select-sm w-full"
         value={value ?? ""}
         onChange={(e) =>
           onChange(e.target.value === "" ? null : Number(e.target.value))
@@ -121,16 +121,11 @@ type PreviewRow = {
   deposit: number | null;
 };
 
-function buildPreviewRow(
-  row: string[],
-  config: ImportConfig
-): PreviewRow {
+function buildPreviewRow(row: string[], config: ImportConfig): PreviewRow {
   const rawDate =
     config.dateColumn !== null ? (row[config.dateColumn] ?? "") : "";
 
-  const parsedDateObj = rawDate
-    ? parseDate(rawDate, config.dateFormat)
-    : null;
+  const parsedDateObj = rawDate ? parseDate(rawDate, config.dateFormat) : null;
   const parsedDate = parsedDateObj ? formatDate(parsedDateObj) : null;
 
   const payee =
@@ -220,7 +215,9 @@ const ImportPreview = ({
   config: ImportConfig;
 }) => {
   const dataRows = config.firstRowIsData ? rows : rows.slice(1);
-  const previewRows = dataRows.slice(0, 5).map((r) => buildPreviewRow(r, config));
+  const previewRows = dataRows
+    .slice(0, 5)
+    .map((r) => buildPreviewRow(r, config));
 
   if (previewRows.length === 0) return null;
 
@@ -312,15 +309,16 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const savedConfig = accounts?.find((a) => a.id === accountId)?.csvImportConfig ?? null;
+  const savedConfig =
+    accounts?.find((a) => a.id === accountId)?.csvImportConfig ?? null;
 
   const [config, setConfig] = useState<ImportConfig>(
-    () => savedConfig ?? defaultImportConfig
+    () => savedConfig ?? defaultImportConfig,
   );
 
   const updateConfig = <K extends keyof ImportConfig>(
     key: K,
-    value: ImportConfig[K]
+    value: ImportConfig[K],
   ) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
@@ -349,18 +347,26 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
     }
   };
 
-  const usedColumns = new Set(
+  const requiredColumns = new Set(
     [
       config.dateColumn,
       config.singleAmountColumn ? config.amountColumn : config.debitColumn,
       config.singleAmountColumn ? null : config.creditColumn,
-      config.payeeColumn,
-      config.notesColumn,
-    ].filter((v): v is number => v !== null)
+    ].filter((v): v is number => v !== null),
   );
+
+  const usedColumns = new Set([
+    ...requiredColumns,
+    config.payeeColumn,
+    config.notesColumn,
+  ].filter((v): v is number => v !== null));
 
   function excludeOthers(ownValue: number | null): number[] {
     return [...usedColumns].filter((v) => v !== ownValue);
+  }
+
+  function excludeRequiredOthers(ownValue: number | null): number[] {
+    return [...requiredColumns].filter((v) => v !== ownValue);
   }
 
   const isImportReady = (() => {
@@ -375,7 +381,11 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
       await importCsv({ config, rows });
       onClose();
     } catch (e) {
-      setImportError(e instanceof Error ? e.message : "Failed to import transactions. Please try again.");
+      setImportError(
+        e instanceof Error
+          ? e.message
+          : "Failed to import transactions. Please try again.",
+      );
     }
   };
 
@@ -443,131 +453,123 @@ export const CsvImportModal = ({ onClose }: CsvImportModalProps) => {
         {/* Scrollable config form */}
         <div className="flex flex-col gap-3 overflow-y-auto pr-1 min-h-0 pb-2">
           {/* First row */}
-          <fieldset className="fieldset">
-            <label className="fieldset-label flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={config.firstRowIsData}
-                onChange={(e) =>
-                  updateConfig("firstRowIsData", e.target.checked)
-                }
-              />
-              <span>First row is data (no header row)</span>
-            </label>
-          </fieldset>
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-sm"
+              checked={config.firstRowIsData}
+              onChange={(e) => updateConfig("firstRowIsData", e.target.checked)}
+            />
+            <span>First row is data (no header row)</span>
+          </label>
 
           {/* Date config */}
-          <ColumnSelect
-            label="Date column"
-            value={config.dateColumn}
-            onChange={(v) => updateConfig("dateColumn", v)}
-            rows={rows}
-            firstRowIsData={config.firstRowIsData}
-            excludedColumns={excludeOthers(config.dateColumn)}
-          />
-
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend">Date format</legend>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  className="radio radio-sm"
-                  name="dateFormat"
-                  checked={config.dateFormat === "EU"}
-                  onChange={() => updateConfig("dateFormat", "EU")}
-                />
-                <span className="text-sm">EU (DD/MM/YYYY)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  className="radio radio-sm"
-                  name="dateFormat"
-                  checked={config.dateFormat === "US"}
-                  onChange={() => updateConfig("dateFormat", "US")}
-                />
-                <span className="text-sm">US (MM/DD/YYYY)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  className="radio radio-sm"
-                  name="dateFormat"
-                  checked={config.dateFormat === "ISO"}
-                  onChange={() => updateConfig("dateFormat", "ISO")}
-                />
-                <span className="text-sm">ISO (YYYY-MM-DD)</span>
-              </label>
+          <div className="flex gap-2">
+            <div className="basis-1/2 shrink-0">
+              <ColumnSelect
+                label="Date column"
+                value={config.dateColumn}
+                onChange={(v) => updateConfig("dateColumn", v)}
+                rows={rows}
+                firstRowIsData={config.firstRowIsData}
+                excludedColumns={excludeOthers(config.dateColumn)}
+              />
             </div>
-          </fieldset>
+            <fieldset className="fieldset py-0 flex-1">
+              <legend className="fieldset-legend">Date format</legend>
+              <select
+                className="select select-bordered select-sm w-full"
+                value={config.dateFormat}
+                onChange={(e) =>
+                  updateConfig(
+                    "dateFormat",
+                    e.target.value as "EU" | "US" | "ISO",
+                  )
+                }
+              >
+                <option value="EU">EU (DD/MM/YYYY)</option>
+                <option value="US">US (MM/DD/YYYY)</option>
+                <option value="ISO">ISO (YYYY-MM-DD)</option>
+              </select>
+            </fieldset>
+          </div>
 
           {/* Amount config */}
-          <fieldset className="fieldset">
-            <label className="fieldset-label flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={config.singleAmountColumn}
-                onChange={(e) =>
-                  updateConfig("singleAmountColumn", e.target.checked)
-                }
-              />
-              <span>Credit and debit are a single column</span>
-            </label>
-          </fieldset>
-
-          {config.singleAmountColumn ? (
-            <ColumnSelect
-              label="Amount column"
-              value={config.amountColumn}
-              onChange={(v) => updateConfig("amountColumn", v)}
-              rows={rows}
-              firstRowIsData={config.firstRowIsData}
-              excludedColumns={excludeOthers(config.amountColumn)}
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-sm"
+              checked={config.singleAmountColumn}
+              onChange={(e) =>
+                updateConfig("singleAmountColumn", e.target.checked)
+              }
             />
-          ) : (
-            <>
-              <ColumnSelect
-                label="Debit column (payment)"
-                value={config.debitColumn}
-                onChange={(v) => updateConfig("debitColumn", v)}
-                rows={rows}
-                firstRowIsData={config.firstRowIsData}
-                excludedColumns={excludeOthers(config.debitColumn)}
-              />
-              <ColumnSelect
-                label="Credit column (deposit)"
-                value={config.creditColumn}
-                onChange={(v) => updateConfig("creditColumn", v)}
-                rows={rows}
-                firstRowIsData={config.firstRowIsData}
-                excludedColumns={excludeOthers(config.creditColumn)}
-              />
-            </>
-          )}
+            <span>Credit and debit are a single column</span>
+          </label>
+
+          <div className="flex gap-2">
+            {config.singleAmountColumn ? (
+              <div className="basis-1/2 shrink-0">
+                <ColumnSelect
+                  label="Amount column"
+                  value={config.amountColumn}
+                  onChange={(v) => updateConfig("amountColumn", v)}
+                  rows={rows}
+                  firstRowIsData={config.firstRowIsData}
+                  excludedColumns={excludeOthers(config.amountColumn)}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="flex-1">
+                  <ColumnSelect
+                    label="Debit column (payment)"
+                    value={config.debitColumn}
+                    onChange={(v) => updateConfig("debitColumn", v)}
+                    rows={rows}
+                    firstRowIsData={config.firstRowIsData}
+                    excludedColumns={excludeOthers(config.debitColumn)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <ColumnSelect
+                    label="Credit column (deposit)"
+                    value={config.creditColumn}
+                    onChange={(v) => updateConfig("creditColumn", v)}
+                    rows={rows}
+                    firstRowIsData={config.firstRowIsData}
+                    excludedColumns={excludeOthers(config.creditColumn)}
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Optional columns */}
-          <ColumnSelect
-            label="Payee column"
-            value={config.payeeColumn}
-            onChange={(v) => updateConfig("payeeColumn", v)}
-            rows={rows}
-            firstRowIsData={config.firstRowIsData}
-            optional
-            excludedColumns={excludeOthers(config.payeeColumn)}
-          />
-
-          <ColumnSelect
-            label="Description column"
-            value={config.notesColumn}
-            onChange={(v) => updateConfig("notesColumn", v)}
-            rows={rows}
-            firstRowIsData={config.firstRowIsData}
-            optional
-            excludedColumns={excludeOthers(config.notesColumn)}
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <ColumnSelect
+                label="Payee column"
+                value={config.payeeColumn}
+                onChange={(v) => updateConfig("payeeColumn", v)}
+                rows={rows}
+                firstRowIsData={config.firstRowIsData}
+                optional
+                excludedColumns={excludeRequiredOthers(config.payeeColumn)}
+              />
+            </div>
+            <div className="flex-1">
+              <ColumnSelect
+                label="Description column"
+                value={config.notesColumn}
+                onChange={(v) => updateConfig("notesColumn", v)}
+                rows={rows}
+                firstRowIsData={config.firstRowIsData}
+                optional
+                excludedColumns={excludeRequiredOthers(config.notesColumn)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Sticky preview — always visible at the bottom */}
