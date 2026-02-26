@@ -6,6 +6,7 @@ export type BudgetAccount = {
   id: string;
   name: string;
   balance: number;
+  reconciledBalance: number;
   isLinked: boolean;
   csvImportConfig: ImportConfig | null;
 };
@@ -45,7 +46,6 @@ export type UpdateTransaction = Partial<{
   date: Date;
   amount: number;
   categoryId: string | null;
-  isReconciled: boolean;
   notes: string | null;
   payeeId: string | null;
   destinationAccountId: string | null;

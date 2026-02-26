@@ -40,7 +40,7 @@ export namespace accountBalanceService {
     return { year: latestDate.getFullYear(), month: latestDate.getMonth() + 1 };
   };
 
-  const getPreviousMonthBalance = async (
+  const getPreviousMonthBalances = async (
     db: Kysely<DB>,
     accountId: string,
     year: number,
@@ -54,26 +54,28 @@ export namespace accountBalanceService {
       prevYear--;
     }
 
-    // Query for previous month's balance
+    // Query for previous month's balances
     let previousBalance = 0;
+    let previousReconciledBalance = 0;
     if (prevYear > 0) {
       const prevBalanceResult = await db
         .selectFrom("account_partial_balances")
         .where("accountId", "=", accountId)
         .where("year", "=", prevYear)
         .where("month", "=", prevMonth)
-        .select(["balance"])
+        .select(["balance", "reconciledBalance"])
         .executeTakeFirst();
-      if (
-        prevBalanceResult &&
-        prevBalanceResult.balance !== undefined &&
-        prevBalanceResult.balance !== null
-      ) {
-        previousBalance = Number(prevBalanceResult.balance);
+      if (prevBalanceResult) {
+        if (prevBalanceResult.balance !== undefined && prevBalanceResult.balance !== null) {
+          previousBalance = Number(prevBalanceResult.balance);
+        }
+        if (prevBalanceResult.reconciledBalance !== undefined && prevBalanceResult.reconciledBalance !== null) {
+          previousReconciledBalance = Number(prevBalanceResult.reconciledBalance);
+        }
       }
     }
 
-    return previousBalance;
+    return { previousBalance, previousReconciledBalance };
   };
 
   const recalculateAndUpsertBalances = async (
@@ -82,7 +84,8 @@ export namespace accountBalanceService {
     accountId: string,
     start: { year: number; month: number },
     end: { year: number; month: number },
-    previousBalance: number
+    previousBalance: number,
+    previousReconciledBalance: number
   ) => {
     const timezone = await budgetsService.getBudgetTimezone(budgetId);
 
@@ -93,7 +96,7 @@ export namespace accountBalanceService {
       const monthStart = toZonedTime(new Date(year, month - 1, 1), timezone);
       const monthEnd = endOfMonth(monthStart);
 
-      // Sum only the transactions for this month
+      // Sum all transactions for this month
       const sumResult = await db
         .selectFrom("transactions")
         .where("accountId", "=", accountId)
@@ -104,6 +107,20 @@ export namespace accountBalanceService {
       const monthSum = sumResult?.balance ? Number(sumResult.balance) : 0;
       const balance = previousBalance + monthSum;
 
+      // Sum only reconciled transactions for this month
+      const reconciledSumResult = await db
+        .selectFrom("transactions")
+        .where("accountId", "=", accountId)
+        .where("date", ">=", monthStart)
+        .where("date", "<=", monthEnd)
+        .where("isReconciled", "=", true)
+        .select(db.fn.sum("amount").as("reconciledBalance"))
+        .executeTakeFirst();
+      const reconciledMonthSum = reconciledSumResult?.reconciledBalance
+        ? Number(reconciledSumResult.reconciledBalance)
+        : 0;
+      const reconciledBalance = previousReconciledBalance + reconciledMonthSum;
+
       await db
         .insertInto("account_partial_balances")
         .values({
@@ -111,13 +128,17 @@ export namespace accountBalanceService {
           year,
           month,
           balance,
+          reconciledBalance,
         })
         .onConflict((oc) =>
-          oc.columns(["accountId", "year", "month"]).doUpdateSet({ balance })
+          oc
+            .columns(["accountId", "year", "month"])
+            .doUpdateSet({ balance, reconciledBalance })
         )
         .execute();
 
       previousBalance = balance;
+      previousReconciledBalance = reconciledBalance;
 
       if (month === 12) {
         month = 1;
@@ -167,12 +188,8 @@ export namespace accountBalanceService {
     // if there is nothing saved, which shouldn't happen, we can't calculate anything
     if (!end) return;
 
-    const previousBalance = await getPreviousMonthBalance(
-      db,
-      accountId,
-      start.year,
-      start.month
-    );
+    const { previousBalance, previousReconciledBalance } =
+      await getPreviousMonthBalances(db, accountId, start.year, start.month);
 
     await recalculateAndUpsertBalances(
       db,
@@ -180,7 +197,8 @@ export namespace accountBalanceService {
       accountId,
       start,
       end,
-      previousBalance
+      previousBalance,
+      previousReconciledBalance
     );
 
     await deleteBalancesAfterLastTransaction(db, accountId, end);
@@ -214,6 +232,7 @@ export namespace accountBalanceService {
       .select([
         "account_partial_balances.accountId",
         "account_partial_balances.balance",
+        "account_partial_balances.reconciledBalance",
       ])
       .execute();
   };

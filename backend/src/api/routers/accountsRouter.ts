@@ -37,6 +37,8 @@ accountsRouter.get(
       id: a.id,
       name: a.name,
       balance: balances.find((b) => b.accountId === a.id)?.balance ?? 0,
+      reconciledBalance:
+        balances.find((b) => b.accountId === a.id)?.reconciledBalance ?? 0,
       isLinked: a.plaidAccountId !== null,
       csvImportConfig: a.csv_import_config as BudgetAccount["csvImportConfig"],
     }));

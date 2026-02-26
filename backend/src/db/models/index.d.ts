@@ -29,6 +29,7 @@ export interface AccountPartialBalances {
   accountId: string;
   balance: Generated<Int8>;
   month: number;
+  reconciledBalance: Generated<Int8>;
   year: number;
 }
 

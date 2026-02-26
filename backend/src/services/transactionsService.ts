@@ -194,6 +194,7 @@ export namespace transactionsService {
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
         const { destinationAccountId: _, ...updateData } = transactionUpdates;
+        // isReconciled must only be set via reconciliationService, never via a regular patch
 
         if (!isEmpty(updateData)) {
           await trx

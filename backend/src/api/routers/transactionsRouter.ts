@@ -12,6 +12,7 @@ import type {
 import type { Json } from "../../db/models";
 import { importTransactionsService } from "../../services/importTransactionsService";
 import { transactionsService } from "../../services/transactionsService";
+import { reconciliationService } from "../../services/reconciliationService";
 
 export const transactionsRouter = Router();
 
@@ -131,6 +132,29 @@ transactionsRouter.patch(
       req.params.budgetId,
       transactionId,
       req.body,
+    );
+
+    res.status(200).send({});
+  },
+);
+
+transactionsRouter.post(
+  "/budgets/:budgetId/accounts/:accountId/reconcile",
+  async (
+    req: Request<
+      { budgetId: string; accountId: string },
+      {},
+      { transactionIds: string[] }
+    >,
+    res: Response,
+  ) => {
+    const { transactionIds } = req.body;
+
+    await reconciliationService.reconcileTransactions(
+      db,
+      req.params.budgetId,
+      req.params.accountId,
+      transactionIds,
     );
 
     res.status(200).send({});
