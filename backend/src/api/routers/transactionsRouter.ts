@@ -1,18 +1,18 @@
-import { Router } from "express";
 import type { Request, Response } from "express";
+import { Router } from "express";
 import { sql } from "kysely";
 import { db } from "../../db";
-import { authenticate, authorizeRequest } from "../middlewares";
+import type { Json } from "../../db/models";
+import { importTransactionsService } from "../../services/importTransactionsService";
 import type {
   CreateTransaction,
   ImportCsvRequest,
   Transaction,
   UpdateTransaction,
 } from "../../services/models";
-import type { Json } from "../../db/models";
-import { importTransactionsService } from "../../services/importTransactionsService";
-import { transactionsService } from "../../services/transactionsService";
 import { reconciliationService } from "../../services/reconciliationService";
+import { transactionsService } from "../../services/transactionsService";
+import { authenticate, authorizeRequest } from "../middlewares";
 
 export const transactionsRouter = Router();
 
@@ -23,7 +23,7 @@ transactionsRouter.get(
   "/budgets/:budgetId/accounts/:accountId/transactions",
   async (
     req: Request<{ budgetId: string; accountId: string }>,
-    res: Response,
+    res: Response
   ) => {
     const transactions: Transaction[] = await db
       .selectFrom("transactions")
@@ -51,18 +51,14 @@ transactionsRouter.get(
       .execute();
 
     res.json(transactions);
-  },
+  }
 );
 
 transactionsRouter.post(
   "/budgets/:budgetId/accounts/:accountId/transactions/import-csv",
   async (
-    req: Request<
-      { budgetId: string; accountId: string },
-      {},
-      ImportCsvRequest
-    >,
-    res: Response,
+    req: Request<{ budgetId: string; accountId: string }, {}, ImportCsvRequest>,
+    res: Response
   ) => {
     const { config, rows } = req.body;
     try {
@@ -71,7 +67,7 @@ transactionsRouter.post(
         req.params.budgetId,
         req.params.accountId,
         config,
-        rows,
+        rows
       );
 
       await db
@@ -88,7 +84,7 @@ transactionsRouter.post(
       }
       throw err;
     }
-  },
+  }
 );
 
 transactionsRouter.post(
@@ -99,16 +95,16 @@ transactionsRouter.post(
       {},
       CreateTransaction
     >,
-    res: Response,
+    res: Response
   ) => {
     await transactionsService.insertTransaction(
       db,
       req.params.budgetId,
-      req.body,
+      req.body
     );
 
     res.status(200).send({});
-  },
+  }
 );
 
 transactionsRouter.patch(
@@ -123,7 +119,7 @@ transactionsRouter.patch(
       {},
       UpdateTransaction
     >,
-    res: Response,
+    res: Response
   ) => {
     const { transactionId } = req.params;
 
@@ -131,11 +127,11 @@ transactionsRouter.patch(
       db,
       req.params.budgetId,
       transactionId,
-      req.body,
+      req.body
     );
 
     res.status(200).send({});
-  },
+  }
 );
 
 transactionsRouter.post(
@@ -146,7 +142,7 @@ transactionsRouter.post(
       {},
       { transactionIds: string[] }
     >,
-    res: Response,
+    res: Response
   ) => {
     const { transactionIds } = req.body;
 
@@ -154,11 +150,32 @@ transactionsRouter.post(
       db,
       req.params.budgetId,
       req.params.accountId,
-      transactionIds,
+      transactionIds
     );
 
     res.status(200).send({});
-  },
+  }
+);
+
+transactionsRouter.delete(
+  "/budgets/:budgetId/accounts/:accountId/transactions/:transactionId/reconcile",
+  async (
+    req: Request<{
+      budgetId: string;
+      accountId: string;
+      transactionId: string;
+    }>,
+    res: Response
+  ) => {
+    await reconciliationService.unreconcileTransaction(
+      db,
+      req.params.budgetId,
+      req.params.accountId,
+      req.params.transactionId
+    );
+
+    res.status(200).send({});
+  }
 );
 
 transactionsRouter.delete(
@@ -169,7 +186,7 @@ transactionsRouter.delete(
       {},
       { transactionIds: string[] }
     >,
-    res: Response,
+    res: Response
   ) => {
     const { transactionIds } = req.body;
 
@@ -177,9 +194,9 @@ transactionsRouter.delete(
       db,
       req.params.budgetId,
       req.params.accountId,
-      transactionIds,
+      transactionIds
     );
 
     res.status(200).send({});
-  },
+  }
 );
