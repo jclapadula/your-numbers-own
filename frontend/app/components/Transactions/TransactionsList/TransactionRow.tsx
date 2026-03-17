@@ -1,3 +1,4 @@
+import { LockClosedIcon } from "@heroicons/react/16/solid";
 import { formatISO } from "date-fns";
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
@@ -5,6 +6,7 @@ import { z } from "zod";
 import type { Transaction } from "~/api/models";
 import { rawNumberToAmount } from "~/components/Amount";
 import { useAccountTransactions } from "../AccountTransactionsContext";
+import { useReconciliation } from "../ReconciliationContext";
 import {
   useCreateTransaction,
   useUpdateTransaction,
@@ -41,6 +43,11 @@ export const TransactionRow = ({
   onSelect: (selected: boolean) => void;
 }) => {
   const { accountId } = useAccountTransactions();
+  const {
+    isReconciling,
+    reconciliationPendingIds,
+    toggleReconciliationPending,
+  } = useReconciliation();
 
   const transactionAmount = transaction.amount || null;
 
@@ -134,18 +141,17 @@ export const TransactionRow = ({
         />
         <div
           style={TransactionTableWidths.reconciled}
-          className="tooltip tooltip-left flex items-center justify-center"
-          data-tip="Reconciled"
+          className="flex items-center justify-center"
         >
-          <input
-            type="checkbox"
-            defaultChecked={transaction.isReconciled}
-            onChange={(e) => {
-              saveChanges({
-                isReconciled: e.target.checked,
-              });
-            }}
-          />
+          {transaction.isReconciled ? (
+            <LockClosedIcon className="size-3 text-success" />
+          ) : (
+            <input
+              type="checkbox"
+              checked={reconciliationPendingIds.has(transaction.id)}
+              onChange={() => toggleReconciliationPending(transaction.id)}
+            />
+          )}
         </div>
       </div>
     </>
@@ -158,6 +164,8 @@ type NewTransactionRowProps = {
 
 export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
   const { accountId } = useAccountTransactions();
+  const { isReconciling, addReconciliationPending } = useReconciliation();
+  const [pendingReconciliation, setPendingReconciliation] = useState(false);
   const [newTransaction, setNewTransaction] = useState<TransactionFormData>({
     accountId,
     payeeId: null,
@@ -166,7 +174,7 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
     notes: "",
     date: formatISO(new Date()),
     amount: 0,
-    isReconciled: true,
+    isReconciled: false,
   });
 
   const transactionAmount = newTransaction.amount || null;
@@ -183,7 +191,10 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
       return;
     }
 
-    await createTransaction(result.data);
+    const created = await createTransaction(result.data);
+    if (isReconciling && pendingReconciliation && created) {
+      addReconciliationPending(created.transactionId);
+    }
     onClose();
   };
 
@@ -259,13 +270,8 @@ export const NewTransactionRow = ({ onClose }: NewTransactionRowProps) => {
         >
           <input
             type="checkbox"
-            checked={newTransaction.isReconciled}
-            onChange={(e) => {
-              setNewTransaction({
-                ...newTransaction,
-                isReconciled: e.target.checked,
-              });
-            }}
+            checked={pendingReconciliation}
+            onChange={(e) => setPendingReconciliation(e.target.checked)}
           />
         </div>
       </div>

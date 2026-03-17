@@ -1,12 +1,12 @@
 import type { Kysely, Selectable } from "kysely";
-import type { CreateTransaction, UpdateTransaction } from "./models";
+import { isEmpty } from "lodash";
 import type { DB, Transactions } from "../db/models";
 import { accountBalanceService } from "./accountBalanceService";
-import { toZonedDate } from "./ZonedDate";
-import { budgetsService } from "./budgetsService";
 import { balanceUpdater } from "./balanceUpdater";
+import { budgetsService } from "./budgetsService";
+import type { CreateTransaction, UpdateTransaction } from "./models";
 import { transfersService, type AffectedTransaction } from "./transfersService";
-import { isEmpty } from "lodash";
+import { toZonedDate } from "./ZonedDate";
 
 export namespace transactionsService {
   const _updateAccountBalancesForAffectedAccounts = async (
@@ -85,7 +85,7 @@ export namespace transactionsService {
     budgetId: string,
     transaction: CreateTransaction,
   ) => {
-    await db
+    const { transactionId } = await db
       .transaction()
       .setIsolationLevel("serializable")
       .execute(async (trx) => {
@@ -105,7 +105,11 @@ export namespace transactionsService {
           { transactionId, amount: transaction.amount },
           destinationAccountId,
         );
+
+        return { transactionId };
       });
+
+    return { transactionId };
   };
 
   const _postUpdateSideEffects = async (

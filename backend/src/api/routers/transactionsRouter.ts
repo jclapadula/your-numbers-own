@@ -23,7 +23,7 @@ transactionsRouter.get(
   "/budgets/:budgetId/accounts/:accountId/transactions",
   async (
     req: Request<{ budgetId: string; accountId: string }>,
-    res: Response
+    res: Response,
   ) => {
     const transactions: Transaction[] = await db
       .selectFrom("transactions")
@@ -51,14 +51,14 @@ transactionsRouter.get(
       .execute();
 
     res.json(transactions);
-  }
+  },
 );
 
 transactionsRouter.post(
   "/budgets/:budgetId/accounts/:accountId/transactions/import-csv",
   async (
     req: Request<{ budgetId: string; accountId: string }, {}, ImportCsvRequest>,
-    res: Response
+    res: Response,
   ) => {
     const { config, rows } = req.body;
     try {
@@ -67,7 +67,7 @@ transactionsRouter.post(
         req.params.budgetId,
         req.params.accountId,
         config,
-        rows
+        rows,
       );
 
       await db
@@ -84,7 +84,7 @@ transactionsRouter.post(
       }
       throw err;
     }
-  }
+  },
 );
 
 transactionsRouter.post(
@@ -95,16 +95,16 @@ transactionsRouter.post(
       {},
       CreateTransaction
     >,
-    res: Response
+    res: Response,
   ) => {
-    await transactionsService.insertTransaction(
+    const { transactionId } = await transactionsService.insertTransaction(
       db,
       req.params.budgetId,
-      req.body
+      req.body,
     );
 
-    res.status(200).send({});
-  }
+    res.status(200).send({ transactionId });
+  },
 );
 
 transactionsRouter.patch(
@@ -119,7 +119,7 @@ transactionsRouter.patch(
       {},
       UpdateTransaction
     >,
-    res: Response
+    res: Response,
   ) => {
     const { transactionId } = req.params;
 
@@ -127,11 +127,11 @@ transactionsRouter.patch(
       db,
       req.params.budgetId,
       transactionId,
-      req.body
+      req.body,
     );
 
     res.status(200).send({});
-  }
+  },
 );
 
 transactionsRouter.post(
@@ -142,7 +142,7 @@ transactionsRouter.post(
       {},
       { transactionIds: string[] }
     >,
-    res: Response
+    res: Response,
   ) => {
     const { transactionIds } = req.body;
 
@@ -150,11 +150,11 @@ transactionsRouter.post(
       db,
       req.params.budgetId,
       req.params.accountId,
-      transactionIds
+      transactionIds,
     );
 
     res.status(200).send({});
-  }
+  },
 );
 
 transactionsRouter.delete(
@@ -165,17 +165,17 @@ transactionsRouter.delete(
       accountId: string;
       transactionId: string;
     }>,
-    res: Response
+    res: Response,
   ) => {
     await reconciliationService.unreconcileTransaction(
       db,
       req.params.budgetId,
       req.params.accountId,
-      req.params.transactionId
+      req.params.transactionId,
     );
 
     res.status(200).send({});
-  }
+  },
 );
 
 transactionsRouter.delete(
@@ -186,7 +186,7 @@ transactionsRouter.delete(
       {},
       { transactionIds: string[] }
     >,
-    res: Response
+    res: Response,
   ) => {
     const { transactionIds } = req.body;
 
@@ -194,9 +194,9 @@ transactionsRouter.delete(
       db,
       req.params.budgetId,
       req.params.accountId,
-      transactionIds
+      transactionIds,
     );
 
     res.status(200).send({});
-  }
+  },
 );

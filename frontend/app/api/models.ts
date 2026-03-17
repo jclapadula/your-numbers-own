@@ -6,6 +6,7 @@ export type BudgetAccount = {
   id: string;
   name: string;
   balance: number;
+  reconciledBalance: number;
   isLinked: boolean;
   deletedAt?: string | null;
   csvImportConfig: ImportConfig | null;

@@ -6,10 +6,11 @@ import type {
   Transaction,
   UpdateTransaction,
 } from "~/api/models";
+
 import { useTransactionsApi } from "~/api/transactionsApi";
-import { useToast } from "../Common/ToastContext";
 import { accountsQueryKeys } from "../Accounts/AccountsQueries";
 import { monthlyBudgetQueryKeys } from "../Budget/MonthlyBudgetQueries";
+import { useToast } from "../Common/ToastContext";
 import { useCurrentBudgetContext } from "../Contexts/CurrentBudgetContext";
 
 export const transactionsQueryKeys = {
@@ -119,11 +120,40 @@ export const useImportTransactions = (accountId: string) => {
         result.updated > 0 && `${result.updated} updated`,
         result.skipped > 0 && `${result.skipped} skipped`,
       ].filter(Boolean);
-      setToast(parts.length ? parts.join(", ") : "Nothing new to import", "success");
+      setToast(
+        parts.length ? parts.join(", ") : "Nothing new to import",
+        "success",
+      );
     },
     onError: (error) => {
       console.error(error);
       setToast("Failed to import transactions", "error");
+    },
+  });
+};
+
+export const useReconcileTransactions = (accountId: string) => {
+  const { budgetId } = useCurrentBudgetContext();
+  const { reconcile } = useTransactionsApi(accountId);
+  const queryClient = useQueryClient();
+  const { setToast } = useToast();
+
+  return useMutation({
+    mutationFn: (transactionIds: string[]) => reconcile(transactionIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: transactionsQueryKeys.transactions(accountId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: accountsQueryKeys.accounts,
+      });
+      queryClient.invalidateQueries({
+        queryKey: monthlyBudgetQueryKeys.monthlyBudget(budgetId),
+      });
+    },
+    onError: (error) => {
+      console.error(error);
+      setToast("Failed to reconcile transactions", "error");
     },
   });
 };

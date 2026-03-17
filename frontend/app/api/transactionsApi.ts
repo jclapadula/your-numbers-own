@@ -15,27 +15,31 @@ export const useTransactionsApi = (accountId: string) => {
   return {
     getAll: () =>
       httpClient.get<Transaction[]>(
-        `/budgets/${budgetId}/accounts/${accountId}/transactions`
+        `/budgets/${budgetId}/accounts/${accountId}/transactions`,
       ),
     create: (transaction: CreateTransaction) =>
-      httpClient.post<CreateTransaction>(
+      httpClient.post<{ transactionId: string }>(
         `/budgets/${budgetId}/accounts/${accountId}/transactions`,
-        transaction
+        transaction,
       ),
     deleteMany: (transactionIds: string[]) =>
       httpClient.delete(
         `/budgets/${budgetId}/accounts/${accountId}/transactions`,
-        { transactionIds }
+        { transactionIds },
       ),
     patch: (transactionId: string, transaction: UpdateTransaction) =>
       httpClient.patch<UpdateTransaction>(
         `/budgets/${budgetId}/accounts/${accountId}/transactions/${transactionId}`,
-        transaction
+        transaction,
       ),
     importCsv: (request: ImportCsvRequest) =>
       httpClient.post<ImportCsvResponse>(
         `/budgets/${budgetId}/accounts/${accountId}/transactions/import-csv`,
-        request
+        request,
       ),
+    reconcile: (transactionIds: string[]) =>
+      httpClient.post(`/budgets/${budgetId}/accounts/${accountId}/reconcile`, {
+        transactionIds,
+      }),
   };
 };

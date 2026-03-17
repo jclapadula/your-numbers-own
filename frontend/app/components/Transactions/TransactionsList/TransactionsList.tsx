@@ -7,6 +7,9 @@ import { useState } from "react";
 import type { Transaction } from "~/api/models";
 import { useAccountTransactions } from "../AccountTransactionsContext";
 import { CsvImportModal } from "../CsvImportModal";
+import { ReconcileButton } from "../ReconcileButton";
+import { ReconciliationBanner } from "../ReconciliationBanner";
+import { useReconciliation } from "../ReconciliationContext";
 import { useDeleteTransactions } from "../TransactionsQueries";
 import { TransactionListHeader } from "./TransactionListHeader";
 import { NewTransactionRow, TransactionRow } from "./TransactionRow";
@@ -41,6 +44,7 @@ const TransactionListActions = ({
           <ArrowUpTrayIcon className="size-4" />
           Import
         </button>
+        <ReconcileButton />
       </div>
       {selectedCount > 0 && (
         <button className="btn btn-sm btn-error" onClick={onDeleteSelected}>
@@ -63,6 +67,7 @@ export const AccountTransactionsList = ({
     new Set(),
   );
   const { accountId } = useAccountTransactions();
+  const { isReconciling } = useReconciliation();
   const { mutateAsync: deleteTransaction } = useDeleteTransactions(accountId);
 
   const onSelectAll = (selected: boolean) => {
@@ -99,6 +104,7 @@ export const AccountTransactionsList = ({
       {importingCsv && (
         <CsvImportModal onClose={() => setImportingCsv(false)} />
       )}
+      {isReconciling && <ReconciliationBanner transactions={transactions} />}
       <div className="border border-base-content/5">
         <div>
           <TransactionListHeader

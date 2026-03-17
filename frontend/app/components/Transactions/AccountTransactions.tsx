@@ -13,6 +13,7 @@ import { EditAccountModal } from "../Accounts/EditAccountModal";
 import { DeleteAccountModal } from "../Accounts/DeleteAccountModal";
 import { AccountTransactionsList } from "./TransactionsList/TransactionsList";
 import { AccountTransactionsContextProvider } from "./AccountTransactionsContext";
+import { ReconciliationContextProvider } from "./ReconciliationContext";
 import { useSyncPlaidAccount } from "../Plaid/PlaidQueries";
 import { Tooltip } from "../Common/Tooltip";
 
@@ -118,10 +119,12 @@ export default function AccountTransactions() {
 
   return (
     <AccountTransactionsContextProvider accountId={accountId}>
-      <div className="flex flex-col h-full w-full">
-        <AccountTransactionsHeader accountId={accountId} />
-        <AccountTransactionsList transactions={sortedTransactions || []} />
-      </div>
+      <ReconciliationContextProvider>
+        <div className="flex flex-col h-full w-full">
+          <AccountTransactionsHeader accountId={accountId} />
+          <AccountTransactionsList transactions={sortedTransactions || []} />
+        </div>
+      </ReconciliationContextProvider>
     </AccountTransactionsContextProvider>
   );
 }
