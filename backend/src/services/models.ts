@@ -79,6 +79,28 @@ export type ImportCsvResponse = {
   skipped: number;
 };
 
+export const FILE_IMPORT_JOB_STATUS = {
+  PENDING: "pending",
+  PROCESSING: "processing",
+  COMPLETED: "completed",
+  FAILED: "failed",
+} as const;
+
+export type FileImportJobStatus =
+  (typeof FILE_IMPORT_JOB_STATUS)[keyof typeof FILE_IMPORT_JOB_STATUS];
+
+export type StartFileImportResponse = {
+  importId: string;
+};
+
+export type FileImportJobStatusResponse = {
+  status: FileImportJobStatus;
+  imported: number | null;
+  updated: number | null;
+  skipped: number | null;
+  error: string | null;
+};
+
 export type CategoryGroup = {
   id: string;
   name: string;

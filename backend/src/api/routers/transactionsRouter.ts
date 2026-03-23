@@ -1,8 +1,10 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import { sql } from "kysely";
+import multer from "multer";
 import { db } from "../../db";
 import type { Json } from "../../db/models";
+import { fileImportService } from "../../services/fileImportService";
 import { importTransactionsService } from "../../services/importTransactionsService";
 import type {
   CreateTransaction,
@@ -13,6 +15,14 @@ import type {
 import { reconciliationService } from "../../services/reconciliationService";
 import { transactionsService } from "../../services/transactionsService";
 import { authenticate, authorizeRequest } from "../middlewares";
+
+const fileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    // 100KB
+    fileSize: 100 * 1024,
+  },
+});
 
 export const transactionsRouter = Router();
 
@@ -175,6 +185,65 @@ transactionsRouter.delete(
     );
 
     res.status(200).send({});
+  },
+);
+
+transactionsRouter.post(
+  "/budgets/:budgetId/accounts/:accountId/transactions/import-file",
+  fileUpload.single("file"),
+  async (
+    req: Request<{ budgetId: string; accountId: string }>,
+    res: Response,
+  ) => {
+    if (!req.file) {
+      res.status(422).json({ error: "No file provided" });
+      return;
+    }
+
+    const importId = await fileImportService.startImportJob(
+      db,
+      req.params.budgetId,
+      req.params.accountId,
+      req.file.buffer,
+    );
+
+    res.status(202).json({ importId });
+  },
+);
+
+transactionsRouter.get(
+  "/budgets/:budgetId/accounts/:accountId/transactions/import-file/:importId",
+  async (
+    req: Request<{
+      budgetId: string;
+      accountId: string;
+      importId: string;
+    }>,
+    res: Response,
+  ) => {
+    const job = await fileImportService.getJobStatus(
+      db,
+      req.params.importId,
+      req.params.accountId,
+    );
+
+    if (!job) {
+      res.status(404).json({ error: "Import job not found" });
+      return;
+    }
+
+    res.json(job);
+  },
+);
+
+// Multer error handler — converts file size limit errors to 422
+transactionsRouter.use(
+  (err: any, _req: Request, res: Response, next: NextFunction) => {
+    if (err?.code === "LIMIT_FILE_SIZE") {
+      res.status(422).json({ error: "File too large. Maximum size is 100KB." });
+      return;
+    }
+    next(err);
   },
 );
 

@@ -8,7 +8,7 @@ import { budgetsService } from "./budgetsService";
 import type { ImportConfig, ImportCsvResponse } from "./models";
 import { toZonedDate } from "./ZonedDate";
 
-type ParsedRow = {
+export type ParsedRow = {
   date: Date;
   dateISO: string;
   amountCents: number;
@@ -158,7 +158,7 @@ function toDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function computeHash(
+export function computeHash(
   accountId: string,
   dateISO: string,
   amountCents: number,
@@ -356,13 +356,13 @@ async function fetchExistingTransactionsByHash(
 ): Promise<Map<string, { id: string; amount: number }>> {
   const existing = await db
     .selectFrom("transactions")
-    .select(["id", "amount", "csv_row_hash"])
+    .select(["id", "amount", "import_hash"])
     .where("accountId", "=", accountId)
-    .where("csv_row_hash", "in", hashes)
+    .where("import_hash", "in", hashes)
     .execute();
 
   return new Map(
-    existing.map((t) => [t.csv_row_hash!, { id: t.id, amount: t.amount }]),
+    existing.map((t) => [t.import_hash!, { id: t.id, amount: t.amount }]),
   );
 }
 
@@ -423,7 +423,7 @@ async function upsertParsedRows(
           isReconciled: false,
           notes: row.notes,
           payeeId,
-          csv_row_hash: row.hash,
+          import_hash: row.hash,
         })
         .execute();
 
@@ -436,16 +436,13 @@ async function upsertParsedRows(
 }
 
 export namespace importTransactionsService {
-  export const importTransactions = async (
+  export const importParsedRows = async (
     db: Kysely<DB>,
     budgetId: string,
     accountId: string,
-    config: ImportConfig,
-    rows: string[][],
+    parsed: ParsedRow[],
+    timezone: string,
   ): Promise<ImportCsvResponse> => {
-    const timezone = await budgetsService.getBudgetTimezone(budgetId);
-    const parsed = parseRows(rows, config, accountId, timezone);
-
     if (!parsed.length) {
       return { imported: 0, updated: 0, skipped: 0 };
     }
@@ -492,5 +489,17 @@ export namespace importTransactionsService {
       });
 
     return { imported, updated, skipped };
+  };
+
+  export const importTransactions = async (
+    db: Kysely<DB>,
+    budgetId: string,
+    accountId: string,
+    config: ImportConfig,
+    rows: string[][],
+  ): Promise<ImportCsvResponse> => {
+    const timezone = await budgetsService.getBudgetTimezone(budgetId);
+    const parsed = parseRows(rows, config, accountId, timezone);
+    return importParsedRows(db, budgetId, accountId, parsed, timezone);
   };
 }

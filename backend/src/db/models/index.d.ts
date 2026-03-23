@@ -5,6 +5,8 @@
 
 import { ColumnType } from "kysely";
 
+export type FileImportJobStatus = "completed" | "failed" | "pending" | "processing";
+
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
   : ColumnType<T, T | undefined, T>;
@@ -73,6 +75,22 @@ export interface CategoryGroups {
   position: Generated<number>;
 }
 
+export interface FileImportJobs {
+  accountId: string;
+  budgetId: string;
+  createdAt: Generated<Timestamp>;
+  error: string | null;
+  file_bytes: Buffer | null;
+  id: Generated<string>;
+  imported: number | null;
+  openai_file_id: string | null;
+  openai_raw_response: Json | null;
+  skipped: number | null;
+  status: Generated<FileImportJobStatus>;
+  updated: number | null;
+  updatedAt: Generated<Timestamp>;
+}
+
 export interface MonthlyCategoryBudgets {
   assignedAmount: Int8;
   balance: Generated<Int8>;
@@ -114,9 +132,9 @@ export interface Transactions {
   accountId: string;
   amount: Generated<Int8>;
   categoryId: string | null;
-  csv_row_hash: string | null;
   date: Timestamp;
   id: Generated<string>;
+  import_hash: string | null;
   isReconciled: Generated<boolean>;
   merchant_name: string | null;
   notes: string | null;
@@ -152,6 +170,7 @@ export interface DB {
   budgets: Budgets;
   categories: Categories;
   category_groups: CategoryGroups;
+  file_import_jobs: FileImportJobs;
   monthly_category_budgets: MonthlyCategoryBudgets;
   payees: Payees;
   plaid_accounts: PlaidAccounts;
